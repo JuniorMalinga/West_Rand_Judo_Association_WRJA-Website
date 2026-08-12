@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -16,6 +17,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -45,9 +48,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable private fun Logo() = Box(Modifier.size(58.dp).background(Color.White), contentAlignment = Alignment.Center) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("WRJA", color = Charcoal, fontWeight = FontWeight.Black); Text("JUDO", color = GoldDark, fontSize = 8.sp, letterSpacing = 1.sp) }
-}
+@Composable private fun Logo() = Box(Modifier.size(58.dp).background(Color.White), contentAlignment = Alignment.Center) { Image(painterResource(R.drawable.wrja_logo), "West Rand Judo Association logo", Modifier.padding(5.dp).fillMaxSize(), contentScale = ContentScale.Fit) }
 @Composable private fun Header(title: String) = Box(Modifier.fillMaxWidth().height(136.dp).background(Charcoal), contentAlignment = Alignment.Center) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) { Text(title.uppercase(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 30.sp); Text("HOME  /  $title", color = Gold, fontSize = 11.sp, letterSpacing = 1.sp) }
 }
@@ -90,7 +91,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable private fun ContentCards(page: String) {
     val content = when (page) { "programs" -> listOf("Kids Judo" to "Balance, safe falling, discipline and confidence.", "Adult Judo" to "Throws, groundwork and conditioning for all grades.", "Women's Judo" to "A supportive space to train, compete and grow."); "news" -> listOf("National success for Golden Score judokas" to "Four gold, six silver and four bronze medals.", "African Cup medals" to "KJK athletes celebrated multiple podium finishes.", "Athlete spotlight" to "West Rand judokas excel nationally."); "events" -> listOf("Events calendar" to "Navigate monthly dates for club events.", "Club grading" to "A clear belt-progression pathway.", "Training camps" to "Special development sessions."); "gallery" -> listOf("ALL  |  ADULTS  |  KIDS  |  COMPETITIONS" to "Tap a category to filter the gallery.", "Training photos" to "Photo placeholders until artwork is added.", "Competition photos" to "Display-only gallery cards."); else -> listOf("Our mission" to "Safe, professional and inclusive judo training.", "Certified coaches" to "Qualified coaches with years of experience.", "Affiliated clubs" to "Golden Score Judo and KJK Judo.") }
-    content.forEach { (heading, text) -> Card(Modifier.fillMaxWidth().padding(bottom = 14.dp), elevation = CardDefaults.cardElevation(3.dp)) { Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) { Box(Modifier.size(52.dp).background(if (page == "gallery") Charcoal else Color(0x22C9A227)), contentAlignment = Alignment.Center) { Text(if (page == "gallery") "PHOTO" else "WRJA", color = Gold, fontSize = 9.sp, fontWeight = FontWeight.Bold) }; Spacer(Modifier.width(15.dp)); Column { Text(heading, fontWeight = FontWeight.Bold, fontSize = 17.sp); Text(text, color = Muted, fontSize = 14.sp, lineHeight = 20.sp) } } } }
+    content.forEachIndexed { index, (heading, text) -> Card(Modifier.fillMaxWidth().height(if (page == "programs") 190.dp else 112.dp).padding(bottom = 14.dp), elevation = CardDefaults.cardElevation(3.dp)) { Box { if (page == "programs") { val image = listOf(R.drawable.kids_judo, R.drawable.adult_judo, R.drawable.womens_judo)[index]; Image(painterResource(image), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop); Box(Modifier.fillMaxSize().background(Color(0x99000000))) }; Row(Modifier.padding(18.dp).align(Alignment.BottomStart), verticalAlignment = Alignment.CenterVertically) { if (page != "programs") { Box(Modifier.size(52.dp).background(if (page == "gallery") Charcoal else Color(0x22C9A227)), contentAlignment = Alignment.Center) { Text(if (page == "gallery") "PHOTO" else "WRJA", color = Gold, fontSize = 9.sp, fontWeight = FontWeight.Bold) }; Spacer(Modifier.width(15.dp)) }; Column { Text(heading, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = if (page == "programs") Color.White else Ink); Text(text, color = if (page == "programs") Color.LightGray else Muted, fontSize = 14.sp, lineHeight = 20.sp) } } } } }
     if (page == "home") { Spacer(Modifier.height(8.dp)); Button({}, colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Ink)) { Text("BOOK A FREE TRIAL") } }
 }
 
