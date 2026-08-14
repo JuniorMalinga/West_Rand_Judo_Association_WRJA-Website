@@ -6,6 +6,12 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.Image
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -41,10 +47,16 @@ class MainActivity : ComponentActivity() {
 
 @Composable private fun WRJAApp() {
     var screen by rememberSaveable { mutableStateOf("login") }
-    when (screen) {
-        "login" -> LoginScreen({ screen = "signup" }, { screen = "home" })
-        "signup" -> SignUpScreen({ screen = "login" }, { screen = "home" })
-        else -> MainSite(screen, { screen = "login" }) { screen = it }
+    AnimatedContent(
+        targetState = screen,
+        transitionSpec = { (slideInHorizontally { it / 7 } + fadeIn()) togetherWith (slideOutHorizontally { -it / 7 } + fadeOut()) },
+        label = "app screen transition"
+    ) { targetScreen ->
+        when (targetScreen) {
+            "login" -> LoginScreen({ screen = "signup" }, { screen = "home" })
+            "signup" -> SignUpScreen({ screen = "login" }, { screen = "home" })
+            else -> MainSite(targetScreen, { screen = "login" }) { screen = it }
+        }
     }
 }
 
@@ -79,7 +91,7 @@ class MainActivity : ComponentActivity() {
 @Composable private fun MainSite(initial: String, logout: () -> Unit, update: (String) -> Unit) {
     var page by rememberSaveable { mutableStateOf(initial) }; val drawer = rememberDrawerState(DrawerValue.Closed); val scope = rememberCoroutineScope(); val pages = listOf("Home", "About", "Events", "Programs", "News", "Gallery", "Contact")
     ModalNavigationDrawer(drawerState = drawer, drawerContent = { ModalDrawerSheet { Column(Modifier.fillMaxHeight().background(Charcoal)) { Row(Modifier.padding(22.dp), verticalAlignment = Alignment.CenterVertically) { Logo(); Spacer(Modifier.width(12.dp)); Text("WEST RAND\nJUDO ASSOCIATION", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp) }; pages.forEach { p -> Text(p, Modifier.fillMaxWidth().clickable { page = p.lowercase(); update(page); scope.launch { drawer.close() } }.padding(18.dp), color = if (p.equals(page, true)) Gold else Color.White, fontWeight = FontWeight.SemiBold) }; Spacer(Modifier.weight(1f)); Text("LOG OUT", Modifier.clickable { logout() }.padding(22.dp), color = Gold, fontWeight = FontWeight.Bold) } } }) {
-        Scaffold(topBar = { TopAppBar(title = { Text("WEST RAND JUDO", fontWeight = FontWeight.Black, fontSize = 16.sp) }, navigationIcon = { IconButton({ scope.launch { drawer.open() } }) { Icon(Icons.Default.Menu, "Menu") } }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Charcoal, titleContentColor = Color.White, navigationIconContentColor = Color.White)) }) { padding -> SitePage(page, Modifier.padding(padding)) }
+        Scaffold(topBar = { TopAppBar(title = { Text("WEST RAND JUDO", fontWeight = FontWeight.Black, fontSize = 16.sp) }, navigationIcon = { IconButton({ scope.launch { drawer.open() } }) { Icon(Icons.Default.Menu, "Menu") } }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Charcoal, titleContentColor = Color.White, navigationIconContentColor = Color.White)) }) { padding -> AnimatedContent(targetState = page, transitionSpec = { (slideInHorizontally { it / 9 } + fadeIn()) togetherWith (slideOutHorizontally { -it / 9 } + fadeOut()) }, label = "site page transition") { targetPage -> SitePage(targetPage, Modifier.padding(padding)) } }
     }
 }
 
@@ -117,7 +129,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable private fun InstructorDetail(name: String, role: String, bio: String, photo: Int) {
-    Card(Modifier.fillMaxWidth().padding(bottom = 16.dp)) { Column { Image(painterResource(photo), null, Modifier.fillMaxWidth().height(180.dp), contentScale = ContentScale.Crop); Column(Modifier.padding(16.dp)) { Text(name, fontWeight = FontWeight.Bold, fontSize = 19.sp); Text(role.uppercase(), color = GoldDark, fontSize = 12.sp, fontWeight = FontWeight.Bold); Spacer(Modifier.height(6.dp)); Text(bio, color = Muted, fontSize = 14.sp, lineHeight = 20.sp) } } }
+    Card(Modifier.fillMaxWidth().padding(bottom = 16.dp)) { Column { Box(Modifier.fillMaxWidth().height(240.dp).background(Charcoal2), contentAlignment = Alignment.Center) { Image(painterResource(photo), null, Modifier.fillMaxSize().padding(8.dp), contentScale = ContentScale.Fit) }; Column(Modifier.padding(16.dp)) { Text(name, fontWeight = FontWeight.Bold, fontSize = 19.sp); Text(role.uppercase(), color = GoldDark, fontSize = 12.sp, fontWeight = FontWeight.Bold); Spacer(Modifier.height(6.dp)); Text(bio, color = Muted, fontSize = 14.sp, lineHeight = 20.sp) } } }
 }
 
 @Composable private fun EventsCalendarPreview() {
