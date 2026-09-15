@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -38,6 +39,9 @@ private val GoldDark = Color(0xFF8A6E1A)
 private val OffWhite = Color(0xFFF4F4F4)
 private val Ink = Color(0xFF1A1A1A)
 private val Muted = Color(0xFF555555)
+
+/** Presentation model ready to be populated by a future chat service. */
+private data class ChatMessageUi(val text: String, val fromAssistant: Boolean)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) = super.onCreate(savedInstanceState).also {
@@ -89,16 +93,16 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable private fun MainSite(initial: String, logout: () -> Unit, update: (String) -> Unit) {
-    var page by rememberSaveable { mutableStateOf(initial) }; val drawer = rememberDrawerState(DrawerValue.Closed); val scope = rememberCoroutineScope(); val pages = listOf("Home", "About", "Events", "Programs", "News", "Gallery", "Contact")
+    var page by rememberSaveable { mutableStateOf(initial) }; val drawer = rememberDrawerState(DrawerValue.Closed); val scope = rememberCoroutineScope(); val pages = listOf("Home", "About", "Events", "Programs", "News", "Gallery", "Contact", "Chat Assistant")
     ModalNavigationDrawer(drawerState = drawer, drawerContent = { ModalDrawerSheet { Column(Modifier.fillMaxHeight().background(Charcoal)) { Row(Modifier.padding(22.dp), verticalAlignment = Alignment.CenterVertically) { Logo(); Spacer(Modifier.width(12.dp)); Text("WEST RAND\nJUDO ASSOCIATION", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp) }; pages.forEach { p -> Text(p, Modifier.fillMaxWidth().clickable { page = p.lowercase(); update(page); scope.launch { drawer.close() } }.padding(18.dp), color = if (p.equals(page, true)) Gold else Color.White, fontWeight = FontWeight.SemiBold) }; Spacer(Modifier.weight(1f)); Text("LOG OUT", Modifier.clickable { logout() }.padding(22.dp), color = Gold, fontWeight = FontWeight.Bold) } } }) {
         Scaffold(topBar = { TopAppBar(title = { Text("WEST RAND JUDO", fontWeight = FontWeight.Black, fontSize = 16.sp) }, navigationIcon = { IconButton({ scope.launch { drawer.open() } }) { Icon(Icons.Default.Menu, "Menu") } }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Charcoal, titleContentColor = Color.White, navigationIconContentColor = Color.White)) }) { padding -> AnimatedContent(targetState = page, transitionSpec = { (slideInHorizontally { it / 9 } + fadeIn()) togetherWith (slideOutHorizontally { -it / 9 } + fadeOut()) }, label = "site page transition") { targetPage -> SitePage(targetPage, Modifier.padding(padding)) } }
     }
 }
 
 @Composable private fun SitePage(page: String, modifier: Modifier) {
-    val descriptions = mapOf("home" to "Building discipline, respect, and excellence through judo for athletes of all ages across the West Rand community.", "about" to "Building character on and off the mat. We develop confident, disciplined and respectful individuals through judo.", "events" to "Club gradings, competitions and training activities.", "programs" to "Judo programmes for children and adults at every level.", "news" to "Competition results and achievements from WRJA athletes.", "gallery" to "Training, competition and community moments.", "contact" to "Send us a message or contact our training venues.")
+    val descriptions = mapOf("home" to "Building discipline, respect, and excellence through judo for athletes of all ages across the West Rand community.", "about" to "Building character on and off the mat. We develop confident, disciplined and respectful individuals through judo.", "events" to "Club gradings, competitions and training activities.", "programs" to "Judo programmes for children and adults at every level.", "news" to "Competition results and achievements from WRJA athletes.", "gallery" to "Training, competition and community moments.", "contact" to "Send us a message or contact our training venues.", "chat assistant" to "Your WRJA guide for training, programmes, events and club information.")
     val title = page.replaceFirstChar { it.uppercase() }
-    LazyColumn(modifier.fillMaxSize().background(Color.White)) { item { Box(Modifier.fillMaxWidth().height(if (page == "home") 320.dp else 160.dp).background(Charcoal2), contentAlignment = if (page == "home") Alignment.BottomStart else Alignment.Center) { Column(Modifier.padding(28.dp), horizontalAlignment = if (page == "home") Alignment.Start else Alignment.CenterHorizontally) { Text(if (page == "home") "WELCOME TO\nWEST RAND JUDO\nASSOCIATION" else title.uppercase(), color = Color.White, fontSize = if (page == "home") 29.sp else 30.sp, fontWeight = FontWeight.Bold); Text(if (page == "home") "DISCIPLINE  •  RESPECT  •  EXCELLENCE" else "HOME  /  $title", color = Gold, fontSize = 11.sp, letterSpacing = 1.sp) } } }; item { Column(Modifier.padding(24.dp)) { Text(descriptions[page] ?: "", color = Ink, fontWeight = FontWeight.SemiBold, fontSize = 19.sp, lineHeight = 28.sp); Spacer(Modifier.height(20.dp)); if (page == "contact") ContactForm() else ContentCards(page) } } }
+    LazyColumn(modifier.fillMaxSize().background(Color.White)) { item { Box(Modifier.fillMaxWidth().height(if (page == "home") 320.dp else 160.dp).background(Charcoal2), contentAlignment = if (page == "home") Alignment.BottomStart else Alignment.Center) { Column(Modifier.padding(28.dp), horizontalAlignment = if (page == "home") Alignment.Start else Alignment.CenterHorizontally) { Text(if (page == "home") "WELCOME TO\nWEST RAND JUDO\nASSOCIATION" else title.uppercase(), color = Color.White, fontSize = if (page == "home") 29.sp else 30.sp, fontWeight = FontWeight.Bold); Text(if (page == "home") "DISCIPLINE  •  RESPECT  •  EXCELLENCE" else "HOME  /  $title", color = Gold, fontSize = 11.sp, letterSpacing = 1.sp) } } }; item { Column(Modifier.padding(24.dp)) { Text(descriptions[page] ?: "", color = Ink, fontWeight = FontWeight.SemiBold, fontSize = 19.sp, lineHeight = 28.sp); Spacer(Modifier.height(20.dp)); when (page) { "contact" -> ContactForm(); "chat assistant" -> ChatAssistantScreen(); else -> ContentCards(page) } } } }
 }
 
 @Composable private fun ContentCards(page: String) {
@@ -149,4 +153,49 @@ class MainActivity : ComponentActivity() {
 @Composable private fun GalleryPhotoGrid() {
     Spacer(Modifier.height(18.dp)); Text("PHOTO GALLERY", fontSize = 22.sp, fontWeight = FontWeight.Bold); Text("ALL    KIDS JUDO    ADULT JUDO    WOMEN'S JUDO    COMPETITIONS", color = GoldDark, fontSize = 10.sp, fontWeight = FontWeight.Bold, lineHeight = 19.sp); Spacer(Modifier.height(12.dp));
     val photos = listOf(R.drawable.gallery_adult_1 to "Adult Judo training", R.drawable.gallery_competition_1 to "Competition action", R.drawable.gallery_kid_1 to "Kids Judo training"); photos.chunked(2).forEach { row -> Row(Modifier.fillMaxWidth()) { row.forEach { (photo, caption) -> Box(Modifier.weight(1f).height(145.dp).padding(4.dp)) { Image(painterResource(photo), caption, Modifier.fillMaxSize(), contentScale = ContentScale.Crop); Box(Modifier.fillMaxWidth().align(Alignment.BottomCenter).background(Color(0x99000000)).padding(7.dp)) { Text(caption, color = Color.White, fontSize = 11.sp) } } }; if (row.size == 1) Spacer(Modifier.weight(1f)) } }; Text("More images will appear here as the gallery grows. Image selection and lightbox browsing are display-only until backend/content administration is connected.", color = Muted, fontSize = 13.sp, lineHeight = 19.sp, modifier = Modifier.padding(top = 10.dp))
+}
+
+@Composable private fun ChatAssistantScreen() {
+    // Replace this local sample list with messages from the authenticated chat session later.
+    val messages = listOf(
+        ChatMessageUi("Hello! I’m the WRJA Assistant. How can I help with your judo journey today?", true),
+        ChatMessageUi("I can help you find a programme, prepare for an event, or point you to the right club contact.", true)
+    )
+    var draft by rememberSaveable { mutableStateOf("") }
+
+    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Charcoal)) {
+        Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(44.dp).background(Gold), contentAlignment = Alignment.Center) { Text("WR", color = Ink, fontWeight = FontWeight.Black, fontSize = 14.sp) }
+            Spacer(Modifier.width(12.dp))
+            Column {
+                Text("WRJA ASSISTANT", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text("●  Online when connected", color = Gold, fontSize = 12.sp)
+            }
+        }
+    }
+    Spacer(Modifier.height(16.dp))
+    messages.forEach { message -> ChatBubble(message) }
+    Spacer(Modifier.height(12.dp))
+    Text("SUGGESTED QUESTIONS", color = GoldDark, fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 0.7.sp)
+    Spacer(Modifier.height(8.dp))
+    listOf("Which programme is right for me?", "How do I book a free trial?", "What events are coming up?").forEach { suggestion ->
+        AssistChip(onClick = { draft = suggestion }, label = { Text(suggestion, fontSize = 12.sp) }, colors = AssistChipDefaults.assistChipColors(containerColor = OffWhite, labelColor = Ink), modifier = Modifier.padding(end = 6.dp, bottom = 6.dp))
+    }
+    Spacer(Modifier.height(14.dp))
+    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = OffWhite)) {
+        Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(value = draft, onValueChange = { draft = it }, placeholder = { Text("Ask the WRJA Assistant…") }, modifier = Modifier.weight(1f), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Gold, unfocusedBorderColor = Color.LightGray))
+            Spacer(Modifier.width(8.dp))
+            IconButton(onClick = { /* Future backend: submit draft and stream assistant response. */ }, enabled = draft.isNotBlank(), colors = IconButtonDefaults.iconButtonColors(contentColor = Ink, disabledContentColor = Muted)) { Icon(Icons.Default.Send, "Send message") }
+        }
+    }
+    Text("Chat is a UI preview only. Messages will be sent securely once the WRJA chat backend is connected.", color = Muted, fontSize = 11.sp, lineHeight = 16.sp, modifier = Modifier.padding(top = 10.dp))
+}
+
+@Composable private fun ChatBubble(message: ChatMessageUi) {
+    Row(Modifier.fillMaxWidth().padding(bottom = 10.dp), horizontalArrangement = if (message.fromAssistant) Arrangement.Start else Arrangement.End) {
+        Surface(color = if (message.fromAssistant) OffWhite else Gold, shape = MaterialTheme.shapes.medium, tonalElevation = 1.dp) {
+            Text(message.text, Modifier.padding(horizontal = 15.dp, vertical = 12.dp).widthIn(max = 265.dp), color = Ink, fontSize = 14.sp, lineHeight = 20.sp)
+        }
+    }
 }
