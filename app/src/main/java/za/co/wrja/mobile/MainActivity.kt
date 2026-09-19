@@ -111,6 +111,10 @@ class MainActivity : ComponentActivity() {
         SupabasePrograms()
         return
     }
+    if (page == "events") {
+        SupabaseEvents()
+        return
+    }
     val content = when (page) {
         "programs" -> listOf("Kids Judo" to "Balance, safe falling, discipline and confidence.", "Adult Judo" to "Throws, groundwork and conditioning for all grades.", "Women's Judo" to "A supportive space to train, compete and grow.")
         "news" -> listOf("National success for Golden Score judokas" to "Golden Score athletes earned four gold, six silver and four bronze medals at the National Schools and SA Open Judo Championships.", "African Cup medals" to "KJK Judo athletes brought home gold, silver and bronze results from the African Cup tournament.", "Africa's best" to "Dane van Heerden won Cadet Boys under-50kg gold, while Madison Lombaard earned silver.")

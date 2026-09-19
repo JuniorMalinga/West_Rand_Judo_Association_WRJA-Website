@@ -27,44 +27,28 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
-// Replace these two values with YOUR Supabase project details.
-// Use a publishable key, never a secret or service_role key.
-internal const val SUPABASE_URL =
-    "https://fgisqtkrznemwtfakfky.supabase.co"
-
-internal const val SUPABASE_KEY =
-    "sb_publishable_nAYh_Xw-I-LGiuYY9IsJrA_mWVXCRxc"
-
-private data class JudoProgram(
-    val name: String,
+private data class JudoEvent(
+    val title: String,
     val description: String,
-    val ageGroup: String,
-    val schedule: String
+    val date: String,
+    val startTime: String,
+    val location: String,
+    val registrationDeadline: String
 )
 
-private fun JSONObject.readText(column: String): String {
+private fun JSONObject.eventText(column: String): String {
     return if (isNull(column)) "" else optString(column, "")
 }
 
-private suspend fun fetchPrograms(): List<JudoProgram> =
+private suspend fun fetchEvents(): List<JudoEvent> =
     withContext(Dispatchers.IO) {
 
-        check(
-            !SUPABASE_URL.contains("YOUR_PROJECT_REF") &&
-                    !SUPABASE_KEY.contains("REPLACE_WITH_YOUR_KEY")
-        ) {
-            "Add your Supabase URL and publishable key first."
-        }
-
-        check(SUPABASE_KEY.startsWith("sb_publishable_")) {
-            "Use the Supabase publishable key starting with sb_publishable_."
-        }
-
         val address = SUPABASE_URL.trimEnd('/') +
-                "/rest/v1/programs" +
-                "?select=id,name,description,short_description,age_group,schedule_text" +
-                "&is_active=eq.true" +
-                "&order=display_order.asc.nullslast,id.asc"
+                "/rest/v1/events" +
+                "?select=id,title,description,event_date,start_time," +
+                "location,registration_deadline" +
+                "&event_status=eq.published" +
+                "&order=event_date.asc,id.asc"
 
         val connection =
             URL(address).openConnection() as HttpURLConnection
@@ -83,10 +67,10 @@ private suspend fun fetchPrograms(): List<JudoProgram> =
             if (status != HttpURLConnection.HTTP_OK) {
                 val message = when (status) {
                     401, 403 ->
-                        "Access denied. Check the Supabase key and programs read policy."
+                        "Access denied. Check the events read policy."
 
                     404 ->
-                        "The programs table or project address was not found."
+                        "The events table or project address was not found."
 
                     else ->
                         "Supabase returned HTTP $status."
@@ -104,13 +88,14 @@ private suspend fun fetchPrograms(): List<JudoProgram> =
             List(rows.length()) { index ->
                 val row = rows.getJSONObject(index)
 
-                JudoProgram(
-                    name = row.readText("name"),
-                    description = row.readText("description").ifBlank {
-                        row.readText("short_description")
-                    },
-                    ageGroup = row.readText("age_group"),
-                    schedule = row.readText("schedule_text")
+                JudoEvent(
+                    title = row.eventText("title"),
+                    description = row.eventText("description"),
+                    date = row.eventText("event_date"),
+                    startTime = row.eventText("start_time").take(5),
+                    location = row.eventText("location"),
+                    registrationDeadline =
+                        row.eventText("registration_deadline")
                 )
             }
         } finally {
@@ -119,9 +104,9 @@ private suspend fun fetchPrograms(): List<JudoProgram> =
     }
 
 @Composable
-fun SupabasePrograms() {
-    var programs by remember {
-        mutableStateOf<List<JudoProgram>>(emptyList())
+fun SupabaseEvents() {
+    var events by remember {
+        mutableStateOf<List<JudoEvent>>(emptyList())
     }
 
     var loading by remember { mutableStateOf(true) }
@@ -133,14 +118,14 @@ fun SupabasePrograms() {
         error = null
 
         try {
-            programs = fetchPrograms()
+            events = fetchEvents()
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (failure: Exception) {
             error = if (failure is IllegalStateException) {
-                failure.message ?: "Unable to load programs."
+                failure.message ?: "Unable to load events."
             } else {
-                "Could not connect. Check your internet connection and project URL."
+                "Could not connect. Check your internet connection and retry."
             }
         } finally {
             loading = false
@@ -152,22 +137,22 @@ fun SupabasePrograms() {
             loading -> {
                 CircularProgressIndicator()
                 Spacer(modifier = Modifier.height(12.dp))
-                Text("Loading programs…")
+                Text("Loading events…")
             }
 
             error != null -> {
                 Text(
-                    text = error ?: "Unable to load programs.",
+                    text = error ?: "Unable to load events.",
                     color = MaterialTheme.colorScheme.error
                 )
             }
 
-            programs.isEmpty() -> {
-                Text("No programs are available yet.")
+            events.isEmpty() -> {
+                Text("No published events are available yet.")
             }
 
             else -> {
-                programs.forEach { program ->
+                events.forEach { event ->
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -175,24 +160,33 @@ fun SupabasePrograms() {
                     ) {
                         Column(modifier = Modifier.padding(18.dp)) {
                             Text(
-                                text = program.name,
+                                text = event.title,
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold
                             )
 
-                            if (program.description.isNotBlank()) {
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(program.description)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Date: ${event.date}")
+
+                            if (event.startTime.isNotBlank()) {
+                                Text("Time: ${event.startTime}")
                             }
 
-                            if (program.ageGroup.isNotBlank()) {
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text("Age group: ${program.ageGroup}")
+                            if (event.location.isNotBlank()) {
+                                Text("Location: ${event.location}")
                             }
 
-                            if (program.schedule.isNotBlank()) {
+                            if (event.description.isNotBlank()) {
                                 Spacer(modifier = Modifier.height(8.dp))
-                                Text("Schedule: ${program.schedule}")
+                                Text(event.description)
+                            }
+
+                            if (event.registrationDeadline.isNotBlank()) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    "Registration closes: " +
+                                            event.registrationDeadline
+                                )
                             }
                         }
                     }
