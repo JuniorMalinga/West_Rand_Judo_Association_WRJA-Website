@@ -27,8 +27,6 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
-// Replace these two values with YOUR Supabase project details.
-// Use a publishable key, never a secret or service_role key.
 internal const val SUPABASE_URL =
     "https://fgisqtkrznemwtfakfky.supabase.co"
 
