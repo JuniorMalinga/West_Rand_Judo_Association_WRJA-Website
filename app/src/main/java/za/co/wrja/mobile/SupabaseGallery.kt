@@ -37,7 +37,6 @@ private fun galleryImageUrl(imagePath: String): String? {
 
     if (path.isBlank()) return null
 
-    // Already a complete image URL.
     if (path.startsWith("https://")) {
         val uri = Uri.parse(path)
 
@@ -51,7 +50,6 @@ private fun galleryImageUrl(imagePath: String): String? {
         }
     }
 
-    // Reject other URL schemes.
     if (path.contains("://")) return null
 
     val relativePath = path.trimStart('/')
@@ -65,7 +63,6 @@ private fun galleryImageUrl(imagePath: String): String? {
 
     val parts = storagePath.split('/')
 
-    // At least a bucket name and an object filename are required.
     if (
         parts.size < 2 ||
         parts.any { it.isBlank() || it == "." || it == ".." }
