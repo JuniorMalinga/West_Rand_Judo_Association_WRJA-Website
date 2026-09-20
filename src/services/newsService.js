@@ -52,3 +52,25 @@ export async function getPublishedNewsPosts() {
 
   return (data || []).map(mapNewsPost);
 }
+
+export async function getPublishedNewsPostById(id) {
+  const { data, error } = await supabase
+    .from("news_posts")
+    .select(`
+      id,
+      slug,
+      title,
+      excerpt,
+      body,
+      image_path,
+      post_status,
+      published_at
+    `)
+    .eq("id", id)
+    .eq("post_status", "published")
+    .maybeSingle();
+
+  if (error) throw error;
+
+  return data ? mapNewsPost(data) : null;
+}
