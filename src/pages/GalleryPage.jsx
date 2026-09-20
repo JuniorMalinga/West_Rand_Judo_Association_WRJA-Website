@@ -1,17 +1,41 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PageHeader from "../components/PageHeader";
 import GalleryFilterTabs from "../components/GalleryFilterTabs";
 import GalleryItem from "../components/GalleryItem";
 import GalleryLightbox from "../components/GalleryLightbox";
 import Pagination from "../components/Pagination";
-import galleryItems, { galleryCategories } from "../data/galleryItems";
+import { galleryCategories } from "../data/galleryItems";
+import { getGalleryItems } from "../services/galleryService";
 
 const PHOTOS_PER_PAGE = 10;
 
 export default function GalleryPage() {
+  const [galleryItems, setGalleryItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [activeIndex, setActiveIndex] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadGallery() {
+      try {
+        const result = await getGalleryItems();
+        if (!cancelled) setGalleryItems(result);
+      } catch {
+        if (!cancelled) setError("Gallery images could not be loaded right now.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadGallery();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const filteredItems =
     activeCategory === "all"
@@ -42,6 +66,12 @@ export default function GalleryPage() {
           activeCategory={activeCategory}
           onSelect={handleSelectCategory}
         />
+
+        {loading && <p className="simple-page">Loading gallery...</p>}
+        {error && <p className="simple-page">{error}</p>}
+        {!loading && !error && filteredItems.length === 0 && (
+          <p className="simple-page">No gallery images are available in this category.</p>
+        )}
 
         <div className="gallery-grid">
           {visibleItems.map((item, localIndex) => (
