@@ -31,7 +31,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
-
+import androidx.compose.ui.platform.LocalContext
 private val Charcoal = Color(0xFF161616)
 private val Charcoal2 = Color(0xFF1F1F1F)
 private val Gold = Color(0xFFC9A227)
@@ -50,6 +50,23 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable private fun WRJAApp() {
+    val context = LocalContext.current.applicationContext
+    var sessionChecked by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        SupabaseAuth.initialize(context)
+        sessionChecked = true
+    }
+
+    if (!sessionChecked) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+        return
+    }
     val scope = rememberCoroutineScope()
 
     if (!SupabaseAuth.isLoggedIn) {
@@ -126,7 +143,7 @@ internal fun LoginScreen(
     var email by rememberSaveable(initialEmail) {
         mutableStateOf(initialEmail)
     }
-
+    var rememberMe by rememberSaveable { mutableStateOf(false) }
     var password by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -211,12 +228,10 @@ internal fun LoginScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Checkbox(
-                                checked = false,
-                                onCheckedChange = null,
-                                enabled = false,
-                                colors = CheckboxDefaults.colors(
-                                    checkedColor = Gold
-                                )
+                                checked = rememberMe,
+                                onCheckedChange = { rememberMe = it },
+                                enabled = !busy,
+                                colors = CheckboxDefaults.colors(checkedColor = Gold)
                             )
 
                             Text("Remember me", fontSize = 13.sp)
@@ -265,7 +280,8 @@ internal fun LoginScreen(
                                     try {
                                         SupabaseAuth.login(
                                             email = email,
-                                            password = password
+                                            password = password,
+                                            rememberMe = rememberMe
                                         )
                                     } catch (
                                         cancelled:
