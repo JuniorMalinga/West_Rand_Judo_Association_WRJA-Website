@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import PageHeader from "../components/PageHeader";
 import AboutSection from "../components/AboutSection";
 import ProgramsSection from "../components/ProgramsSection";
@@ -7,7 +8,7 @@ import NewsSection from "../components/NewsSection";
 import Reveal from "../components/Reveal";
 import InstructorRow from "../components/InstructorRow";
 import ClubLinks from "../components/ClubLinks";
-import instructors from "../data/instructors";
+import { getInstructors } from "../services/instructorsService";
 
 const missionPoints = [
   "Promote and develop the sport of judo throughout the West Rand.",
@@ -19,6 +20,30 @@ const missionPoints = [
 ];
 
 export default function AboutPage() {
+  const [instructors, setInstructors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadInstructors() {
+      try {
+        const result = await getInstructors();
+        if (!cancelled) setInstructors(result);
+      } catch {
+        if (!cancelled) setError("Instructors could not be loaded right now.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadInstructors();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div className="about-page">
       <PageHeader title="About" />
@@ -66,8 +91,14 @@ export default function AboutPage() {
           </p>
         </Reveal>
 
+        {loading && <p className="simple-page">Loading instructors...</p>}
+        {error && <p className="simple-page">{error}</p>}
+        {!loading && !error && instructors.length === 0 && (
+          <p className="simple-page">No instructors are available right now.</p>
+        )}
+
         {instructors.map((instructor, index) => (
-          <InstructorRow key={instructor.slug} instructor={instructor} reverse={index % 2 === 1} />
+          <InstructorRow key={instructor.id} instructor={instructor} reverse={index % 2 === 1} />
         ))}
       </section>
 
