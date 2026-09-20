@@ -50,16 +50,64 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable private fun WRJAApp() {
-    var screen by rememberSaveable { mutableStateOf("login") }
-    AnimatedContent(
-        targetState = screen,
-        transitionSpec = { (slideInHorizontally { it / 7 } + fadeIn()) togetherWith (slideOutHorizontally { -it / 7 } + fadeOut()) },
-        label = "app screen transition"
-    ) { targetScreen ->
-        when (targetScreen) {
-            "login" -> LoginScreen({ screen = "signup" }, { screen = "home" })
-            "signup" -> SignUpScreen({ screen = "login" }, { screen = "home" })
-            else -> MainSite(targetScreen, { screen = "login" }) { screen = it }
+    val scope = rememberCoroutineScope()
+
+    if (!SupabaseAuth.isLoggedIn) {
+        SupabaseAuthScreen()
+    } else {
+        var screen by remember { mutableStateOf("home") }
+        var loggingOut by remember { mutableStateOf(false) }
+        var logoutError by remember { mutableStateOf<String?>(null) }
+
+        MainSite(
+            initial = screen,
+            logout = {
+                if (!loggingOut) {
+                    loggingOut = true
+                    logoutError = null
+
+                    scope.launch {
+                        try {
+                            SupabaseAuth.logout()
+                        } catch (
+                            cancelled: kotlinx.coroutines.CancellationException
+                        ) {
+                            throw cancelled
+                        } catch (failure: Exception) {
+                            logoutError =
+                                "Could not log out. Check your connection " +
+                                        "and try again."
+                        } finally {
+                            loggingOut = false
+                        }
+                    }
+                }
+            },
+            update = { screen = it }
+        )
+
+        if (loggingOut) {
+            AlertDialog(
+                onDismissRequest = {},
+                title = { Text("Logging out") },
+                text = { CircularProgressIndicator() },
+                confirmButton = {}
+            )
+        }
+
+        logoutError?.let { message ->
+            AlertDialog(
+                onDismissRequest = { logoutError = null },
+                title = { Text("Logout failed") },
+                text = { Text(message) },
+                confirmButton = {
+                    TextButton(
+                        onClick = { logoutError = null }
+                    ) {
+                        Text("OK")
+                    }
+                }
+            )
         }
     }
 }
@@ -69,16 +117,213 @@ class MainActivity : ComponentActivity() {
     Column(horizontalAlignment = Alignment.CenterHorizontally) { Text(title.uppercase(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 30.sp); Text("HOME  /  $title", color = Gold, fontSize = 11.sp, letterSpacing = 1.sp) }
 }
 
-@Composable private fun LoginScreen(signUp: () -> Unit, login: () -> Unit) {
-    var email by rememberSaveable { mutableStateOf("") }; var password by rememberSaveable { mutableStateOf("") }; var remember by rememberSaveable { mutableStateOf(false) }
-    LazyColumn(Modifier.fillMaxSize().background(OffWhite), horizontalAlignment = Alignment.CenterHorizontally) {
-        item { Header("Login"); Spacer(Modifier.height(32.dp)) }
-        item { Card(Modifier.padding(24.dp).fillMaxWidth(), elevation = CardDefaults.cardElevation(10.dp)) { Column(Modifier.padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Logo(); Spacer(Modifier.height(18.dp)); Text("Welcome back", fontSize = 26.sp, fontWeight = FontWeight.Bold); Text("Log in to manage your registrations, view grading history, and stay up to date with the club.", color = Muted, textAlign = TextAlign.Center, fontSize = 14.sp); Spacer(Modifier.height(24.dp))
-            OutlinedTextField(email, { email = it }, label = { Text("Email address") }, placeholder = { Text("you@example.com") }, singleLine = true, modifier = Modifier.fillMaxWidth()); Spacer(Modifier.height(14.dp)); OutlinedTextField(password, { password = it }, label = { Text("Password") }, placeholder = { Text("Your password") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) { Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(remember, { remember = it }, colors = CheckboxDefaults.colors(checkedColor = Gold)); Text("Remember me", fontSize = 13.sp) }; Text("Forgot password?", color = GoldDark, fontSize = 13.sp, fontWeight = FontWeight.Bold) }
-            Button(login, Modifier.fillMaxWidth().height(52.dp), colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Ink)) { Text("LOG IN", fontWeight = FontWeight.Bold) }; Spacer(Modifier.height(18.dp)); Text("Don't have an account? Sign up", Modifier.clickable { signUp() }, color = GoldDark, fontWeight = FontWeight.Bold)
-        } } }
+@Composable
+internal fun LoginScreen(
+    signUp: () -> Unit,
+    initialEmail: String = "",
+    notice: String? = null
+) {
+    var email by rememberSaveable(initialEmail) {
+        mutableStateOf(initialEmail)
+    }
+
+    var password by remember { mutableStateOf("") }
+    var busy by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    val scope = rememberCoroutineScope()
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().background(OffWhite),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        item {
+            Header("Login")
+            Spacer(Modifier.height(32.dp))
+        }
+
+        item {
+            Card(
+                modifier = Modifier.padding(24.dp).fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(10.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(28.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Logo()
+
+                    Spacer(Modifier.height(18.dp))
+
+                    Text(
+                        "Welcome back",
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Text(
+                        "Log in to manage your registrations, view grading " +
+                                "history, and stay up to date with the club.",
+                        color = Muted,
+                        textAlign = TextAlign.Center,
+                        fontSize = 14.sp
+                    )
+
+                    Spacer(Modifier.height(24.dp))
+
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email address") },
+                        placeholder = { Text("you@example.com") },
+                        singleLine = true,
+                        enabled = !busy,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(Modifier.height(14.dp))
+
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Password") },
+                        placeholder = { Text("Your password") },
+                        singleLine = true,
+                        enabled = !busy,
+                        visualTransformation =
+                            androidx.compose.ui.text.input
+                                .PasswordVisualTransformation(),
+                        keyboardOptions =
+                            androidx.compose.foundation.text.KeyboardOptions(
+                                keyboardType =
+                                    androidx.compose.ui.text.input
+                                        .KeyboardType.Password
+                            ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = false,
+                                onCheckedChange = null,
+                                enabled = false,
+                                colors = CheckboxDefaults.colors(
+                                    checkedColor = Gold
+                                )
+                            )
+
+                            Text("Remember me", fontSize = 13.sp)
+                        }
+
+                        Text(
+                            "Forgot password?",
+                            color = GoldDark,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    notice?.let {
+                        Text(
+                            it,
+                            color = Muted,
+                            fontSize = 13.sp,
+                            textAlign = TextAlign.Center
+                        )
+
+                        Spacer(Modifier.height(12.dp))
+                    }
+
+                    error?.let {
+                        Text(
+                            it,
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 13.sp,
+                            textAlign = TextAlign.Center
+                        )
+
+                        Spacer(Modifier.height(12.dp))
+                    }
+
+                    Button(
+                        onClick = {
+                            error = null
+
+                            if (email.isBlank() || password.isBlank()) {
+                                error = "Enter your email and password."
+                            } else {
+                                busy = true
+
+                                scope.launch {
+                                    try {
+                                        SupabaseAuth.login(
+                                            email = email,
+                                            password = password
+                                        )
+                                    } catch (
+                                        cancelled:
+                                        kotlinx.coroutines.CancellationException
+                                    ) {
+                                        throw cancelled
+                                    } catch (failure: Exception) {
+                                        error =
+                                            if (failure is java.io.IOException) {
+                                                "Could not connect. " +
+                                                        "Check your connection."
+                                            } else {
+                                                failure.message
+                                                    ?: "Login failed."
+                                            }
+                                    } finally {
+                                        busy = false
+                                    }
+                                }
+                            }
+                        },
+                        enabled = !busy,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Gold,
+                            contentColor = Ink
+                        )
+                    ) {
+                        if (busy) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = Ink,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text(
+                                "LOG IN",
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(18.dp))
+
+                    Text(
+                        "Don't have an account? Sign up",
+                        modifier = Modifier.clickable(
+                            enabled = !busy,
+                            onClick = signUp
+                        ),
+                        color = GoldDark,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -93,7 +338,7 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable private fun MainSite(initial: String, logout: () -> Unit, update: (String) -> Unit) {
-    var page by rememberSaveable { mutableStateOf(initial) }; val drawer = rememberDrawerState(DrawerValue.Closed); val scope = rememberCoroutineScope(); val pages = listOf("Home", "About", "Events", "Programs", "News", "Gallery", "Contact", "Chat Assistant")
+    var page by rememberSaveable { mutableStateOf(initial) }; val drawer = rememberDrawerState(DrawerValue.Closed); val scope = rememberCoroutineScope(); val pages = listOf("Home","My Profile", "About", "Events", "Programs", "News", "Gallery", "Contact", "Chat Assistant")
     ModalNavigationDrawer(drawerState = drawer, drawerContent = { ModalDrawerSheet { Column(Modifier.fillMaxHeight().background(Charcoal)) { Row(Modifier.padding(22.dp), verticalAlignment = Alignment.CenterVertically) { Logo(); Spacer(Modifier.width(12.dp)); Text("WEST RAND\nJUDO ASSOCIATION", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp) }; pages.forEach { p -> Text(p, Modifier.fillMaxWidth().clickable { page = p.lowercase(); update(page); scope.launch { drawer.close() } }.padding(18.dp), color = if (p.equals(page, true)) Gold else Color.White, fontWeight = FontWeight.SemiBold) }; Spacer(Modifier.weight(1f)); Text("LOG OUT", Modifier.clickable { logout() }.padding(22.dp), color = Gold, fontWeight = FontWeight.Bold) } } }) {
         Scaffold(topBar = { TopAppBar(title = { Text("WEST RAND JUDO", fontWeight = FontWeight.Black, fontSize = 16.sp) }, navigationIcon = { IconButton({ scope.launch { drawer.open() } }) { Icon(Icons.Default.Menu, "Menu") } }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Charcoal, titleContentColor = Color.White, navigationIconContentColor = Color.White)) }) { padding -> AnimatedContent(targetState = page, transitionSpec = { (slideInHorizontally { it / 9 } + fadeIn()) togetherWith (slideOutHorizontally { -it / 9 } + fadeOut()) }, label = "site page transition") { targetPage -> SitePage(targetPage, Modifier.padding(padding)) } }
     }
@@ -102,7 +347,7 @@ class MainActivity : ComponentActivity() {
 @Composable private fun SitePage(page: String, modifier: Modifier) {
     val descriptions = mapOf("home" to "Building discipline, respect, and excellence through judo for athletes of all ages across the West Rand community.", "about" to "Building character on and off the mat. We develop confident, disciplined and respectful individuals through judo.", "events" to "Club gradings, competitions and training activities.", "programs" to "Judo programmes for children and adults at every level.", "news" to "Competition results and achievements from WRJA athletes.", "gallery" to "Training, competition and community moments.", "contact" to "Send us a message or contact our training venues.", "chat assistant" to "Your WRJA guide for training, programmes, events and club information.")
     val title = page.replaceFirstChar { it.uppercase() }
-    LazyColumn(modifier.fillMaxSize().background(Color.White)) { item { Box(Modifier.fillMaxWidth().height(if (page == "home") 320.dp else 160.dp).background(Charcoal2), contentAlignment = if (page == "home") Alignment.BottomStart else Alignment.Center) { Column(Modifier.padding(28.dp), horizontalAlignment = if (page == "home") Alignment.Start else Alignment.CenterHorizontally) { Text(if (page == "home") "WELCOME TO\nWEST RAND JUDO\nASSOCIATION" else title.uppercase(), color = Color.White, fontSize = if (page == "home") 29.sp else 30.sp, fontWeight = FontWeight.Bold); Text(if (page == "home") "DISCIPLINE  •  RESPECT  •  EXCELLENCE" else "HOME  /  $title", color = Gold, fontSize = 11.sp, letterSpacing = 1.sp) } } }; item { Column(Modifier.padding(24.dp)) { Text(descriptions[page] ?: "", color = Ink, fontWeight = FontWeight.SemiBold, fontSize = 19.sp, lineHeight = 28.sp); Spacer(Modifier.height(20.dp)); when (page) { "contact" -> SupabaseContact(); "chat assistant" -> ChatAssistantScreen(); else -> ContentCards(page) } } } }
+    LazyColumn(modifier.fillMaxSize().background(Color.White)) { item { Box(Modifier.fillMaxWidth().height(if (page == "home") 320.dp else 160.dp).background(Charcoal2), contentAlignment = if (page == "home") Alignment.BottomStart else Alignment.Center) { Column(Modifier.padding(28.dp), horizontalAlignment = if (page == "home") Alignment.Start else Alignment.CenterHorizontally) { Text(if (page == "home") "WELCOME TO\nWEST RAND JUDO\nASSOCIATION" else title.uppercase(), color = Color.White, fontSize = if (page == "home") 29.sp else 30.sp, fontWeight = FontWeight.Bold); Text(if (page == "home") "DISCIPLINE  •  RESPECT  •  EXCELLENCE" else "HOME  /  $title", color = Gold, fontSize = 11.sp, letterSpacing = 1.sp) } } }; item { Column(Modifier.padding(24.dp)) { Text(descriptions[page] ?: "", color = Ink, fontWeight = FontWeight.SemiBold, fontSize = 19.sp, lineHeight = 28.sp); Spacer(Modifier.height(20.dp)); when (page) {"my profile" -> SupabaseMemberProfile();"contact" -> SupabaseContact(); "chat assistant" -> ChatAssistantScreen(); else -> ContentCards(page) } } } }
 }
 
 @Composable private fun ContentCards(page: String) {
