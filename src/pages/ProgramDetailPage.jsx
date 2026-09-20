@@ -1,12 +1,38 @@
 import { useParams, Link } from "react-router-dom";
 import PageHeader from "../components/PageHeader";
-import programs from "../data/programs";
+import { getProgramBySlug } from "../services/programsService";
 import Reveal from "../components/Reveal";
 import TrainersSection from "../components/TrainersSection";
 
 export default function ProgramDetailPage() {
   const { slug } = useParams();
-  const program = programs.find((item) => item.slug === slug);
+  const [program, setProgram] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError("");
+    setProgram(null);
+
+    async function loadProgram() {
+      try {
+        const result = await getProgramBySlug(slug);
+        if (!cancelled) setProgram(result);
+      } catch {
+        if (!cancelled) setError("The program could not be loaded right now.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadProgram();
+    return () => { cancelled = true; };
+  }, [slug]);
+
+  if (loading) return <div className="simple-page">Loading program...</div>;
+  if (error) return <div className="simple-page">{error}</div>;
 
   if (!program) {
     return (
@@ -47,3 +73,4 @@ export default function ProgramDetailPage() {
     </div>
   );
 }
+import { useEffect, useState } from "react";
