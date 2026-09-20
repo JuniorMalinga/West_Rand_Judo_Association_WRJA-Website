@@ -39,7 +39,7 @@ function buildMonthGrid(year, month) {
   return weeks;
 }
 
-export default function EventsCalendar() {
+export default function EventsCalendar({ events = [] }) {
   const today = new Date();
   const [viewDate, setViewDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [selectedDay, setSelectedDay] = useState(null);
@@ -55,6 +55,25 @@ export default function EventsCalendar() {
       const dayEvents = byDay[eventDate.getDate()] || [];
       byDay[eventDate.getDate()] = [...dayEvents, event];
     }
+    return byDay;
+  }, {});
+
+  const eventsByDay = events.reduce((byDay, event) => {
+    const eventDate = new Date(`${event.date}T00:00:00`);
+
+    if (
+      eventDate.getFullYear() === viewDate.getFullYear() &&
+      eventDate.getMonth() === viewDate.getMonth()
+    ) {
+      const day = eventDate.getDate();
+
+      if (!byDay[day]) {
+        byDay[day] = [];
+      }
+
+      byDay[day].push(event);
+    }
+
     return byDay;
   }, {});
 
@@ -114,6 +133,7 @@ export default function EventsCalendar() {
                   {isToday(cell.day, cell.isCurrentMonth) && (
                     <span className="calendar-today-label">Today</span>
                   )}
+<<<<<<< HEAD
                   <button
                     type="button"
                     className="calendar-day-button"
@@ -136,6 +156,15 @@ export default function EventsCalendar() {
                       ))}
                     </div>
                   )}
+=======
+                  {cell.day}
+                  {cell.isCurrentMonth &&
+                    (eventsByDay[cell.day] || []).map((event) => (
+                      <div key={event.id} className="calendar-event-name">
+                        {event.name}
+                      </div>
+                    ))}
+>>>>>>> f0d745a (Integrate Supabase events listing)
                 </td>
                   );
                 })()
