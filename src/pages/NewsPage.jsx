@@ -54,7 +54,13 @@ export default function NewsPage() {
       {loading && <p className="simple-page">Loading news...</p>}
       {error && <p className="simple-page">{error}</p>}
 
-      {!loading && !error && (
+      {/* This section ensure we still have the news page render even if there is no news post returned from Supabase */}
+      {!loading && !error && newsPosts.length === 0 && (
+        <p className="simple-page">No news has been published yet.</p>
+      )}
+      
+
+      {!loading && !error && newsPosts.length > 0 && (
         <section className="news-page-layout">
           <NewsSidebar newsPosts={newsPosts} />
 
