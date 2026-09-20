@@ -20,10 +20,15 @@ export default function EventsPage() {
           setEvents(result);
         }
       } catch (loadError) {
-        console.error("Could not load WRJA events:", loadError);
+        console.error(
+          "Could not load WRJA events:",
+          loadError
+        );
 
         if (!cancelled) {
-          setError("Events could not be loaded right now.");
+          setError(
+            "Events could not be loaded right now."
+          );
         }
       } finally {
         if (!cancelled) {
@@ -43,17 +48,22 @@ export default function EventsPage() {
     <div className="events-page">
       <PageHeader title="Events" />
 
-<<<<<<< HEAD
-      <section className="events-page-layout">
-        <UpcomingEventsList />
-        <EventsCalendar />
-      </section>
-=======
-      {loading && <p className="simple-page">Loading events...</p>}
-      {error && <p className="simple-page">{error}</p>}
+      {loading && (
+        <p className="simple-page">
+          Loading events...
+        </p>
+      )}
 
-      {!loading && !error && <EventsCalendar events={events} />}
->>>>>>> f0d745a (Integrate Supabase events listing)
+      {error && (
+        <p className="simple-page">{error}</p>
+      )}
+
+      {!loading && !error && (
+        <section className="events-page-layout">
+          <UpcomingEventsList events={events} />
+          <EventsCalendar events={events} />
+        </section>
+      )}
     </div>
   );
 }
