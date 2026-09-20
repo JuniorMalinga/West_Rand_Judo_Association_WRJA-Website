@@ -60,15 +60,22 @@ export default function SignupPage() {
     setIsSubmitting(true);
 
     try {
-      signUp({ firstName, lastName, email, phone: phone || null, dateOfBirth: role === "athlete" ? dateOfBirth : null, password, role });
+      await signUp({
+        firstName,
+        lastName,
+        email,
+        phone: phone || null,
+        dateOfBirth: role === "athlete" ? dateOfBirth : null,
+        password,
+        role,
+      });
+      setIsSubmitting(false);
+      navigate("/login", { state: { justSignedUp: true } });
     } catch (error) {
       setIsSubmitting(false);
       setErrorMessage(error.message);
       return;
     }
-
-    setIsSubmitting(false);
-    navigate("/login", { state: { justSignedUp: true } });
   };
 
   return (

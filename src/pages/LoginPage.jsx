@@ -19,9 +19,9 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      const session = signIn(email, password);
+      const result = await signIn(email, password);
       setIsSubmitting(false);
-      navigate(session.profile.role === "admin" ? "/admin" : "/");
+      navigate(result?.profile?.role === "administrator" ? "/admin" : "/");
     } catch (error) {
       setIsSubmitting(false);
       setErrorMessage(error.message);

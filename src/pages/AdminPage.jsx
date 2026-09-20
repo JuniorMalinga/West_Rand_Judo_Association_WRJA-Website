@@ -18,8 +18,19 @@ const tabs = [
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("events");
-  const { isAdmin } = useAuth();
+  const { isAdmin, loading } = useAuth();
   const ActivePanel = tabs.find((tab) => tab.slug === activeTab).Component;
+
+  if (loading) {
+    return (
+      <div className="admin-page">
+        <PageHeader title="Admin" />
+        <section className="admin-section">
+          <p className="simple-page">Checking administrator access...</p>
+        </section>
+      </div>
+    );
+  }
 
   if (!isAdmin) return <Navigate to="/login" replace />;
 

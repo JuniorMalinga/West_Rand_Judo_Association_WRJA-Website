@@ -1,96 +1,98 @@
-import { useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useEffect, useState } from "react";
+import { getProfilesForAdmin } from "../services/profilesService";
 
-const emptyUser = { firstName: "", lastName: "", email: "", password: "", role: "athlete" };
+function formatRole(role) {
+  if (role === "administrator") return "Administrator";
+  if (role === "guardian") return "Parent / Guardian";
+  if (role === "athlete") return "Athlete";
+  return role || "—";
+}
 
 export default function AdminUsersPanel() {
-  const { users, createUser, updateUser, deleteUser } = useAuth();
-  const [formState, setFormState] = useState(null);
+  const [profiles, setProfiles] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const openAddForm = () => {
-    setErrorMessage("");
-    setFormState({ id: null, ...emptyUser });
-  };
+  useEffect(() => {
+    let isMounted = true;
 
-  const openEditForm = (user) => {
-    setErrorMessage("");
-    setFormState({ ...user });
-  };
-
-  const handleSave = (event) => {
-    event.preventDefault();
-    try {
-      if (formState.id) {
-        updateUser(formState.id, formState);
-      } else {
-        createUser(formState);
-      }
-      setFormState(null);
-    } catch (error) {
-      setErrorMessage(error.message);
-    }
-  };
-
-  const handleDelete = (user) => {
-    if (window.confirm(`Delete ${user.firstName} ${user.lastName}?`)) {
+    async function fetchProfiles() {
       try {
-        deleteUser(user.id);
+        setLoading(true);
+        setErrorMessage("");
+        const data = await getProfilesForAdmin();
+        if (isMounted) setProfiles(data);
       } catch (error) {
-        setErrorMessage(error.message);
+        if (isMounted) {
+          setErrorMessage(error.message || "Failed to load profiles.");
+        }
+      } finally {
+        if (isMounted) setLoading(false);
       }
     }
-  };
+
+    fetchProfiles();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <div className="admin-panel">
       <div className="admin-panel-header">
         <h2>Users</h2>
-        <button className="btn btn-accent" onClick={openAddForm}>+ Add user</button>
       </div>
 
-      {formState && (
-        <form className="admin-form" onSubmit={handleSave}>
-          <div className="admin-form-row-2">
-            <label>First name<input value={formState.firstName} onChange={(event) => setFormState({ ...formState, firstName: event.target.value })} required /></label>
-            <label>Last name<input value={formState.lastName} onChange={(event) => setFormState({ ...formState, lastName: event.target.value })} required /></label>
-          </div>
-          <div className="admin-form-row-2">
-            <label>Email<input type="email" value={formState.email} onChange={(event) => setFormState({ ...formState, email: event.target.value })} required /></label>
-            <label>Password<input type="text" value={formState.password} onChange={(event) => setFormState({ ...formState, password: event.target.value })} required /></label>
-          </div>
-          <label>Role
-            <select value={formState.role} onChange={(event) => setFormState({ ...formState, role: event.target.value })}>
-              <option value="athlete">Athlete</option>
-              <option value="guardian">Parent / Guardian</option>
-              <option value="admin">Administrator</option>
-            </select>
-          </label>
-          {errorMessage && <p className="auth-error">{errorMessage}</p>}
-          <div className="admin-form-actions">
-            <button type="submit" className="btn btn-accent">{formState.id ? "Save changes" : "Add user"}</button>
-            <button type="button" className="btn btn-outline-dark" onClick={() => setFormState(null)}>Cancel</button>
-          </div>
-        </form>
-      )}
+      <p className="admin-table-subtext" style={{ marginBottom: "20px", fontSize: "14px" }}>
+        Authentication is managed by Supabase Auth. Passwords and administrator assignment are not managed in the browser.
+      </p>
 
-      {errorMessage && !formState && <p className="auth-error">{errorMessage}</p>}
-      <table className="admin-table">
-        <thead><tr><th>Name</th><th>Email</th><th>Role</th><th></th></tr></thead>
-        <tbody>
-          {users.map((user) => (
-            <tr key={user.id}>
-              <td>{user.firstName} {user.lastName}</td>
-              <td>{user.email}</td>
-              <td>{user.role}</td>
-              <td className="admin-table-actions">
-                <button onClick={() => openEditForm(user)}>Edit</button>
-                <button onClick={() => handleDelete(user)} disabled={user.role === "admin"}>Delete</button>
-              </td>
+      {errorMessage && <p className="auth-error">{errorMessage}</p>}
+      {loading && <p className="simple-page">Loading user profiles...</p>}
+
+      {!loading && !errorMessage && (
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Role</th>
+              <th>Status</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {profiles.length === 0 ? (
+              <tr>
+                <td colSpan="3" style={{ textAlign: "center", padding: "24px" }}>
+                  No user profiles found.
+                </td>
+              </tr>
+            ) : (
+              profiles.map((profile) => (
+                <tr key={profile.id}>
+                  <td>
+                    {profile.firstName || profile.lastName
+                      ? `${profile.firstName || ""} ${profile.lastName || ""}`.trim()
+                      : "Unnamed User"}
+                  </td>
+                  <td>{formatRole(profile.role)}</td>
+                  <td>
+                    <span
+                      className={`admin-status ${
+                        profile.isActive !== false
+                          ? "admin-status-confirmed"
+                          : "admin-status-cancelled"
+                      }`}
+                    >
+                      {profile.isActive !== false ? "Active" : "Inactive"}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }
