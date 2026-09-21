@@ -1,53 +1,136 @@
-import { useState } from "react";
-import seedEvents from "../data/events";
-
+import { useEffect, useState } from "react";
+import {
+  getEventsForAdmin,
+  createEvent,
+  updateEvent,
+  deleteEvent,
+} from "../services/eventsService";
 
 const emptyEvent = {
   name: "",
-  type: "",
+  type: "competition",
   date: "",
+  startTime: "",
+  endTime: "",
   location: "",
   description: "",
-  applicationSheetUrl: "",
-  qrCodeImage: "",
+  registrationDeadline: "",
+  status: "draft",
+  entryFormPath: "",
+  imagePath: "",
 };
 
-export default function AdminEventsPanel() {
-  const [events, setEvents] = useState(() =>
-    seedEvents.map((event) => ({ ...event }))
-  );
-  const [formState, setFormState] = useState(null);
+function getStatusClass(status) {
+  if (status === "published") return "admin-status-confirmed";
+  if (status === "draft") return "admin-status-pending";
+  if (status === "cancelled") return "admin-status-cancelled";
+  if (status === "completed") return "admin-status-paid";
+  return "";
+}
 
-  const openAddForm = () => setFormState({ id: null, ...emptyEvent });
-  const openEditForm = (event) => setFormState({ ...event });
-  const closeForm = () => setFormState(null);
+function formatStatus(status) {
+  if (!status) return "Draft";
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+export default function AdminEventsPanel() {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [panelError, setPanelError] = useState("");
+  const [formState, setFormState] = useState(null);
+  const [formError, setFormError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Load events from Supabase on mount
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadEvents() {
+      try {
+        setLoading(true);
+        setPanelError("");
+        const data = await getEventsForAdmin();
+        if (isMounted) setEvents(data);
+      } catch (err) {
+        console.error("Failed to load events for admin:", err);
+        if (isMounted) setPanelError(err.message || "Failed to load events.");
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+
+    loadEvents();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const openAddForm = () => {
+    setFormError("");
+    setFormState({ id: null, ...emptyEvent });
+  };
+
+  const openEditForm = (event) => {
+    setFormError("");
+    setFormState({
+      id: event.id,
+      name: event.title || event.name || "",
+      type: event.type || "competition",
+      date: event.date || "",
+      startTime: event.startTime || "",
+      endTime: event.endTime || "",
+      location: event.location || "",
+      description: event.description || "",
+      registrationDeadline: event.registrationDeadline || "",
+      status: event.status || "draft",
+      entryFormPath: event.entryFormPath || "",
+      imagePath: event.imagePath || "",
+    });
+  };
+
+  const closeForm = () => {
+    setFormState(null);
+    setFormError("");
+  };
 
   const handleFieldChange = (field, value) => {
     setFormState((current) => ({ ...current, [field]: value }));
   };
 
-  const handleSave = (event) => {
+  const handleSave = async (event) => {
     event.preventDefault();
+    setFormError("");
+    setIsSaving(true);
 
-    if (formState.id) {
-      setEvents((current) =>
-        current.map((item) =>
-          item.id === formState.id ? formState : item
-        )
-      );
-    } else {
-      setEvents((current) => [
-        ...current,
-        { ...formState, id: Date.now() },
-      ]);
+    try {
+      if (formState.id) {
+        const updated = await updateEvent(formState.id, formState);
+        setEvents((current) =>
+          current.map((item) => (item.id === formState.id ? updated : item))
+        );
+      } else {
+        const created = await createEvent(formState);
+        setEvents((current) => [created, ...current]);
+      }
+      closeForm();
+    } catch (err) {
+      console.error("Error saving event:", err);
+      setFormError(err.message || "Failed to save event. Check your inputs.");
+    } finally {
+      setIsSaving(false);
     }
-
-    closeForm();
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("Delete this event?")) {
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this event?")) return;
+
+    try {
+      await deleteEvent(id);
       setEvents((current) => current.filter((item) => item.id !== id));
+    } catch (err) {
+      console.error("Error deleting event:", err);
+      setPanelError(err.message || "Failed to delete event.");
     }
   };
 
@@ -60,38 +143,44 @@ export default function AdminEventsPanel() {
         </button>
       </div>
 
+      {panelError && <p className="auth-error">{panelError}</p>}
+      {loading && <p className="simple-page">Loading events from Supabase...</p>}
+
       {formState && (
         <form className="admin-form" onSubmit={handleSave}>
           <div className="admin-form-row-2">
             <label>
-              Event name
+              Event title
               <input
                 type="text"
                 value={formState.name}
                 onChange={(event) =>
                   handleFieldChange("name", event.target.value)
                 }
+                placeholder="e.g. West Rand Open Championships"
                 required
               />
             </label>
 
             <label>
-              Type
-              <input
-                type="text"
+              Event type
+              <select
                 value={formState.type}
                 onChange={(event) =>
                   handleFieldChange("type", event.target.value)
                 }
-                placeholder="Grading, Competition, Training camp..."
                 required
-              />
+              >
+                <option value="competition">Competition</option>
+                <option value="grading">Grading</option>
+                <option value="training_camp">Training Camp</option>
+              </select>
             </label>
           </div>
 
           <div className="admin-form-row-2">
             <label>
-              Date
+              Event date
               <input
                 type="date"
                 value={formState.date}
@@ -110,12 +199,64 @@ export default function AdminEventsPanel() {
                 onChange={(event) =>
                   handleFieldChange("location", event.target.value)
                 }
-                required
+                placeholder="e.g. Kagiso Dojo, Krugersdorp"
               />
             </label>
           </div>
 
-          {/* event description field */}
+          <div className="admin-form-row-2">
+            <label>
+              Start time (optional)
+              <input
+                type="time"
+                value={formState.startTime}
+                onChange={(event) =>
+                  handleFieldChange("startTime", event.target.value)
+                }
+              />
+            </label>
+
+            <label>
+              End time (optional)
+              <input
+                type="time"
+                value={formState.endTime}
+                onChange={(event) =>
+                  handleFieldChange("endTime", event.target.value)
+                }
+              />
+            </label>
+          </div>
+
+          <div className="admin-form-row-2">
+            <label>
+              Registration deadline (optional)
+              <input
+                type="date"
+                value={formState.registrationDeadline}
+                onChange={(event) =>
+                  handleFieldChange("registrationDeadline", event.target.value)
+                }
+              />
+            </label>
+
+            <label>
+              Status
+              <select
+                value={formState.status}
+                onChange={(event) =>
+                  handleFieldChange("status", event.target.value)
+                }
+                required
+              >
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="completed">Completed</option>
+              </select>
+            </label>
+          </div>
+
           <label>
             Description
             <textarea
@@ -124,48 +265,56 @@ export default function AdminEventsPanel() {
               onChange={(event) =>
                 handleFieldChange("description", event.target.value)
               }
+              placeholder="Details about the event, weight categories, rules, or requirements..."
             />
           </label>
 
-          {/* Google Sheets application link and QR code image URL fields */}
           <div className="admin-form-row-2">
             <label>
-              Google Sheets application link
+              Entry form document path (Storage)
               <input
-                type="url"
-                value={formState.applicationSheetUrl}
+                type="text"
+                value={formState.entryFormPath}
                 onChange={(event) =>
-                  handleFieldChange(
-                    "applicationSheetUrl",
-                    event.target.value
-                  )
+                  handleFieldChange("entryFormPath", event.target.value)
                 }
-                placeholder="https://docs.google.com/spreadsheets/..."
+                placeholder="e.g. events/entry-forms/tournament-2026.pdf"
               />
             </label>
 
             <label>
-              QR code image URL
+              Cover image path (Storage)
               <input
-                type="url"
-                value={formState.qrCodeImage}
+                type="text"
+                value={formState.imagePath}
                 onChange={(event) =>
-                  handleFieldChange("qrCodeImage", event.target.value)
+                  handleFieldChange("imagePath", event.target.value)
                 }
-                placeholder="https://..."
+                placeholder="e.g. events/flyers/championship-cover.jpg"
               />
             </label>
           </div>
 
+          {formError && <p className="auth-error">{formError}</p>}
+
           <div className="admin-form-actions">
-            <button type="submit" className="btn btn-accent">
-              {formState.id ? "Save changes" : "Add event"}
+            <button
+              type="submit"
+              className="btn btn-accent"
+              disabled={isSaving}
+            >
+              {isSaving
+                ? "Saving..."
+                : formState.id
+                ? "Save changes"
+                : "Add event"}
             </button>
 
             <button
               type="button"
               className="btn btn-outline-dark"
               onClick={closeForm}
+              disabled={isSaving}
             >
               Cancel
             </button>
@@ -173,37 +322,76 @@ export default function AdminEventsPanel() {
         </form>
       )}
 
-      <table className="admin-table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Date</th>
-            <th>Location</th>
-            <th></th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {events.map((event) => (
-            <tr key={event.id}>
-              <td>{event.name}</td>
-              <td>{event.type}</td>
-              <td>{event.date}</td>
-              <td>{event.location}</td>
-              <td className="admin-table-actions">
-                <button onClick={() => openEditForm(event)}>
-                  Edit
-                </button>
-
-                <button onClick={() => handleDelete(event.id)}>
-                  Delete
-                </button>
-              </td>
+      {!loading && (
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Type</th>
+              <th>Date</th>
+              <th>Location</th>
+              <th>Status</th>
+              <th></th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+
+          <tbody>
+            {events.length === 0 ? (
+              <tr>
+                <td
+                  colSpan="6"
+                  style={{ textAlign: "center", padding: "24px" }}
+                >
+                  No events found.
+                </td>
+              </tr>
+            ) : (
+              events.map((event) => (
+                <tr key={event.id}>
+                  <td>
+                    {event.name}
+                    {event.startTime && (
+                      <div className="admin-table-subtext">
+                        {event.startTime.slice(0, 5)}
+                        {event.endTime
+                          ? ` - ${event.endTime.slice(0, 5)}`
+                          : ""}
+                      </div>
+                    )}
+                  </td>
+                  <td>{event.displayType || event.type}</td>
+                  <td>{event.date}</td>
+                  <td>{event.location || "—"}</td>
+                  <td>
+                    <span
+                      className={`admin-status ${getStatusClass(
+                        event.status
+                      )}`}
+                    >
+                      {formatStatus(event.status)}
+                    </span>
+                  </td>
+                  <td className="admin-table-actions">
+                    <button
+                      type="button"
+                      onClick={() => openEditForm(event)}
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(event.id)}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }

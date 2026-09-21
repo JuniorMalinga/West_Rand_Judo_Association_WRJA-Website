@@ -1,27 +1,82 @@
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import PageHeader from "../components/PageHeader";
 import Reveal from "../components/Reveal";
-import events from "../data/events";
+import { getPublishedEventById } from "../services/eventsService";
+import placeholder from "../assets/images/team/image 79.jpg";
 
 export default function EventDetailPage() {
   const { id } = useParams();
-  const event = events.find((item) => String(item.id) === id);
+  const [event, setEvent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  if (!event) {
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadEvent() {
+      try {
+        setLoading(true);
+        setError("");
+        const data = await getPublishedEventById(id);
+        if (isMounted) setEvent(data);
+      } catch (err) {
+        console.error("Error loading event details:", err);
+        if (isMounted) setError("Could not load event details right now.");
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+
+    loadEvent();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
+
+  if (loading) {
     return (
-      <div className="simple-page">
-        <h1>Event not found</h1>
-        <Link to="/events">Back to events</Link>
+      <div className="event-detail-page">
+        <PageHeader title="Event Details" crumbs={[{ label: "Events", to: "/events" }]} />
+        <p className="simple-page">Loading event details...</p>
       </div>
     );
   }
 
-  const formattedDate = new Date(event.date).toLocaleDateString("en-ZA", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  if (error) {
+    return (
+      <div className="event-detail-page">
+        <PageHeader title="Event Details" crumbs={[{ label: "Events", to: "/events" }]} />
+        <div className="simple-page">
+          <p>{error}</p>
+          <Link to="/events" className="btn btn-outline-dark">&larr; Back to all events</Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!event) {
+    return (
+      <div className="event-detail-page">
+        <PageHeader title="Event Not Found" crumbs={[{ label: "Events", to: "/events" }]} />
+        <div className="simple-page">
+          <h1>Event not found</h1>
+          <p>This event may not exist or is no longer published.</p>
+          <Link to="/events" className="btn btn-outline-dark">&larr; Back to all events</Link>
+        </div>
+      </div>
+    );
+  }
+
+  const formattedDate = event.date
+    ? new Date(`${event.date}T00:00:00`).toLocaleDateString("en-ZA", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : "Date to be announced";
 
   return (
     <div className="event-detail-page">
@@ -29,14 +84,21 @@ export default function EventDetailPage() {
 
       <section className="event-detail">
         <Reveal className="event-detail-image-wrap">
-          <img src={event.image} alt={event.name} />
+          <img src={event.image || placeholder} alt={event.name} />
         </Reveal>
 
         <Reveal delay={150} className="event-detail-content">
           <span className="event-detail-type">{event.type}</span>
           <p className="event-detail-meta">
-            &#128197; {formattedDate} &nbsp;&middot;&nbsp; &#128205; {event.location}
+            &#128197; {formattedDate}
+            {event.startTime ? ` (${event.startTime.slice(0, 5)}${event.endTime ? ` - ${event.endTime.slice(0, 5)}` : ""})` : ""}
+            {event.location ? <> &nbsp;&middot;&nbsp; &#128205; {event.location}</> : null}
           </p>
+          {event.registrationDeadline && (
+            <p className="event-detail-meta" style={{ marginTop: "-8px" }}>
+              Registration deadline: {new Date(`${event.registrationDeadline}T00:00:00`).toLocaleDateString("en-ZA", { year: "numeric", month: "long", day: "numeric" })}
+            </p>
+          )}
           <p>{event.description}</p>
           <Link to="/events" className="btn btn-outline-dark">&larr; Back to all events</Link>
         </Reveal>
@@ -45,28 +107,19 @@ export default function EventDetailPage() {
       <Reveal className="event-application-section">
         <h2>Apply for this event</h2>
 
-        {event.applicationSheetUrl || event.qrCodeImage ? (
+        {event.entryFormUrl ? (
           <div className="event-application-options">
-            {event.applicationSheetUrl && (
-              <div className="event-application-option">
-                <p>Apply online through our entry form.</p>
-                <a
-                  href={event.applicationSheetUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-accent"
-                >
-                  Open application form
-                </a>
-              </div>
-            )}
-
-            {event.qrCodeImage && (
-              <div className="event-application-option">
-                <p>Or scan this code with your phone to apply.</p>
-                <img src={event.qrCodeImage} alt="Scan to apply" className="event-qr-code" />
-              </div>
-            )}
+            <div className="event-application-option">
+              <p>Download or view the official event entry form.</p>
+              <a
+                href={event.entryFormUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-accent"
+              >
+                Open entry form
+              </a>
+            </div>
           </div>
         ) : (
           <p className="event-application-none">
