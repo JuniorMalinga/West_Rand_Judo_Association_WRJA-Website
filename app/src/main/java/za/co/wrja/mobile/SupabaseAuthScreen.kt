@@ -21,7 +21,7 @@ import java.io.IOException
 
 
 @Composable
-fun SupabaseAuthScreen() {
+fun SupabaseAuthScreen(onLanguageChanged: (AppLanguage) -> Unit = {}) {
     var signUpMode by remember { mutableStateOf(false) }
 
     var firstName by remember { mutableStateOf("") }
@@ -62,7 +62,8 @@ fun SupabaseAuthScreen() {
                 notice = null
             },
             initialEmail = email,
-            notice = notice
+            notice = notice,
+            onLanguageChanged = onLanguageChanged
         )
 
         return

@@ -51,6 +51,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable private fun WRJAApp() {
     val context = LocalContext.current.applicationContext
+    var language by remember { mutableStateOf(LanguageStore.read(context)) }
     var sessionChecked by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -69,8 +70,12 @@ class MainActivity : ComponentActivity() {
     }
     val scope = rememberCoroutineScope()
 
+    CompositionLocalProvider(LocalAppLanguage provides language) {
     if (!SupabaseAuth.isLoggedIn) {
-        SupabaseAuthScreen()
+        SupabaseAuthScreen(onLanguageChanged = { selected ->
+            language = selected
+            LanguageStore.save(context, selected)
+        })
     } else {
         var screen by remember { mutableStateOf("home") }
         var loggingOut by remember { mutableStateOf(false) }
@@ -127,9 +132,24 @@ class MainActivity : ComponentActivity() {
             )
         }
     }
+    }
 }
 
 @Composable private fun Logo() = Box(Modifier.size(58.dp).background(Color.White), contentAlignment = Alignment.Center) { Image(painterResource(R.drawable.wrja_logo), "West Rand Judo Association logo", Modifier.padding(5.dp).fillMaxSize(), contentScale = ContentScale.Fit) }
+@Composable private fun LanguageSelector(onLanguageChanged: (AppLanguage) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    val language = LocalAppLanguage.current
+    Box(Modifier.fillMaxWidth()) {
+        OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.outlinedButtonColors(contentColor = GoldDark)) {
+            Text("${tr("change_language")}: ${language.label}", fontSize = 13.sp)
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            AppLanguage.entries.forEach { option ->
+                DropdownMenuItem(text = { Text(option.label) }, onClick = { onLanguageChanged(option); expanded = false })
+            }
+        }
+    }
+}
 @Composable private fun Header(title: String) = Box(Modifier.fillMaxWidth().height(136.dp).background(Charcoal), contentAlignment = Alignment.Center) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) { Text(title.uppercase(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 30.sp); Text("HOME  /  $title", color = Gold, fontSize = 11.sp, letterSpacing = 1.sp) }
 }
@@ -138,7 +158,8 @@ class MainActivity : ComponentActivity() {
 internal fun LoginScreen(
     signUp: () -> Unit,
     initialEmail: String = "",
-    notice: String? = null
+    notice: String? = null,
+    onLanguageChanged: (AppLanguage) -> Unit = {}
 ) {
     var email by rememberSaveable(initialEmail) {
         mutableStateOf(initialEmail)
@@ -155,7 +176,7 @@ internal fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         item {
-            Header("Login")
+            Header(tr("login"))
             Spacer(Modifier.height(32.dp))
         }
 
@@ -168,19 +189,20 @@ internal fun LoginScreen(
                     modifier = Modifier.padding(28.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    LanguageSelector(onLanguageChanged)
+                    Spacer(Modifier.height(16.dp))
                     Logo()
 
                     Spacer(Modifier.height(18.dp))
 
                     Text(
-                        "Welcome back",
+                        tr("welcome_back"),
                         fontSize = 26.sp,
                         fontWeight = FontWeight.Bold
                     )
 
                     Text(
-                        "Log in to manage your registrations, view grading " +
-                                "history, and stay up to date with the club.",
+                        tr("login_intro"),
                         color = Muted,
                         textAlign = TextAlign.Center,
                         fontSize = 14.sp
@@ -191,7 +213,7 @@ internal fun LoginScreen(
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
-                        label = { Text("Email address") },
+                        label = { Text(tr("email")) },
                         placeholder = { Text("you@example.com") },
                         singleLine = true,
                         enabled = !busy,
@@ -203,8 +225,8 @@ internal fun LoginScreen(
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
-                        label = { Text("Password") },
-                        placeholder = { Text("Your password") },
+                        label = { Text(tr("password")) },
+                        placeholder = { Text(tr("your_password")) },
                         singleLine = true,
                         enabled = !busy,
                         visualTransformation =
@@ -234,11 +256,11 @@ internal fun LoginScreen(
                                 colors = CheckboxDefaults.colors(checkedColor = Gold)
                             )
 
-                            Text("Remember me", fontSize = 13.sp)
+                            Text(tr("remember_me"), fontSize = 13.sp)
                         }
 
                         Text(
-                            "Forgot password?",
+                            tr("forgot_password"),
                             color = GoldDark,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold
@@ -320,7 +342,7 @@ internal fun LoginScreen(
                             )
                         } else {
                             Text(
-                                "LOG IN",
+                                tr("login").uppercase(),
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -329,7 +351,7 @@ internal fun LoginScreen(
                     Spacer(Modifier.height(18.dp))
 
                     Text(
-                        "Don't have an account? Sign up",
+                        tr("dont_have_account"),
                         modifier = Modifier.clickable(
                             enabled = !busy,
                             onClick = signUp
@@ -354,16 +376,16 @@ internal fun LoginScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable private fun MainSite(initial: String, logout: () -> Unit, update: (String) -> Unit) {
-    var page by rememberSaveable { mutableStateOf(initial) }; val drawer = rememberDrawerState(DrawerValue.Closed); val scope = rememberCoroutineScope(); val pages = listOf("Home","My Profile", "About", "Events", "Programs", "Book", "News", "Gallery", "Contact", "Chat Assistant")
-    ModalNavigationDrawer(drawerState = drawer, drawerContent = { ModalDrawerSheet { Column(Modifier.fillMaxHeight().background(Charcoal)) { Row(Modifier.padding(22.dp), verticalAlignment = Alignment.CenterVertically) { Logo(); Spacer(Modifier.width(12.dp)); Text("WEST RAND\nJUDO ASSOCIATION", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp) }; pages.forEach { p -> Text(p, Modifier.fillMaxWidth().clickable { page = p.lowercase(); update(page); scope.launch { drawer.close() } }.padding(18.dp), color = if (p.equals(page, true)) Gold else Color.White, fontWeight = FontWeight.SemiBold) }; Spacer(Modifier.weight(1f)); Text("LOG OUT", Modifier.clickable { logout() }.padding(22.dp), color = Gold, fontWeight = FontWeight.Bold) } } }) {
+    var page by rememberSaveable { mutableStateOf(initial) }; val drawer = rememberDrawerState(DrawerValue.Closed); val scope = rememberCoroutineScope(); val pages = listOf("home" to tr("home"), "my profile" to tr("my_profile"), "about" to tr("about"), "events" to tr("events"), "programs" to tr("programs"), "book" to tr("book"), "news" to tr("news"), "gallery" to tr("gallery"), "contact" to tr("contact"), "chat assistant" to tr("chat_assistant"))
+    ModalNavigationDrawer(drawerState = drawer, drawerContent = { ModalDrawerSheet { Column(Modifier.fillMaxHeight().background(Charcoal)) { Row(Modifier.padding(22.dp), verticalAlignment = Alignment.CenterVertically) { Logo(); Spacer(Modifier.width(12.dp)); Text("WEST RAND\nJUDO ASSOCIATION", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp) }; pages.forEach { (route, label) -> Text(label, Modifier.fillMaxWidth().clickable { page = route; update(page); scope.launch { drawer.close() } }.padding(18.dp), color = if (route == page) Gold else Color.White, fontWeight = FontWeight.SemiBold) }; Spacer(Modifier.weight(1f)); Text(tr("log_out").uppercase(), Modifier.clickable { logout() }.padding(22.dp), color = Gold, fontWeight = FontWeight.Bold) } } }) {
         Scaffold(topBar = { TopAppBar(title = { Text("WEST RAND JUDO", fontWeight = FontWeight.Black, fontSize = 16.sp) }, navigationIcon = { IconButton({ scope.launch { drawer.open() } }) { Icon(Icons.Default.Menu, "Menu") } }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Charcoal, titleContentColor = Color.White, navigationIconContentColor = Color.White)) }) { padding -> AnimatedContent(targetState = page, transitionSpec = { (slideInHorizontally { it / 9 } + fadeIn()) togetherWith (slideOutHorizontally { -it / 9 } + fadeOut()) }, label = "site page transition") { targetPage -> SitePage(targetPage, Modifier.padding(padding)) } }
     }
 }
 
 @Composable private fun SitePage(page: String, modifier: Modifier) {
     val descriptions = mapOf("home" to "Building discipline, respect, and excellence through judo for athletes of all ages across the West Rand community.", "about" to "Building character on and off the mat. We develop confident, disciplined and respectful individuals through judo.", "events" to "Club gradings, competitions and training activities.", "programs" to "Judo programmes for children and adults at every level.","book" to "Choose your program and preferred training session.", "news" to "Competition results and achievements from WRJA athletes.", "gallery" to "Training, competition and community moments.", "contact" to "Send us a message or contact our training venues.", "chat assistant" to "Your WRJA guide for training, programmes, events and club information.")
-    val title = page.replaceFirstChar { it.uppercase() }
-    LazyColumn(modifier.fillMaxSize().background(Color.White)) { item { Box(Modifier.fillMaxWidth().height(if (page == "home") 320.dp else 160.dp).background(Charcoal2), contentAlignment = if (page == "home") Alignment.BottomStart else Alignment.Center) { Column(Modifier.padding(28.dp), horizontalAlignment = if (page == "home") Alignment.Start else Alignment.CenterHorizontally) { Text(if (page == "home") "WELCOME TO\nWEST RAND JUDO\nASSOCIATION" else title.uppercase(), color = Color.White, fontSize = if (page == "home") 29.sp else 30.sp, fontWeight = FontWeight.Bold); Text(if (page == "home") "DISCIPLINE  •  RESPECT  •  EXCELLENCE" else "HOME  /  $title", color = Gold, fontSize = 11.sp, letterSpacing = 1.sp) } } }; item { Column(Modifier.padding(24.dp)) { Text(descriptions[page] ?: "", color = Ink, fontWeight = FontWeight.SemiBold, fontSize = 19.sp, lineHeight = 28.sp); Spacer(Modifier.height(20.dp)); when (page) {"my profile" -> SupabaseMemberProfile();"book" -> BookScreen();"contact" -> SupabaseContact(); "chat assistant" -> ChatAssistantScreen(); else -> ContentCards(page) } } } }
+    val title = when (page) { "home" -> tr("home"); "my profile" -> tr("my_profile"); "about" -> tr("about"); "events" -> tr("events"); "programs" -> tr("programs"); "book" -> tr("book"); "news" -> tr("news"); "gallery" -> tr("gallery"); "contact" -> tr("contact"); "chat assistant" -> tr("chat_assistant"); else -> page.replaceFirstChar { it.uppercase() } }
+    LazyColumn(modifier.fillMaxSize().background(Color.White)) { item { Box(Modifier.fillMaxWidth().height(if (page == "home") 320.dp else 160.dp).background(Charcoal2), contentAlignment = if (page == "home") Alignment.BottomStart else Alignment.Center) { Column(Modifier.padding(28.dp), horizontalAlignment = if (page == "home") Alignment.Start else Alignment.CenterHorizontally) { Text(if (page == "home") "WELCOME TO\nWEST RAND JUDO\nASSOCIATION" else title.uppercase(), color = Color.White, fontSize = if (page == "home") 29.sp else 30.sp, fontWeight = FontWeight.Bold); Text(if (page == "home") "DISCIPLINE  •  RESPECT  •  EXCELLENCE" else "HOME  /  $title", color = Gold, fontSize = 11.sp, letterSpacing = 1.sp) } } }; item { Column(Modifier.padding(24.dp)) { Text(if (page == "chat assistant") tr("chat_help") else descriptions[page] ?: "", color = Ink, fontWeight = FontWeight.SemiBold, fontSize = 19.sp, lineHeight = 28.sp); Spacer(Modifier.height(20.dp)); when (page) {"my profile" -> SupabaseMemberProfile();"book" -> BookScreen();"contact" -> SupabaseContact(); "chat assistant" -> ChatAssistantScreen(); else -> ContentCards(page) } } } }
 }
 
 @Composable private fun ContentCards(page: String) {
@@ -440,8 +462,8 @@ internal fun LoginScreen(
 @Composable private fun ChatAssistantScreen() {
     // Replace this local sample list with messages from the authenticated chat session later.
     val messages = listOf(
-        ChatMessageUi("Hello! I’m the WRJA Assistant. How can I help with your judo journey today?", true),
-        ChatMessageUi("I can help you find a programme, prepare for an event, or point you to the right club contact.", true)
+        ChatMessageUi(tr("chat_welcome"), true),
+        ChatMessageUi(tr("chat_help"), true)
     )
     var draft by rememberSaveable { mutableStateOf("") }
 
@@ -450,28 +472,28 @@ internal fun LoginScreen(
             Box(Modifier.size(44.dp).background(Gold), contentAlignment = Alignment.Center) { Text("WR", color = Ink, fontWeight = FontWeight.Black, fontSize = 14.sp) }
             Spacer(Modifier.width(12.dp))
             Column {
-                Text("WRJA ASSISTANT", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text("●  Online when connected", color = Gold, fontSize = 12.sp)
+                Text(tr("wrja_assistant"), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text(tr("online_when_connected"), color = Gold, fontSize = 12.sp)
             }
         }
     }
     Spacer(Modifier.height(16.dp))
     messages.forEach { message -> ChatBubble(message) }
     Spacer(Modifier.height(12.dp))
-    Text("SUGGESTED QUESTIONS", color = GoldDark, fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 0.7.sp)
+    Text(tr("suggested_questions"), color = GoldDark, fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 0.7.sp)
     Spacer(Modifier.height(8.dp))
-    listOf("Which programme is right for me?", "How do I book a free trial?", "What events are coming up?").forEach { suggestion ->
+    listOf(tr("question_programme"), tr("question_trial"), tr("question_events")).forEach { suggestion ->
         AssistChip(onClick = { draft = suggestion }, label = { Text(suggestion, fontSize = 12.sp) }, colors = AssistChipDefaults.assistChipColors(containerColor = OffWhite, labelColor = Ink), modifier = Modifier.padding(end = 6.dp, bottom = 6.dp))
     }
     Spacer(Modifier.height(14.dp))
     Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = OffWhite)) {
         Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(value = draft, onValueChange = { draft = it }, placeholder = { Text("Ask the WRJA Assistant…") }, modifier = Modifier.weight(1f), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Gold, unfocusedBorderColor = Color.LightGray))
+            OutlinedTextField(value = draft, onValueChange = { draft = it }, placeholder = { Text(tr("ask_assistant")) }, modifier = Modifier.weight(1f), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Gold, unfocusedBorderColor = Color.LightGray))
             Spacer(Modifier.width(8.dp))
             IconButton(onClick = { /* Future backend: submit draft and stream assistant response. */ }, enabled = draft.isNotBlank(), colors = IconButtonDefaults.iconButtonColors(contentColor = Ink, disabledContentColor = Muted)) { Icon(Icons.Default.Send, "Send message") }
         }
     }
-    Text("Chat is a UI preview only. Messages will be sent securely once the WRJA chat backend is connected.", color = Muted, fontSize = 11.sp, lineHeight = 16.sp, modifier = Modifier.padding(top = 10.dp))
+    Text(tr("chat_preview"), color = Muted, fontSize = 11.sp, lineHeight = 16.sp, modifier = Modifier.padding(top = 10.dp))
 }
 
 @Composable private fun ChatBubble(message: ChatMessageUi) {
