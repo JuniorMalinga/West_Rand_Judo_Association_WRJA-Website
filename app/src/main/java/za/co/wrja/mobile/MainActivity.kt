@@ -1,9 +1,15 @@
 package za.co.wrja.mobile
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
+import androidx.core.content.ContextCompat
+import androidx.core.hardware.fingerprint.FingerprintManagerCompat
+import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.Image
 import androidx.compose.animation.AnimatedContent
@@ -43,13 +49,14 @@ private val Muted = Color(0xFF555555)
 /** Presentation model ready to be populated by a future chat service. */
 private data class ChatMessageUi(val text: String, val fromAssistant: Boolean)
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) = super.onCreate(savedInstanceState).also {
         setContent { MaterialTheme { WRJAApp() } }
     }
 }
 
 @Composable private fun WRJAApp() {
+    val activity = LocalContext.current as? MainActivity
     val context = LocalContext.current.applicationContext
     var language by remember { mutableStateOf(LanguageStore.read(context)) }
     var sessionChecked by remember { mutableStateOf(false) }
@@ -72,10 +79,19 @@ class MainActivity : ComponentActivity() {
 
     CompositionLocalProvider(LocalAppLanguage provides language) {
     if (!SupabaseAuth.isLoggedIn) {
-        SupabaseAuthScreen(onLanguageChanged = { selected ->
-            language = selected
-            LanguageStore.save(context, selected)
-        })
+        SupabaseAuthScreen(
+            onLanguageChanged = { selected ->
+                language = selected
+                LanguageStore.save(context, selected)
+            },
+            onFingerprintUnlock = { onError ->
+                if (activity != null) {
+                    activity.requestFingerprintUnlock(onError)
+                } else {
+                    onError("Fingerprint recognition is unavailable in this app session.")
+                }
+            }
+        )
     } else {
         var screen by remember { mutableStateOf("home") }
         var loggingOut by remember { mutableStateOf(false) }
@@ -135,6 +151,58 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+private fun MainActivity.requestFingerprintUnlock(onError: (String) -> Unit) {
+    val authenticators = BiometricManager.Authenticators.BIOMETRIC_STRONG
+    val fingerprint = FingerprintManagerCompat.from(this)
+    if (!fingerprint.isHardwareDetected) {
+        onError("Fingerprint recognition is not available on this device.")
+        return
+    }
+    if (!fingerprint.hasEnrolledFingerprints()) {
+        onError("No fingerprint is enrolled on this device. Add one in Android Settings first.")
+        return
+    }
+    when (BiometricManager.from(this).canAuthenticate(authenticators)) {
+        BiometricManager.BIOMETRIC_SUCCESS -> Unit
+        BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> {
+            onError("No fingerprint is enrolled on this device. Add one in Android Settings first.")
+            return
+        }
+        BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> {
+            onError("Fingerprint recognition is not available on this device.")
+            return
+        }
+        else -> {
+            onError("Fingerprint recognition is currently unavailable. Please use your password.")
+            return
+        }
+    }
+
+    val prompt = BiometricPrompt(this, ContextCompat.getMainExecutor(this),
+        object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                lifecycleScope.launch {
+                    runCatching { SupabaseAuth.unlockRememberedSession() }
+                        .onFailure { onError("Your remembered session is no longer available. Please log in with your password.") }
+                }
+            }
+
+            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                if (errorCode != BiometricPrompt.ERROR_USER_CANCELED &&
+                    errorCode != BiometricPrompt.ERROR_NEGATIVE_BUTTON
+                ) onError(errString.toString())
+            }
+        }
+    )
+    prompt.authenticate(
+        BiometricPrompt.PromptInfo.Builder()
+            .setTitle("Unlock WRJA")
+            .setSubtitle("Use your fingerprint to continue")
+            .setAllowedAuthenticators(authenticators)
+            .build()
+    )
+}
+
 @Composable private fun Logo() = Box(Modifier.size(58.dp).background(Color.White), contentAlignment = Alignment.Center) { Image(painterResource(R.drawable.wrja_logo), "West Rand Judo Association logo", Modifier.padding(5.dp).fillMaxSize(), contentScale = ContentScale.Fit) }
 @Composable private fun LanguageSelector(onLanguageChanged: (AppLanguage) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
@@ -159,7 +227,8 @@ internal fun LoginScreen(
     signUp: () -> Unit,
     initialEmail: String = "",
     notice: String? = null,
-    onLanguageChanged: (AppLanguage) -> Unit = {}
+    onLanguageChanged: (AppLanguage) -> Unit = {},
+    onFingerprintUnlock: (((String) -> Unit) -> Unit)? = null
 ) {
     var email by rememberSaveable(initialEmail) {
         mutableStateOf(initialEmail)
@@ -242,21 +311,35 @@ internal fun LoginScreen(
                     )
 
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(40.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Checkbox(
-                                checked = rememberMe,
-                                onCheckedChange = { rememberMe = it },
-                                enabled = !busy,
-                                colors = CheckboxDefaults.colors(checkedColor = Gold)
-                            )
-
-                            Text(tr("remember_me"), fontSize = 13.sp)
+                            Box(
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .border(1.dp, if (rememberMe) Gold else Muted)
+                                    .background(if (rememberMe) Gold else Color.Transparent)
+                                    .clickable(enabled = !busy) { rememberMe = !rememberMe },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (rememberMe) Text("✓", color = Ink, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            Column {
+                                Text(tr("remember_me"), fontSize = 13.sp)
+                                Text(
+                                    tr("fingerprint_unlock"),
+                                    color = Muted,
+                                    fontSize = 10.sp,
+                                    lineHeight = 12.sp
+                                )
+                            }
                         }
 
                         Text(
@@ -287,6 +370,20 @@ internal fun LoginScreen(
                         )
 
                         Spacer(Modifier.height(12.dp))
+                    }
+
+                    if (SupabaseAuth.hasRememberedSession) {
+                        OutlinedButton(
+                            onClick = {
+                                onFingerprintUnlock?.invoke { message ->
+                                    error = message
+                                }
+                            },
+                            enabled = !busy,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = GoldDark)
+                        ) { Text("USE FINGERPRINT", fontWeight = FontWeight.Bold) }
+                        Spacer(Modifier.height(8.dp))
                     }
 
                     Button(
@@ -348,7 +445,7 @@ internal fun LoginScreen(
                         }
                     }
 
-                    Spacer(Modifier.height(18.dp))
+                    Spacer(Modifier.height(10.dp))
 
                     Text(
                         tr("dont_have_account"),

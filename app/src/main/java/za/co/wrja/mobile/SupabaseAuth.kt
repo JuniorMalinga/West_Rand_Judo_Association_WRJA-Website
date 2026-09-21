@@ -34,6 +34,10 @@ object SupabaseAuth {
     var isLoggedIn by mutableStateOf(false)
         private set
 
+    /** A refresh token exists locally but needs fingerprint approval to unlock. */
+    var hasRememberedSession by mutableStateOf(false)
+        private set
+
     private var tokens: AuthTokens? = null
     private val mutex = Mutex()
     private var rememberSession = false
@@ -68,7 +72,7 @@ object SupabaseAuth {
                 expiresAtMillis = 0
             )
             rememberSession = true
-            isLoggedIn = true
+            hasRememberedSession = true
         }
 
         initialized = true
@@ -106,6 +110,14 @@ object SupabaseAuth {
         )
 
         saveSession(response, remember = rememberMe)
+    }
+
+    /** Called only after Android's fingerprint prompt reports success. */
+    suspend fun unlockRememberedSession() = mutex.withLock {
+        check(tokens != null && hasRememberedSession) {
+            "No remembered session is available."
+        }
+        isLoggedIn = true
     }
 
 
@@ -295,6 +307,7 @@ object SupabaseAuth {
 
             tokens = nextTokens
             rememberSession = remember
+            hasRememberedSession = remember
             isLoggedIn = true
         }
     }
@@ -305,6 +318,7 @@ object SupabaseAuth {
 
             tokens = null
             rememberSession = false
+            hasRememberedSession = false
             isLoggedIn = false
         }
     }
