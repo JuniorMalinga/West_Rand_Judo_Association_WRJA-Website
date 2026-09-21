@@ -4,9 +4,9 @@ import GalleryFilterTabs from "../components/GalleryFilterTabs";
 import GalleryItem from "../components/GalleryItem";
 import GalleryLightbox from "../components/GalleryLightbox";
 import Pagination from "../components/Pagination";
-import { galleryCategories } from "../data/galleryItems";
 import { getGalleryItems } from "../services/galleryService";
 
+const categories = [{ slug: "all", label: "All" }];
 const PHOTOS_PER_PAGE = 10;
 
 export default function GalleryPage() {
@@ -62,7 +62,7 @@ export default function GalleryPage() {
 
       <section className="gallery-section">
         <GalleryFilterTabs
-          categories={galleryCategories}
+          categories={categories}
           activeCategory={activeCategory}
           onSelect={handleSelectCategory}
         />

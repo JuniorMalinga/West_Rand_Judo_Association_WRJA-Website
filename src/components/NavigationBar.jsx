@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import wrjaLogo from "../assets/images/Logo/wrja-logo.png";
-import instructors from "../data/instructors";
+import { getInstructors } from "../services/instructorsService";
 import { useAuth } from "../context/AuthContext";
 
 // Total time the "Welcome, {name}" message spends center-stage before
@@ -10,6 +10,32 @@ const LOGIN_TRANSITION_DURATION = 3800;
 
 export default function NavigationBar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [instructors, setInstructors] = useState([]);
+
+  // Load active instructors for the dropdown menu
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadInstructors() {
+      try {
+        const data = await getInstructors();
+        if (isMounted) {
+          setInstructors(data || []);
+        }
+      } catch (err) {
+        console.error("Failed to load instructors for navigation:", err);
+        if (isMounted) {
+          setInstructors([]);
+        }
+      }
+    }
+
+    loadInstructors();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Track whether the user has scrolled down the page.
   const [isScrolled, setIsScrolled] = useState(false);

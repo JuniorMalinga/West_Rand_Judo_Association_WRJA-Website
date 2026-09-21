@@ -1,9 +1,34 @@
+import { useState, useEffect } from "react";
 import wrjaLogo from "../assets/images/Logo/wrja-logo.png";
-
-// Import the real gallery data instead of using placeholder images.
-import galleryItems from "../data/galleryItems";
+import { getGalleryItems } from "../services/galleryService";
 
 export default function SiteFooter() {
+  const [galleryItems, setGalleryItems] = useState([]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadFooterGallery() {
+      try {
+        const items = await getGalleryItems();
+        if (isMounted) {
+          setGalleryItems(items || []);
+        }
+      } catch (err) {
+        console.error("Failed to load gallery items for footer:", err);
+        if (isMounted) {
+          setGalleryItems([]);
+        }
+      }
+    }
+
+    loadFooterGallery();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <footer className="site-footer">
       <div className="footer-grid">
@@ -55,12 +80,11 @@ export default function SiteFooter() {
           <h3>Gallery</h3>
 
           <div className="footer-gallery-grid">
-            {/* Use the real gallery images from galleryItems */}
             {galleryItems.slice(0, 8).map((item) => (
               <img
                 key={item.id}
                 src={item.photoUrl}
-                alt={item.caption}
+                alt={item.caption || "WRJA Gallery"}
               />
             ))}
           </div>
