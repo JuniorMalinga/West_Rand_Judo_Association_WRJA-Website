@@ -175,6 +175,10 @@ fun SupabaseAbout() {
         Spacer(modifier = Modifier.height(12.dp))
 
         SupabaseClubs()
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        WebsiteAffiliatedClubs()
     }
 }
 
@@ -240,6 +244,10 @@ private fun AboutDataSection(
 
             entries.isEmpty() -> {
                 Text(emptyMessage)
+                if (table == "instructors") {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    BuiltInInstructors()
+                }
             }
 
             else -> {
@@ -292,12 +300,20 @@ private fun BuiltInInstructors() {
     listOf(
         AboutEntry(
             title = "Sensei Katja Bruwer",
-            details = listOf("7th Dan • Director, KJK Judo Club", "Four decades of judo coaching and athlete development."),
+            details = listOf(
+                "7th Dan • Director, KJK Judo Club",
+                "Former South African National Team athlete and captain, Judo South Africa coach and IJF-qualified coach.",
+                "With more than four decades in judo, she has developed athletes from grassroots to provincial, national, African and Commonwealth levels."
+            ),
             photoResId = R.drawable.sensei_katja
         ),
         AboutEntry(
             title = "Sensei Michelle Diamond",
-            details = listOf("3rd Dan • Founder & Director, Golden Score Judo", "Coaching centred on discipline, respect and personal growth."),
+            details = listOf(
+                "3rd Dan • Founder & Director, Golden Score Judo",
+                "Sport Psychology graduate and head coach of Golden Score Judo.",
+                "Her coaching develops competitive athletes while building character, discipline, respect and personal growth."
+            ),
             photoResId = R.drawable.sensei_michelle
         )
     ).forEach { instructor ->
@@ -316,6 +332,35 @@ private fun BuiltInInstructors() {
                         Text(detail)
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WebsiteAffiliatedClubs() {
+    Text(
+        text = "FOLLOW OUR CLUBS",
+        style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.Bold
+    )
+    Spacer(modifier = Modifier.height(8.dp))
+    Text(
+        "Stay connected for training schedules, grading information, results and achievements.",
+        style = MaterialTheme.typography.bodyMedium
+    )
+    Spacer(modifier = Modifier.height(12.dp))
+
+    listOf(
+        "Golden Score Judo" to "Website • Facebook • Instagram",
+        "KJK Judo Club" to "Website • Facebook • Instagram",
+        "West Rand Judo Association" to "Facebook"
+    ).forEach { (name, channels) ->
+        Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+            Column(modifier = Modifier.padding(18.dp)) {
+                Text(name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(channels, color = MaterialTheme.colorScheme.primary)
             }
         }
     }

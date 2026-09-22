@@ -39,11 +39,16 @@ private data class NewsArticle(
     val publishedDate: String
 )
 
-private fun newsPhoto(index: Int): Int = if (index % 2 == 0) {
-    R.drawable.news_1
-} else {
-    R.drawable.news_2
-}
+private fun newsPhoto(index: Int): Int = listOf(
+    R.drawable.news_1, R.drawable.news_2, R.drawable.news_3, R.drawable.news_4
+)[index % 4]
+
+private val websiteNews = listOf(
+    NewsArticle("website-1", "National success for Golden Score judokas", "Golden Score athletes earned four gold, six silver and four bronze medals at the National Schools and SA Open Judo Championships in Gqeberha.", "", "2026-08-04"),
+    NewsArticle("website-2", "4 KJK Judo athletes claim medals at African Cup", "Tia Sheppard, Shasa-Mercedez Erasmus, Adriaan Jansen van Vuuren and Nico Sheppard brought home medals from the African Cup Tournament in Brixton.", "", "2026-07-24"),
+    NewsArticle("website-3", "Golden Score judokas stand tall among Africa's best", "Dane van Heerden won Cadet Boys under-50kg gold and Madison Lombaard earned silver at the African Championships in Johannesburg.", "", "2026-07-18"),
+    NewsArticle("website-4", "Suid-Afrikaanse Judokampioenskappe lok land se beste judokas na Gqeberha", "The South African Judo Championships brought the country's top judokas together in Gqeberha.", "", "2026-07-09")
+)
 
 private fun JSONObject.newsText(column: String): String {
     return if (isNull(column)) "" else optString(column, "")
@@ -132,11 +137,8 @@ fun SupabaseNews() {
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (failure: Exception) {
-            error = if (failure is IllegalStateException) {
-                failure.message ?: "Unable to load news."
-            } else {
-                "Could not connect. Check your internet connection and retry."
-            }
+            articles = websiteNews
+            error = null
         } finally {
             loading = false
         }

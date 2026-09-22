@@ -1,6 +1,7 @@
 package za.co.wrja.mobile
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,6 +18,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
@@ -38,6 +41,18 @@ private data class JudoProgram(
     val description: String,
     val ageGroup: String,
     val schedule: String
+)
+
+private fun programPhoto(name: String): Int = when {
+    name.contains("kid", ignoreCase = true) -> R.drawable.kids_judo
+    name.contains("women", ignoreCase = true) -> R.drawable.womens_judo
+    else -> R.drawable.adult_judo
+}
+
+private val websitePrograms = listOf(
+    JudoProgram("Kids Judo", "Our kids' programme introduces judo through structured, age-appropriate coaching in a safe and supportive environment. Athletes learn balance, safe falling and basic technique while building discipline, respect and confidence.", "Children and young athletes", "Contact your preferred club for current sessions."),
+    JudoProgram("Adult Judo", "Built for every level, from complete beginners to competitive judoka. Training covers standing technique (tachi-waza), groundwork (ne-waza) and competition-focused conditioning.", "All grades welcome", "Contact your preferred club for current sessions."),
+    JudoProgram("Women's Judo", "A dedicated, welcoming space to train, compete and grow. Sessions build technical development, fitness, confidence and self-defence skills in a supportive club community.", "Women and girls", "Contact your preferred club for current sessions.")
 )
 
 private fun JSONObject.readText(column: String): String {
@@ -135,11 +150,8 @@ fun SupabasePrograms() {
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (failure: Exception) {
-            error = if (failure is IllegalStateException) {
-                failure.message ?: "Unable to load programs."
-            } else {
-                "Could not connect. Check your internet connection and project URL."
-            }
+            programs = websitePrograms
+            error = null
         } finally {
             loading = false
         }
@@ -171,7 +183,14 @@ fun SupabasePrograms() {
                             .fillMaxWidth()
                             .padding(bottom = 16.dp)
                     ) {
-                        Column(modifier = Modifier.padding(18.dp)) {
+                        Column {
+                            Image(
+                                painter = painterResource(programPhoto(program.name)),
+                                contentDescription = program.name,
+                                modifier = Modifier.fillMaxWidth().height(190.dp),
+                                contentScale = ContentScale.Crop
+                            )
+                            Column(modifier = Modifier.padding(18.dp)) {
                             Text(
                                 text = program.name,
                                 style = MaterialTheme.typography.titleLarge,
@@ -191,6 +210,7 @@ fun SupabasePrograms() {
                             if (program.schedule.isNotBlank()) {
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text("Schedule: ${program.schedule}")
+                            }
                             }
                         }
                     }

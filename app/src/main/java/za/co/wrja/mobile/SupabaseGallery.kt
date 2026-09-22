@@ -31,15 +31,27 @@ private data class GalleryPhoto(
 )
 
 private val builtInGalleryPhotos = listOf(
-    GalleryPhoto("built-in-adult", "Adult Judo training", "Technique, teamwork and regular dojo sessions.", ""),
-    GalleryPhoto("built-in-competition", "Competition action", "WRJA athletes representing their clubs with pride.", ""),
-    GalleryPhoto("built-in-kids", "Kids Judo training", "Building confidence, coordination and respect from the start.", "")
+    GalleryPhoto("built-in-adult-1", "Adult Judo training", "Judo SA Awards.", ""),
+    GalleryPhoto("built-in-adult-2", "Adult Judo training session", "Groundwork action on the mat.", ""),
+    GalleryPhoto("built-in-competition-1", "Judo competition", "African Cup medal winners.", ""),
+    GalleryPhoto("built-in-competition-2", "Competition action", "Junior African Cup achievement.", ""),
+    GalleryPhoto("built-in-competition-3", "Judo competition action", "WRJA athletes on the podium.", ""),
+    GalleryPhoto("built-in-competition-4", "WRJA competition", "National competition medals.", ""),
+    GalleryPhoto("built-in-kids-1", "Kids Judo training", "Young athlete competing in judo.", ""),
+    GalleryPhoto("built-in-kids-2", "Junior Judo training", "Young judoka celebrating their medals.", ""),
+    GalleryPhoto("built-in-kids-3", "Kids Judo session", "Kids Judo achievement.", "")
 )
 
 private fun builtInPhoto(id: String): Int? = when (id) {
-    "built-in-adult" -> R.drawable.gallery_adult_1
-    "built-in-competition" -> R.drawable.gallery_competition_1
-    "built-in-kids" -> R.drawable.gallery_kid_1
+    "built-in-adult-1" -> R.drawable.gallery_adult_1
+    "built-in-adult-2" -> R.drawable.gallery_adult_2
+    "built-in-competition-1" -> R.drawable.gallery_competition_1
+    "built-in-competition-2" -> R.drawable.gallery_competition_2
+    "built-in-competition-3" -> R.drawable.gallery_competition_3
+    "built-in-competition-4" -> R.drawable.gallery_competition_4
+    "built-in-kids-1" -> R.drawable.gallery_kid_1
+    "built-in-kids-2" -> R.drawable.gallery_kid_2
+    "built-in-kids-3" -> R.drawable.gallery_kid_3
     else -> null
 }
 
