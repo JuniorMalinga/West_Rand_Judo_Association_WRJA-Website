@@ -1,6 +1,7 @@
 package za.co.wrja.mobile
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,6 +19,8 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
@@ -35,6 +38,12 @@ private data class NewsArticle(
     val body: String,
     val publishedDate: String
 )
+
+private fun newsPhoto(index: Int): Int = if (index % 2 == 0) {
+    R.drawable.news_1
+} else {
+    R.drawable.news_2
+}
 
 private fun JSONObject.newsText(column: String): String {
     return if (isNull(column)) "" else optString(column, "")
@@ -153,7 +162,7 @@ fun SupabaseNews() {
             }
 
             else -> {
-                articles.forEach { article ->
+                articles.forEachIndexed { index, article ->
                     val expanded =
                         expandedArticles[article.id] == true
 
@@ -162,7 +171,14 @@ fun SupabaseNews() {
                             .fillMaxWidth()
                             .padding(bottom = 16.dp)
                     ) {
-                        Column(modifier = Modifier.padding(18.dp)) {
+                        Column {
+                            Image(
+                                painter = painterResource(newsPhoto(index)),
+                                contentDescription = article.title,
+                                modifier = Modifier.fillMaxWidth().height(190.dp),
+                                contentScale = ContentScale.Crop
+                            )
+                            Column(modifier = Modifier.padding(18.dp)) {
                             if (article.publishedDate.isNotBlank()) {
                                 Text(
                                     text = article.publishedDate,
@@ -209,6 +225,7 @@ fun SupabaseNews() {
                                         }
                                     )
                                 }
+                            }
                             }
                         }
                     }

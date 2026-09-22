@@ -60,7 +60,7 @@ private val translations = mapOf(
     "question_trial" to arrayOf("How do I book a free trial?", "Hoe bespreek ek 'n gratis proefsessie?", "Ngisibhukha kanjani isivivinyo samahhala?"),
     "question_events" to arrayOf("What events are coming up?", "Watter geleenthede kom op?", "Yimiphi imicimbi ezayo?"),
     "ask_assistant" to arrayOf("Ask the WRJA Assistant…", "Vra die WRJA-assistent…", "Buza umsizi wakwa-WRJA…"),
-    "chat_preview" to arrayOf("Chat is a UI preview only. Messages will be sent securely once the WRJA chat backend is connected.", "Klets is slegs 'n UI-voorskou. Boodskappe sal veilig gestuur word wanneer die WRJA-kletsagterkant gekoppel is.", "Ingxoxo iyisibonelo se-UI kuphela. Imilayezo izothunyelwa ngokuphephile uma ingemuva lengxoxo lakwa-WRJA selixhunyiwe.")
+    "chat_preview" to arrayOf("The assistant answers common WRJA questions locally. A secure online chat service can be connected here later.", "Die assistent beantwoord algemene WRJA-vrae plaaslik. ’n Veilige aanlyn kletsdiens kan later hier gekoppel word.", "Umsizi uphendula imibuzo evamile yakwa-WRJA endaweni. Isevisi yengxoxo ephephile eku-inthanethi ingaxhunywa lapha kamuva.")
 )
 
 @Composable

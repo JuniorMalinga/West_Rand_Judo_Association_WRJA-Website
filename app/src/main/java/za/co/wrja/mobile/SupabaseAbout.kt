@@ -1,9 +1,12 @@
 package za.co.wrja.mobile
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.Image
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
@@ -16,8 +19,15 @@ import java.net.URL
 
 private data class AboutEntry(
     val title: String,
-    val details: List<String>
+    val details: List<String>,
+    val photoResId: Int? = null
 )
+
+private fun instructorPhoto(name: String): Int? = when {
+    name.contains("katja", ignoreCase = true) -> R.drawable.sensei_katja
+    name.contains("michelle", ignoreCase = true) -> R.drawable.sensei_michelle
+    else -> null
+}
 
 private fun JSONObject.aboutText(column: String): String {
     return if (isNull(column)) "" else optString(column, "")
@@ -84,12 +94,14 @@ private suspend fun fetchAboutEntries(
             val row = rows.getJSONObject(index)
 
             if (table == "instructors") {
+                val instructorName = listOf(
+                    row.aboutText("first_name"),
+                    row.aboutText("last_name")
+                ).filter { it.isNotBlank() }
+                    .joinToString(" ")
+
                 AboutEntry(
-                    title = listOf(
-                        row.aboutText("first_name"),
-                        row.aboutText("last_name")
-                    ).filter { it.isNotBlank() }
-                        .joinToString(" "),
+                    title = instructorName,
 
                     details = listOf(
                         row.aboutText("rank"),
@@ -102,7 +114,8 @@ private suspend fun fetchAboutEntries(
                         row.aboutText("specialisations").let {
                             if (it.isBlank()) "" else "Specialisations: $it"
                         }
-                    ).filter { it.isNotBlank() }
+                    ).filter { it.isNotBlank() },
+                    photoResId = instructorPhoto(instructorName)
                 )
             } else {
                 AboutEntry(
@@ -219,6 +232,10 @@ private fun AboutDataSection(
                     text = error ?: "Unable to load $table.",
                     color = MaterialTheme.colorScheme.error
                 )
+                if (table == "instructors") {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    BuiltInInstructors()
+                }
             }
 
             entries.isEmpty() -> {
@@ -232,7 +249,19 @@ private fun AboutDataSection(
                             .fillMaxWidth()
                             .padding(bottom = 16.dp)
                     ) {
-                        Column(modifier = Modifier.padding(18.dp)) {
+                        Column {
+                            entry.photoResId?.let { photo ->
+                                Image(
+                                    painter = painterResource(photo),
+                                    contentDescription = "Portrait of ${entry.title}",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(240.dp)
+                                        .padding(8.dp),
+                                    contentScale = ContentScale.Fit
+                                )
+                            }
+                            Column(modifier = Modifier.padding(18.dp)) {
                             Text(
                                 text = entry.title,
                                 style = MaterialTheme.typography.titleLarge,
@@ -243,6 +272,7 @@ private fun AboutDataSection(
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(detail)
                             }
+                            }
                         }
                     }
                 }
@@ -252,6 +282,40 @@ private fun AboutDataSection(
         if (!loading) {
             TextButton(onClick = { refreshCount++ }) {
                 Text(if (error == null) "Refresh" else "Retry")
+            }
+        }
+    }
+}
+
+@Composable
+private fun BuiltInInstructors() {
+    listOf(
+        AboutEntry(
+            title = "Sensei Katja Bruwer",
+            details = listOf("7th Dan • Director, KJK Judo Club", "Four decades of judo coaching and athlete development."),
+            photoResId = R.drawable.sensei_katja
+        ),
+        AboutEntry(
+            title = "Sensei Michelle Diamond",
+            details = listOf("3rd Dan • Founder & Director, Golden Score Judo", "Coaching centred on discipline, respect and personal growth."),
+            photoResId = R.drawable.sensei_michelle
+        )
+    ).forEach { instructor ->
+        Card(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+            Column {
+                Image(
+                    painter = painterResource(instructor.photoResId!!),
+                    contentDescription = "Portrait of ${instructor.title}",
+                    modifier = Modifier.fillMaxWidth().height(240.dp).padding(8.dp),
+                    contentScale = ContentScale.Fit
+                )
+                Column(modifier = Modifier.padding(18.dp)) {
+                    Text(instructor.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    instructor.details.forEach { detail ->
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(detail)
+                    }
+                }
             }
         }
     }

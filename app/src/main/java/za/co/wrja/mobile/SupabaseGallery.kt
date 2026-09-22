@@ -2,11 +2,13 @@ package za.co.wrja.mobile
 
 import android.net.Uri
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.Image
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.SubcomposeAsyncImage
@@ -27,6 +29,25 @@ private data class GalleryPhoto(
     val caption: String,
     val imagePath: String
 )
+
+private val builtInGalleryPhotos = listOf(
+    GalleryPhoto("built-in-adult", "Adult Judo training", "Technique, teamwork and regular dojo sessions.", ""),
+    GalleryPhoto("built-in-competition", "Competition action", "WRJA athletes representing their clubs with pride.", ""),
+    GalleryPhoto("built-in-kids", "Kids Judo training", "Building confidence, coordination and respect from the start.", "")
+)
+
+private fun builtInPhoto(id: String): Int? = when (id) {
+    "built-in-adult" -> R.drawable.gallery_adult_1
+    "built-in-competition" -> R.drawable.gallery_competition_1
+    "built-in-kids" -> R.drawable.gallery_kid_1
+    else -> null
+}
+
+private fun galleryFallbackPhoto(id: String): Int = builtInPhoto(id) ?: when {
+    id.hashCode().and(1) == 0 -> R.drawable.gallery_adult_1
+    id.hashCode().and(2) == 0 -> R.drawable.gallery_competition_1
+    else -> R.drawable.gallery_kid_1
+}
 
 private fun JSONObject.galleryText(column: String): String {
     return if (isNull(column)) "" else optString(column, "")
@@ -184,10 +205,16 @@ fun SupabaseGallery() {
                     text = error ?: "Unable to load the gallery.",
                     color = MaterialTheme.colorScheme.error
                 )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text("Featured moments", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(8.dp))
+                builtInGalleryPhotos.forEach { GalleryPhotoCard(it) }
             }
 
             photos.isEmpty() -> {
-                Text("No gallery photos are available yet.")
+                Text("No online gallery photos are available yet. Showing featured moments.")
+                Spacer(modifier = Modifier.height(12.dp))
+                builtInGalleryPhotos.forEach { GalleryPhotoCard(it) }
             }
 
             else -> {
@@ -210,6 +237,9 @@ fun SupabaseGallery() {
 @Composable
 private fun GalleryPhotoCard(photo: GalleryPhoto) {
     val imageUrl = galleryImageUrl(photo.imagePath)
+    // Every server-supplied card has an offline visual while storage is being
+    // configured or an image URL is temporarily unavailable.
+    val fallbackImage = galleryFallbackPhoto(photo.id)
 
     Card(
         modifier = Modifier
@@ -218,15 +248,12 @@ private fun GalleryPhotoCard(photo: GalleryPhoto) {
     ) {
         Column {
             if (imageUrl == null) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(220.dp)
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Image address is missing or incomplete.")
-                }
+                Image(
+                    painter = painterResource(fallbackImage),
+                    contentDescription = photo.caption.ifBlank { photo.title },
+                    modifier = Modifier.fillMaxWidth().height(220.dp),
+                    contentScale = ContentScale.Crop
+                )
             } else {
                 SubcomposeAsyncImage(
                     model = imageUrl,
@@ -248,14 +275,12 @@ private fun GalleryPhotoCard(photo: GalleryPhoto) {
                         }
                     },
                     error = {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("Image could not be loaded.")
-                        }
+                        Image(
+                            painter = painterResource(fallbackImage),
+                            contentDescription = photo.caption.ifBlank { photo.title },
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
                     }
                 )
             }
