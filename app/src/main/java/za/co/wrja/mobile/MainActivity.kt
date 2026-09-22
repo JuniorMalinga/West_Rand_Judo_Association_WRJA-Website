@@ -1,11 +1,11 @@
 package za.co.wrja.mobile
 
 import android.os.Bundle
-import androidx.activity.compose.setContent
+import android.hardware.fingerprint.FingerprintManager
+import androidx.activity.compose.LocalActivity
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
-import androidx.core.hardware.fingerprint.FingerprintManagerCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.compose.foundation.background
@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.ComposeView
 private val Charcoal = Color(0xFF161616)
 private val Charcoal2 = Color(0xFF1F1F1F)
 private val Gold = Color(0xFFC9A227)
@@ -50,13 +51,18 @@ private val Muted = Color(0xFF555555)
 private data class ChatMessageUi(val text: String, val fromAssistant: Boolean)
 
 class MainActivity : FragmentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) = super.onCreate(savedInstanceState).also {
-        setContent { MaterialTheme { WRJAApp() } }
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(
+            ComposeView(this).apply {
+                setContent { MaterialTheme { WRJAApp() } }
+            }
+        )
     }
 }
 
 @Composable private fun WRJAApp() {
-    val activity = LocalContext.current as? MainActivity
+    val activity = LocalActivity.current as? MainActivity
     val context = LocalContext.current.applicationContext
     var language by remember { mutableStateOf(LanguageStore.read(context)) }
     var sessionChecked by remember { mutableStateOf(false) }
@@ -153,8 +159,8 @@ class MainActivity : FragmentActivity() {
 
 private fun MainActivity.requestFingerprintUnlock(onError: (String) -> Unit) {
     val authenticators = BiometricManager.Authenticators.BIOMETRIC_STRONG
-    val fingerprint = FingerprintManagerCompat.from(this)
-    if (!fingerprint.isHardwareDetected) {
+    val fingerprint = getSystemService(FingerprintManager::class.java)
+    if (fingerprint == null || !fingerprint.isHardwareDetected) {
         onError("Fingerprint recognition is not available on this device.")
         return
     }
