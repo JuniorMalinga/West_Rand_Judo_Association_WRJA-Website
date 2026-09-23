@@ -30,6 +30,7 @@ export default function SignupPage() {
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const { signUp } = useAuth();
@@ -57,18 +58,31 @@ export default function SignupPage() {
       }
     }
 
-    setIsSubmitting(true);
-
-    try {
-      signUp({ firstName, lastName, email, phone: phone || null, dateOfBirth: role === "athlete" ? dateOfBirth : null, password, role });
-    } catch (error) {
-      setIsSubmitting(false);
-      setErrorMessage(error.message);
+    if (!termsAccepted) {
+      setErrorMessage("Please agree to the club's terms and privacy policy.");
       return;
     }
 
-    setIsSubmitting(false);
-    navigate("/login", { state: { justSignedUp: true } });
+    setIsSubmitting(true);
+
+    try {
+      await signUp({
+        firstName,
+        lastName,
+        email,
+        phone,
+        dateOfBirth: role === "athlete" ? dateOfBirth : null,
+        password,
+        role,
+        termsAccepted,
+      });
+      setIsSubmitting(false);
+      navigate("/login", { state: { justSignedUp: true } });
+    } catch (error) {
+      setIsSubmitting(false);
+      setErrorMessage(error.message || "Failed to create account.");
+      return;
+    }
   };
 
   return (
@@ -197,7 +211,12 @@ export default function SignupPage() {
           </div>
 
           <label className="auth-checkbox">
-            <input type="checkbox" required />
+            <input
+              type="checkbox"
+              checked={termsAccepted}
+              onChange={(event) => setTermsAccepted(event.target.checked)}
+              required
+            />
             I agree to the club's terms and privacy policy
           </label>
 
