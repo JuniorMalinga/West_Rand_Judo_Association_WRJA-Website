@@ -661,3 +661,43 @@ body:has(.login-page) {
   .login-visual h1 { font-size: clamp(34px, 11vw, 46px); }
   .login-page .auth-card { padding: 30px 20px; }
 }
+
+/* ---------- Split-screen WRJA sign-up ---------- */
+html:has(.signup-page), body:has(.signup-page) { background: #080808; }
+.signup-page .auth-card { max-height: calc(100svh - 56px); overflow: auto; }
+.signup-page .auth-card h2 { margin-bottom: 8px; }
+.signup-page .auth-card .auth-card-subtitle { margin-bottom: 22px; }
+.signup-reference-form { gap: 13px; }
+.reference-role-toggle { display: flex; border: 1px solid rgba(255,255,255,.28); border-radius: 999px; overflow: hidden; background: #242424; }
+.reference-role-toggle button { flex: 1; min-height: 42px; padding: 9px 12px; border: 0; background: transparent; color: #aaa; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; transition: background .18s ease, color .18s ease; }
+.reference-role-toggle button:hover { background: #303030; color: #fff; }
+.reference-role-toggle .auth-role-active { background: #f1bd16 !important; color: #111 !important; }
+.signup-grid-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.signup-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.signup-label { padding-left: 12px; color: #c7c7c7; font-size: 11px; font-weight: 700; letter-spacing: .03em; }
+.signup-field .reference-input { height: 54px; }
+.signup-field .reference-input-icon { flex-basis: 43px; width: 43px; height: 43px; }
+.signup-field .reference-input-icon svg { width: 20px; height: 20px; }
+.signup-field .reference-input input { font-size: 13px; }
+.signup-terms { padding: 1px 10px 0; font-size: 12px; }
+.signup-page .login-visual { align-items: center; padding-top: 12vh; }
+.signup-page .login-visual-content { transform: translateY(-3vh); }
+.signup-page .login-visual h1 { font-size: clamp(42px, 5vw, 76px); }
+.signup-page .reference-login-button { margin-top: 2px; }
+.signup-page .auth-card-footer { margin-top: 20px; }
+.signup-page .auth-error { border-radius: 10px; }
+@media (max-width: 900px) {
+  .signup-page { display: block; overflow: auto; }
+  .signup-page .login-visual { min-height: 300px; padding: 42px 8vw 54px; align-items: flex-end; }
+  .signup-page .login-visual-content { transform: none; }
+  .signup-page .login-visual h1 { margin: 12px 0; font-size: clamp(38px, 10vw, 60px); }
+  .signup-page .signup-page .auth-section, .signup-page .auth-section { padding: 0 5vw 42px; align-items: flex-start; }
+  .signup-page .auth-card { max-height: none; margin-top: -22px; position: relative; }
+}
+@media (max-width: 560px) {
+  .signup-grid-two { grid-template-columns: 1fr; gap: 13px; }
+  .signup-page .login-visual { min-height: 270px; padding: 34px 7vw 50px; }
+  .signup-page .login-visual-copy, .signup-page .login-visual-rule, .signup-page .login-visual-caption { display: none; }
+  .signup-page .auth-card { padding: 27px 19px 25px; border-radius: 18px; }
+  .reference-role-toggle button { font-size: 11px; padding-inline: 7px; }
+}
