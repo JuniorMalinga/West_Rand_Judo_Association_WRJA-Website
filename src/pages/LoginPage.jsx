@@ -63,6 +63,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const handleSubmit = async (event) => {
@@ -72,16 +73,16 @@ export default function LoginPage() {
 
     try {
       const session = await signIn(email, password);
-      navigate(session.profile.role === "admin" ? "/admin" : "/");
+      setIsAuthenticating(true);
+      window.setTimeout(() => navigate(session.profile.role === "admin" ? "/admin" : "/"), 1350);
     } catch (error) {
       setErrorMessage(error.message || "Unable to log in.");
-    } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <main className="login-page">
+    <main className={`login-page ${isAuthenticating ? "login-is-authenticating" : ""}`}>
       <aside className="login-visual" aria-label="West Rand Judo Association">
         <div className="login-visual-content">
           <p className="login-kicker">WEST RAND JUDO ASSOCIATION</p>
@@ -108,8 +109,8 @@ export default function LoginPage() {
           </p>
         )}
 
-        <form className="reference-auth-form" onSubmit={handleSubmit}>
-          <div className="reference-input">
+        <form className="reference-auth-form login-reference-form" onSubmit={handleSubmit}>
+          <div className="reference-input login-field login-field-0">
             <span className="reference-input-icon"><UserIcon /></span>
             <input
               type="email"
@@ -121,7 +122,7 @@ export default function LoginPage() {
             />
           </div>
 
-          <div className="reference-input">
+          <div className="reference-input login-field login-field-1">
             <span className="reference-input-icon"><LockIcon /></span>
             <input
               type={showPassword ? "text" : "password"}
@@ -160,6 +161,7 @@ export default function LoginPage() {
           >
             {isSubmitting ? "Logging in..." : "Login"}
           </button>
+          {isAuthenticating && <p className="login-auth-signal" role="status">Securing your club access...</p>}
         </form>
 
         <div className="reference-divider">
