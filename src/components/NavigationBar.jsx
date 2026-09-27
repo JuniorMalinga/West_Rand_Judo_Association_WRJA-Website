@@ -148,19 +148,11 @@ export default function NavigationBar() {
           )}
 
           {!isAdmin && (
-            <Link to="/competitions">Competitions</Link>
-          )}
-
-          {!isAdmin && (
             <Link to="/news">News</Link>
           )}
 
           {user && !isAdmin && (
             <Link to="/booking">Book</Link>
-          )}
-
-          {user && !isAdmin && (
-            <Link to="/dashboard">My home</Link>
           )}
 
           {!isAdmin && (

@@ -493,3 +493,131 @@
 @media (max-width: 640px) {
   .events-page > .events-hub-intro { margin-top: 18px; }
 }
+
+/* ---------- Events store storefront ---------- */
+.events-store-grid {
+  max-width: 1120px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 26px;
+}
+
+.events-store-card {
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid #dedbd2;
+  border-radius: 14px;
+  background: var(--bg-light);
+  box-shadow: 0 14px 30px rgba(22, 22, 22, 0.08);
+  transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease);
+}
+
+.events-store-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 22px 42px rgba(22, 22, 22, 0.14);
+}
+
+.events-store-product-image {
+  position: relative;
+  height: 230px;
+  background-color: #252525;
+  background-position: center;
+  background-size: cover;
+}
+
+.events-store-product-image::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(22, 22, 22, 0.04), rgba(22, 22, 22, 0.58));
+  content: "";
+}
+
+.events-store-product-poster {
+  background-color: #e6dfcf;
+  background-size: 42%;
+  background-repeat: no-repeat;
+}
+
+.events-store-product-poster::after { background: linear-gradient(180deg, rgba(22, 22, 22, 0.02), rgba(22, 22, 22, 0.32)); }
+
+.events-store-badge {
+  position: absolute;
+  z-index: 1;
+  bottom: 18px;
+  left: 20px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--text-dark);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.events-store-card-content { padding: 24px 26px 26px; }
+.events-store-card-topline { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.events-store-card-topline .eyebrow { margin: 0; }
+.events-store-stock { color: #6b6b6b; font-size: 11px; font-weight: 700; }
+.events-store-card h2 { margin: 12px 0 8px; font-size: 28px; }
+.events-store-card p:not(.eyebrow) { min-height: 76px; margin: 0; line-height: 1.65; }
+.events-store-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 22px; padding-top: 18px; border-top: 1px solid #e6e3dc; }
+.events-store-card-footer strong { color: var(--text-dark); font-size: 12px; }
+.events-store-card-footer .btn { margin: 0; padding: 10px 16px; font-size: 12px; }
+
+@media (max-width: 640px) {
+  .events-store-grid { grid-template-columns: 1fr; }
+  .events-store-product-image { height: 200px; }
+  .events-store-card-footer { align-items: flex-start; flex-direction: column; }
+}
+
+/* Fix product media stretching inside the existing flex card rule. */
+.events-store-card { align-items: stretch; }
+.events-store-product-image { width: 100%; flex: 0 0 230px; }
+
+/* ---------- Premium WRJA merch storefront ---------- */
+.store-hero {
+  position: relative;
+  display: flex;
+  max-width: 1280px;
+  min-height: 350px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 35px;
+  overflow: hidden;
+  margin: 28px auto 0;
+  padding: 54px clamp(28px, 6vw, 78px);
+  border-radius: 16px;
+  background: radial-gradient(circle at 78% 45%, rgba(201,162,39,.26), transparent 26%), linear-gradient(120deg, #141414, #282216 58%, #171717);
+  color: var(--text-light);
+  box-shadow: 0 22px 50px rgba(22,22,22,.18);
+}
+
+.store-hero::before { position: absolute; right: 23%; bottom: -140px; width: 330px; height: 330px; border: 1px solid rgba(201,162,39,.23); border-radius: 50%; box-shadow: 0 0 0 20px rgba(201,162,39,.04), 0 0 0 46px rgba(201,162,39,.025); content: ""; }
+.store-hero-copy { position: relative; z-index: 1; max-width: 700px; }
+.store-back-link { display: inline-flex; margin-bottom: 32px; color: rgba(255,255,255,.62); font-size: 12px; font-weight: 700; }
+.store-back-link:hover { color: var(--accent); }
+.store-hero .eyebrow { color: var(--accent); }
+.store-hero h1 { margin: 10px 0 16px; color: var(--text-light); font-size: clamp(39px, 5vw, 68px); line-height: 1.02; letter-spacing: -.025em; }
+.store-hero h1 span { color: var(--accent); }
+.store-hero-copy > p:not(.eyebrow) { max-width: 520px; margin: 0; color: rgba(255,255,255,.7); line-height: 1.7; }
+.store-hero-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 25px; }
+.store-hero-chips span { padding: 8px 11px; border: 1px solid rgba(255,255,255,.18); border-radius: 999px; color: rgba(255,255,255,.78); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.store-hero-mark { position: relative; z-index: 1; display: grid; width: 210px; height: 210px; flex-shrink: 0; place-items: center; align-content: center; gap: 9px; border: 1px solid rgba(201,162,39,.6); border-radius: 50%; background: rgba(255,255,255,.92); box-shadow: 0 0 0 13px rgba(201,162,39,.06); transform: rotate(7deg); }
+.store-hero-mark img { width: 125px; height: auto; }
+.store-hero-mark span { color: var(--accent-dark); font-size: 9px; font-weight: 900; letter-spacing: .14em; }
+.store-collection-bar { display: flex; max-width: 1120px; align-items: end; justify-content: space-between; gap: 18px; margin: 40px auto 4px; padding: 0 0 14px; border-bottom: 1px solid #dedbd2; }
+.store-collection-bar h2 { margin: 5px 0 0; font-size: 28px; }
+.store-collection-count { color: var(--text-dark-muted); font-size: 12px; font-weight: 700; }
+.events-store-grid { margin-top: 0; }
+.events-store-card { position: relative; }
+.events-store-card::after { position: absolute; top: 18px; right: 18px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 5px rgba(201,162,39,.18); content: ""; }
+.events-store-product-image { transition: transform .45s var(--ease); }
+.events-store-card:hover .events-store-product-image { transform: scale(1.025); }
+
+@media (max-width: 640px) {
+  .store-hero { min-height: 0; align-items: flex-start; flex-direction: column; margin-top: 18px; padding: 36px 24px; }
+  .store-back-link { margin-bottom: 24px; }
+  .store-hero-mark { align-self: center; width: 155px; height: 155px; }
+  .store-hero-mark img { width: 95px; }
+  .store-collection-bar { margin-top: 30px; padding: 0 24px 14px; }
+}

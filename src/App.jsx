@@ -6,7 +6,6 @@ import NewsDetailPage from "./pages/NewsDetailPage";
 import HomePage from "./pages/HomePage";
 import AboutPage from "./pages/AboutPage";
 import EventsPage from "./pages/EventsPage";
-import CompetitionsPage from "./pages/CompetitionsPage";
 import GalleryPage from "./pages/GalleryPage";
 import NewsPage from "./pages/NewsPage";
 import ContactPage from "./pages/ContactPage";
@@ -22,7 +21,7 @@ import NotFoundPage from "./pages/NotFoundPage";
 import FAQPage from "./pages/FAQPage";
 import InstructorDetailPage from "./pages/InstructorDetailPage";
 import EventDetailPage from "./pages/EventDetailPage";
-import DashboardPage from "./pages/DashboardPage";
+import CompetitionPaymentPage from "./pages/CompetitionPaymentPage";
 import ProofOfPaymentPage from "./pages/ProofOfPaymentPage";
 
 function AdminExperienceGuard({ children }) {
@@ -47,13 +46,13 @@ function AppContent() {
           <Route path="/events" element={<EventsPage />} />
           <Route path="/events/calendar" element={<EventsPage section="calendar" />} />
           <Route path="/events/competitions" element={<EventsPage section="competitions" />} />
+          <Route path="/events/competitions/:slug/payment" element={<CompetitionPaymentPage />} />
+          <Route path="/events/competitions/:slug" element={<CompetitionDetailPage />} />
           <Route path="/events/schools" element={<EventsPage section="schools" />} />
           <Route path="/events/store" element={<EventsPage section="store" />} />
           <Route path="/events/:id" element={<EventDetailPage />} />
-          <Route path="/programs" element={<Navigate to="/competitions" replace />} />
-          <Route path="/programs/:slug" element={<Navigate to="/competitions" replace />} />
-          <Route path="/competitions" element={<CompetitionsPage />} />
-          <Route path="/competitions/:slug" element={<CompetitionDetailPage />} />
+          <Route path="/programs" element={<Navigate to="/events/competitions" replace />} />
+          <Route path="/programs/:slug" element={<Navigate to="/events/competitions" replace />} />
           <Route path="/gallery" element={<GalleryPage />} />
           <Route path="/news" element={<NewsPage />} />
           <Route path="/faq" element={<FAQPage />} />
@@ -62,7 +61,6 @@ function AppContent() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/booking" element={<BookingPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/proof-of-payment" element={<ProofOfPaymentPage />} />
           <Route path="/instructors/:slug" element={<InstructorDetailPage />} />
           <Route path="/admin" element={<AdminPage />} />

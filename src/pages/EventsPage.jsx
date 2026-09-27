@@ -5,6 +5,7 @@ import EventsCalendar from "../components/EventsCalendar";
 import Reveal from "../components/Reveal";
 import CompetitionCard from "../components/CompetitionCard";
 import { getCompetitions } from "../data/competitions";
+import wrjaLogo from "../assets/images/Logo/wrja-logo.png";
 
 const hubCards = [
   {
@@ -68,9 +69,6 @@ function CompetitionsView() {
   return (
     <>
       <CategoryHeader title="Competitions" description="The same WRJA competition content is available here as a convenient part of the Events hub." />
-      <section className="events-category-actions">
-        <Link to="/competitions" className="btn btn-accent">Open standalone Competitions page</Link>
-      </section>
       <section className="competitions-grid events-embedded-competitions" aria-label="Competitions available through Events">
         {competitions.map((competition, index) => (
           <Reveal key={competition.id} delay={index * 45}>
@@ -104,24 +102,42 @@ function StoreView() {
 
   return (
     <>
-      <CategoryHeader title="Store" description="Get the kit and club materials that help WRJA athletes represent the association with pride." />
+      <section className="store-hero">
+        <div className="store-hero-copy">
+          <Link to="/events" className="store-back-link">← Events hub</Link>
+          <p className="eyebrow">WRJA MERCH / OFFICIAL COLLECTION</p>
+          <h1>Represent the club.<br /><span>On and off the mat.</span></h1>
+          <p>Official WRJA apparel and club prints for athletes, coaches, families and supporters.</p>
+          <div className="store-hero-chips"><span>Official WRJA</span><span>JSA collection</span><span>Made to order</span></div>
+        </div>
+        <div className="store-hero-mark" aria-hidden="true"><img src={wrjaLogo} alt="" /><span>EST. WRJA</span></div>
+      </section>
+      <div className="store-collection-bar"><div><span className="eyebrow">THE WRJA COLLECTION</span><h2>Club essentials</h2></div><span className="store-collection-count">02 products</span></div>
       <section className="events-store-grid" aria-label="WRJA store items">
         <Reveal>
           <article className="events-store-card">
-            <div className="events-store-card-mark">KIT</div>
-            <p className="eyebrow">WRJA &amp; JSA</p>
-            <h2>Tracksuits</h2>
-            <p>Order official WRJA and JSA tracksuits. The existing WRJA ordering and payment flow is used for this item.</p>
-            {tracksuit ? <Link to={`/competitions/${tracksuit.slug}`} className="btn btn-accent">View tracksuit ordering</Link> : <Link to="/contact" className="btn btn-accent">Contact WRJA</Link>}
+            <div className="events-store-product-image" style={{ backgroundImage: `url("${tracksuit?.image || wrjaLogo}")` }}>
+              <span className="events-store-badge">WRJA KIT</span>
+            </div>
+            <div className="events-store-card-content">
+              <div className="events-store-card-topline"><p className="eyebrow">WRJA &amp; JSA</p><span className="events-store-stock">Official kit</span></div>
+              <h2>Tracksuits</h2>
+              <p>Official WRJA and JSA tracksuits for athletes, coaches and supporters. Select your requirements through the WRJA ordering flow.</p>
+              <div className="events-store-card-footer"><strong>Order by enquiry</strong>{tracksuit ? <Link to={`/events/competitions/${tracksuit.slug}`} className="btn btn-accent">Shop tracksuits</Link> : <Link to="/contact" className="btn btn-accent">Contact WRJA</Link>}</div>
+            </div>
           </article>
         </Reveal>
         <Reveal delay={80}>
           <article className="events-store-card">
-            <div className="events-store-card-mark">WRJA</div>
-            <p className="eyebrow">CLUB MATERIALS</p>
-            <h2>WRJA Posters</h2>
-            <p>Request official WRJA posters for your dojo, school or event. Contact the association to confirm availability and collection details.</p>
-            <Link to="/contact" className="btn btn-outline-dark">Enquire about posters</Link>
+            <div className="events-store-product-image events-store-product-poster" style={{ backgroundImage: `url("${wrjaLogo}")` }}>
+              <span className="events-store-badge">WRJA PRINT</span>
+            </div>
+            <div className="events-store-card-content">
+              <div className="events-store-card-topline"><p className="eyebrow">CLUB MATERIALS</p><span className="events-store-stock">Made to order</span></div>
+              <h2>WRJA Posters</h2>
+              <p>Bring the WRJA spirit to your dojo, school or event space with official association posters.</p>
+              <div className="events-store-card-footer"><strong>Order by enquiry</strong><Link to="/contact" className="btn btn-outline-dark">Shop posters</Link></div>
+            </div>
           </article>
         </Reveal>
       </section>
