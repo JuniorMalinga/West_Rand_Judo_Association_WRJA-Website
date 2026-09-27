@@ -12,7 +12,6 @@ import ContactPage from "./pages/ContactPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import AdminPage from "./pages/AdminPage";
-import BookingPage from "./pages/BookingPage";
 import ChatWidget from "./components/ChatWidget";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import ScrollToTop from "./components/ScrollToTop";
@@ -36,7 +35,7 @@ function AppContent() {
 
   return (
     <>
-      {!isLoginRoute && <NavigationBar />}
+      {!isLoginRoute && pathname !== "/admin" && <NavigationBar />}
       <ScrollToTop />
       <AdminExperienceGuard>
         <Routes>
@@ -60,15 +59,14 @@ function AppContent() {
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
-          <Route path="/booking" element={<BookingPage />} />
           <Route path="/proof-of-payment" element={<ProofOfPaymentPage />} />
           <Route path="/instructors/:slug" element={<InstructorDetailPage />} />
           <Route path="/admin" element={<AdminPage />} />
         </Routes>
       </AdminExperienceGuard>
       {!isLoginRoute && pathname !== "/admin" && <SiteFooter />}
-      {!isLoginRoute && <ChatWidget />}
-      {!isLoginRoute && <BackToTopButton />}
+      {!isLoginRoute && pathname !== "/admin" && <ChatWidget />}
+      {!isLoginRoute && pathname !== "/admin" && <BackToTopButton />}
     </>
   );
 }

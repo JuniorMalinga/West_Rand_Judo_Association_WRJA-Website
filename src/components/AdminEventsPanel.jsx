@@ -1,6 +1,11 @@
 import { useState } from "react";
 import seedEvents from "../data/events";
 
+const EVENTS_KEY = "wrja.events";
+const readEvents = () => {
+  try { return JSON.parse(window.localStorage.getItem(EVENTS_KEY)) || seedEvents; } catch { return seedEvents; }
+};
+const saveEvents = (events) => { window.localStorage.setItem(EVENTS_KEY, JSON.stringify(events)); window.dispatchEvent(new Event("wrja:events-updated")); };
 
 const emptyEvent = {
   name: "",
@@ -13,9 +18,7 @@ const emptyEvent = {
 };
 
 export default function AdminEventsPanel() {
-  const [events, setEvents] = useState(() =>
-    seedEvents.map((event) => ({ ...event }))
-  );
+  const [events, setEvents] = useState(() => readEvents().map((event) => ({ ...event })));
   const [formState, setFormState] = useState(null);
 
   const openAddForm = () => setFormState({ id: null, ...emptyEvent });
@@ -29,25 +32,15 @@ export default function AdminEventsPanel() {
   const handleSave = (event) => {
     event.preventDefault();
 
-    if (formState.id) {
-      setEvents((current) =>
-        current.map((item) =>
-          item.id === formState.id ? formState : item
-        )
-      );
-    } else {
-      setEvents((current) => [
-        ...current,
-        { ...formState, id: Date.now() },
-      ]);
-    }
-
+    const next = formState.id ? events.map((item) => item.id === formState.id ? formState : item) : [...events, { ...formState, id: Date.now() }];
+    setEvents(next);
+    saveEvents(next);
     closeForm();
   };
 
   const handleDelete = (id) => {
     if (window.confirm("Delete this event?")) {
-      setEvents((current) => current.filter((item) => item.id !== id));
+      setEvents((current) => { const next = current.filter((item) => item.id !== id); saveEvents(next); return next; });
     }
   };
 

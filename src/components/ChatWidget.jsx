@@ -3,7 +3,6 @@ import { sendChatMessage } from "../services/geminiChat";
 
 const quickReplies = [
   "What programs do you offer?",
-  "How do I book a session?",
   "Where are you located?",
 ];
 
@@ -14,9 +13,6 @@ function getFallbackReply(userMessage) {
 
   if (message.includes("program") || message.includes("judo")) {
     return "We offer Kids, Adult, and Women's Judo programs. You can see all the details on our Programs page!";
-  }
-  if (message.includes("book") || message.includes("session") || message.includes("trial")) {
-    return "You can request a booking on our Book page — pick a program and we'll assign an instructor for you.";
   }
   if (message.includes("locat") || message.includes("where") || message.includes("address")) {
     return "Our affiliated clubs train in Randfontein and Krugersdorp — check the Contact page for exact addresses and a map.";
@@ -31,7 +27,7 @@ function getFallbackReply(userMessage) {
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { id: 1, from: "bot", text: "Hi! I'm the WRJA assistant. Ask me about programs, booking, or where to find us." },
+    { id: 1, from: "bot", text: "Hi! I'm the WRJA assistant. Ask me about programs, events, payments, or where to find us." },
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);

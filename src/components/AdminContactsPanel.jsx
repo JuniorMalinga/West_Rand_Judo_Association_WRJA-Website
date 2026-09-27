@@ -1,12 +1,18 @@
 import { useState } from "react";
 import seedContactMessages from "../data/contactMessages";
 
+const MESSAGES_KEY = "wrja.contact.messages";
+const readMessages = () => {
+  try { return JSON.parse(window.localStorage.getItem(MESSAGES_KEY)) || seedContactMessages; } catch { return seedContactMessages; }
+};
+const saveMessages = (messages) => window.localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages));
+
 export default function AdminContactsPanel() {
-  const [messages, setMessages] = useState(() => seedContactMessages.map((message) => ({ ...message })));
+  const [messages, setMessages] = useState(() => readMessages().map((message) => ({ ...message })));
 
   const handleDelete = (id) => {
     if (window.confirm("Delete this message?")) {
-      setMessages((current) => current.filter((message) => message.id !== id));
+      setMessages((current) => { const next = current.filter((message) => message.id !== id); saveMessages(next); return next; });
     }
   };
 

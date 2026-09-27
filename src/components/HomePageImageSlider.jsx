@@ -58,8 +58,8 @@ export default function ImageSlider() {
         </p>
 
         <div className="image-actions">
-          <Link to="/booking" className="btn btn-accent btn-lg">
-            Book a session
+          <Link to="/contact" className="btn btn-accent btn-lg">
+            Contact the club
           </Link>
           <Link to="/about" className="btn btn-outline btn-lg">
             Learn more

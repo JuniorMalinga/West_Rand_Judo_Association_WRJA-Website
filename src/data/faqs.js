@@ -8,14 +8,6 @@ const faqs = [
     answer: "Kids Judo, Adult Judo, and Women's Judo — each run by our affiliated clubs. See the Programs page for full details.",
   },
   {
-    question: "How do I book a session?",
-    answer: "Use the Book page to choose a program — an instructor is assigned automatically based on the program you pick.",
-  },
-  {
-    question: "What payment methods are accepted?",
-    answer: "EFT, cash at the dojo, or card, selected when you request a booking.",
-  },
-  {
     question: "Where are you located?",
     answer: "Our affiliated clubs train in Randfontein (Golden Score Judo) and Krugersdorp (KJK Judo). See the Contact page for full addresses and a map.",
   },

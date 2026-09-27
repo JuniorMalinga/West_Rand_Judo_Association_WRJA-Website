@@ -151,10 +151,6 @@ export default function NavigationBar() {
             <Link to="/news">News</Link>
           )}
 
-          {user && !isAdmin && (
-            <Link to="/booking">Book</Link>
-          )}
-
           {!isAdmin && (
             <Link to="/contact">Contact</Link>
           )}

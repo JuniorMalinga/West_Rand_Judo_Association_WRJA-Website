@@ -10,7 +10,6 @@ import "./styles/about.css";
 import "./styles/contact.css";
 import "./styles/auth.css";
 import "./styles/gallery.css";
-import "./styles/booking.css";
 import "./styles/chat.css";
 import "./styles/admin.css";
 import "./styles/notfound.css";
