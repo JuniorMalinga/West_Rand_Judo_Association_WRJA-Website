@@ -31,11 +31,9 @@ function AdminExperienceGuard({ children }) {
 
 function AppContent() {
   const { pathname } = useLocation();
-  const isLoginRoute = pathname === "/login";
-
   return (
     <>
-      {!isLoginRoute && pathname !== "/admin" && <NavigationBar />}
+      {pathname !== "/admin" && <NavigationBar />}
       <ScrollToTop />
       <AdminExperienceGuard>
         <Routes>
@@ -64,9 +62,9 @@ function AppContent() {
           <Route path="/admin" element={<AdminPage />} />
         </Routes>
       </AdminExperienceGuard>
-      {!isLoginRoute && pathname !== "/admin" && <SiteFooter />}
-      {!isLoginRoute && pathname !== "/admin" && <ChatWidget />}
-      {!isLoginRoute && pathname !== "/admin" && <BackToTopButton />}
+      {pathname !== "/admin" && <SiteFooter />}
+      {pathname !== "/admin" && pathname !== "/login" && <ChatWidget />}
+      {pathname !== "/admin" && pathname !== "/login" && <BackToTopButton />}
     </>
   );
 }
