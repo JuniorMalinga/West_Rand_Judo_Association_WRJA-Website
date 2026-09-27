@@ -17,9 +17,8 @@ import androidx.compose.ui.unit.dp
 
 /* Primary mobile render of the supplied website source. Existing Supabase
    services remain in the project for later live content administration. */
-private val SiteGold = Color(0xFFC9A227)
-private val SiteInk = Color(0xFF1A1A1A)
-private val SiteMuted = Color(0xFF555555)
+private val SiteGold = Color(0xFFF1BD16)
+private val SiteMuted = Color(0xFFA6A6A6)
 
 @Composable fun WebsitePrograms() {
     val programs = listOf(

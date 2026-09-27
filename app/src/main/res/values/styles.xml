@@ -1,8 +1,9 @@
 <resources>
-    <style name="Theme.WRJA" parent="android:style/Theme.Material.Light.NoActionBar">
+    <style name="Theme.WRJA" parent="android:style/Theme.Material.NoActionBar">
         <item name="android:fontFamily">sans</item>
         <item name="android:windowLightStatusBar">false</item>
-        <item name="android:statusBarColor">#161616</item>
-        <item name="android:navigationBarColor">#161616</item>
+        <item name="android:windowBackground">#090909</item>
+        <item name="android:statusBarColor">#090909</item>
+        <item name="android:navigationBarColor">#090909</item>
     </style>
 </resources>

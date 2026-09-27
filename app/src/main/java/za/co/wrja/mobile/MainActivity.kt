@@ -39,13 +39,24 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ComposeView
-private val Charcoal = Color(0xFF161616)
-private val Charcoal2 = Color(0xFF1F1F1F)
-private val Gold = Color(0xFFC9A227)
-private val GoldDark = Color(0xFF8A6E1A)
-private val OffWhite = Color(0xFFF4F4F4)
-private val Ink = Color(0xFF1A1A1A)
-private val Muted = Color(0xFF555555)
+private val Charcoal = Color(0xFF090909)
+private val Charcoal2 = Color(0xFF171717)
+private val Gold = Color(0xFFF1BD16)
+private val GoldDark = Color(0xFFF1BD16)
+private val OffWhite = Color(0xFF090909)
+private val Ink = Color(0xFFF5F5F5)
+private val Muted = Color(0xFFA6A6A6)
+private val WRJAColorScheme = darkColorScheme(
+    primary = Gold,
+    onPrimary = Charcoal,
+    background = Charcoal,
+    onBackground = Ink,
+    surface = Charcoal2,
+    onSurface = Ink,
+    surfaceVariant = Color(0xFF242424),
+    onSurfaceVariant = Muted,
+    outline = Color(0xFF555555)
+)
 
 /** Conversation model; a remote chat service can use this same shape later. */
 private data class ChatMessageUi(val text: String, val fromAssistant: Boolean)
@@ -158,7 +169,7 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         setContentView(
             ComposeView(this).apply {
-                setContent { MaterialTheme { WRJAApp() } }
+                setContent { MaterialTheme(colorScheme = WRJAColorScheme) { WRJAApp() } }
             }
         )
     }
@@ -312,7 +323,7 @@ private fun MainActivity.requestFingerprintUnlock(onError: (String) -> Unit) {
     )
 }
 
-@Composable private fun Logo() = Box(Modifier.size(58.dp).background(Color.White), contentAlignment = Alignment.Center) { Image(painterResource(R.drawable.wrja_logo), "West Rand Judo Association logo", Modifier.padding(5.dp).fillMaxSize(), contentScale = ContentScale.Fit) }
+@Composable private fun Logo() = Box(Modifier.size(58.dp).background(Charcoal2), contentAlignment = Alignment.Center) { Image(painterResource(R.drawable.wrja_logo), "West Rand Judo Association logo", Modifier.padding(5.dp).fillMaxSize(), contentScale = ContentScale.Fit) }
 @Composable private fun LanguageSelector(onLanguageChanged: (AppLanguage) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     val language = LocalAppLanguage.current
@@ -327,8 +338,10 @@ private fun MainActivity.requestFingerprintUnlock(onError: (String) -> Unit) {
         }
     }
 }
-@Composable private fun Header(title: String) = Box(Modifier.fillMaxWidth().height(136.dp).background(Charcoal), contentAlignment = Alignment.Center) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) { Text(title.uppercase(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 30.sp); Text("HOME  /  $title", color = Gold, fontSize = 11.sp, letterSpacing = 1.sp) }
+@Composable private fun Header(title: String) = Box(Modifier.fillMaxWidth().height(176.dp).background(Charcoal), contentAlignment = Alignment.Center) {
+    Image(painterResource(R.drawable.judo_hero), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+    Box(Modifier.fillMaxSize().background(Color(0x99000000)))
+    Column(horizontalAlignment = Alignment.CenterHorizontally) { Text(title.uppercase(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 30.sp); Text("WEST RAND JUDO ASSOCIATION", color = Gold, fontSize = 11.sp, letterSpacing = 1.sp) }
 }
 
 @Composable
@@ -591,7 +604,7 @@ internal fun LoginScreen(
 @Composable private fun SitePage(page: String, modifier: Modifier) {
     val descriptions = mapOf("home" to "Building discipline, respect, and excellence through judo for athletes of all ages across the West Rand community.", "about" to "Building character on and off the mat. We develop confident, disciplined and respectful individuals through judo.", "events" to "Club gradings, competitions and training activities.", "programs" to "Judo programmes for children and adults at every level.","book" to "Choose your program and preferred training session.", "news" to "Competition results and achievements from WRJA athletes.", "gallery" to "Training, competition and community moments.", "contact" to "Send us a message or contact our training venues.", "chat assistant" to "Your WRJA guide for training, programmes, events and club information.")
     val title = when (page) { "home" -> tr("home"); "my profile" -> tr("my_profile"); "about" -> tr("about"); "events" -> tr("events"); "programs" -> tr("programs"); "book" -> tr("book"); "news" -> tr("news"); "gallery" -> tr("gallery"); "contact" -> tr("contact"); "chat assistant" -> tr("chat_assistant"); else -> page.replaceFirstChar { it.uppercase() } }
-    LazyColumn(modifier.fillMaxSize().background(Color.White)) { item { Box(Modifier.fillMaxWidth().height(if (page == "home") 320.dp else 160.dp).background(Charcoal2), contentAlignment = if (page == "home") Alignment.BottomStart else Alignment.Center) { if (page == "home") { Image(painterResource(R.drawable.landing_1), "WRJA members training together", Modifier.fillMaxSize(), contentScale = ContentScale.Crop); Box(Modifier.fillMaxSize().background(Color(0x88000000))) }; Column(Modifier.padding(28.dp), horizontalAlignment = if (page == "home") Alignment.Start else Alignment.CenterHorizontally) { Text(if (page == "home") "WELCOME TO\nWEST RAND JUDO\nASSOCIATION" else title.uppercase(), color = Color.White, fontSize = if (page == "home") 29.sp else 30.sp, fontWeight = FontWeight.Bold); Text(if (page == "home") "DISCIPLINE  •  RESPECT  •  EXCELLENCE" else "HOME  /  $title", color = Gold, fontSize = 11.sp, letterSpacing = 1.sp) } } }; item { Column(Modifier.padding(24.dp)) { Text(if (page == "chat assistant") tr("chat_help") else descriptions[page] ?: "", color = Ink, fontWeight = FontWeight.SemiBold, fontSize = 19.sp, lineHeight = 28.sp); Spacer(Modifier.height(20.dp)); when (page) {"my profile" -> SupabaseMemberProfile();"book" -> BookScreen();"contact" -> { ContactForm(); Spacer(Modifier.height(28.dp)); WebsiteContact() }; "chat assistant" -> ChatAssistantScreen(); else -> ContentCards(page) } } } }
+    LazyColumn(modifier.fillMaxSize().background(Charcoal)) { item { Box(Modifier.fillMaxWidth().height(if (page == "home") 320.dp else 160.dp).background(Charcoal2), contentAlignment = if (page == "home") Alignment.BottomStart else Alignment.Center) { if (page == "home") { Image(painterResource(R.drawable.landing_1), "WRJA members training together", Modifier.fillMaxSize(), contentScale = ContentScale.Crop); Box(Modifier.fillMaxSize().background(Color(0x88000000))) }; Column(Modifier.padding(28.dp), horizontalAlignment = if (page == "home") Alignment.Start else Alignment.CenterHorizontally) { Text(if (page == "home") "WELCOME TO\nWEST RAND JUDO\nASSOCIATION" else title.uppercase(), color = Color.White, fontSize = if (page == "home") 29.sp else 30.sp, fontWeight = FontWeight.Bold); Text(if (page == "home") "DISCIPLINE  •  RESPECT  •  EXCELLENCE" else "HOME  /  $title", color = Gold, fontSize = 11.sp, letterSpacing = 1.sp) } } }; item { Column(Modifier.padding(24.dp)) { Text(if (page == "chat assistant") tr("chat_help") else descriptions[page] ?: "", color = Ink, fontWeight = FontWeight.SemiBold, fontSize = 19.sp, lineHeight = 28.sp); Spacer(Modifier.height(20.dp)); when (page) {"my profile" -> SupabaseMemberProfile();"book" -> BookScreen();"contact" -> { ContactForm(); Spacer(Modifier.height(28.dp)); WebsiteContact() }; "chat assistant" -> ChatAssistantScreen(); else -> ContentCards(page) } } } }
 }
 
 @Composable private fun ContentCards(page: String) {

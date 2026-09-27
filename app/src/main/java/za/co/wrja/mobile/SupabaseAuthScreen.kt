@@ -2,6 +2,7 @@ package za.co.wrja.mobile
 
 import android.util.Patterns
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -44,7 +45,7 @@ fun SupabaseAuthScreen(
     var notice by remember { mutableStateOf<String?>(null) }
 
     val scope = rememberCoroutineScope()
-    val gold = Color(0xFFC9A227)
+    val gold = Color(0xFFF1BD16)
 
     BackHandler(enabled = signUpMode && !busy) {
         signUpMode = false
@@ -76,6 +77,7 @@ fun SupabaseAuthScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(Color(0xFF090909))
             .verticalScroll(rememberScrollState())
             .imePadding()
             .padding(24.dp),

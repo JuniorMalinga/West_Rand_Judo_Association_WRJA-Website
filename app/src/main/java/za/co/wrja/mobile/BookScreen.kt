@@ -26,8 +26,8 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-private val BookGold = Color(0xFFC9A227)
-private val BookFieldBackground = Color(0xFF3B3B3B)
+private val BookGold = Color(0xFFF1BD16)
+private val BookFieldBackground = Color(0xFF242424)
 
 @Composable
 fun BookScreen() {
@@ -60,7 +60,7 @@ fun BookScreen() {
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(6.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF656565)
+            containerColor = Color(0xFF171717)
         )
     ) {
         Column(
