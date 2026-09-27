@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import wrjaLogo from "../assets/images/Logo/wrja-logo.png";
 import instructors from "../data/instructors";
 import { useAuth } from "../context/AuthContext";
@@ -13,6 +13,8 @@ export default function NavigationBar() {
 
   // Track whether the user has scrolled down the page.
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isNavVisible, setIsNavVisible] = useState(true);
+  const previousScrollY = useRef(0);
 
   const location = useLocation();
 
@@ -41,19 +43,27 @@ export default function NavigationBar() {
     }
 
     const handleScroll = () => {
-      // Navbar becomes dark after scrolling 50px.
-      setIsScrolled(window.scrollY > 50);
+      const currentScrollY = window.scrollY;
+      const scrollingUp = currentScrollY < previousScrollY.current;
+      setIsScrolled(currentScrollY > 50);
+      setIsNavVisible(currentScrollY < 72 || scrollingUp);
+      previousScrollY.current = currentScrollY;
+    };
+    const handlePointerMove = (event) => {
+      if (event.clientY < 90) setIsNavVisible(true);
     };
 
     // Set the correct initial state when entering the homepage.
     handleScroll();
 
     window.addEventListener("scroll", handleScroll);
+    window.addEventListener("mousemove", handlePointerMove);
 
     // Clean up the event listener when the component unmounts
     // or the route changes.
     return () => {
       window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("mousemove", handlePointerMove);
     };
   }, [isHomePage]);
 
@@ -77,7 +87,9 @@ export default function NavigationBar() {
       // navbar-scrolled is added after the user scrolls.
       className={`navigation-bar ${
         isHomePage ? "home-navigation" : ""
-      } ${isScrolled ? "navbar-scrolled" : ""}`}
+      } ${isScrolled ? "navbar-scrolled" : ""} ${
+        isHomePage && !isNavVisible ? "navbar-hidden" : ""
+      }`}
     >
       <div className="nav-inner">
         <Link to="/" className="nav-logo">
@@ -130,13 +142,13 @@ export default function NavigationBar() {
             </div>
           )}
 
-          {/* Events is gated behind login, same as Book. */}
+          {/* Events and member tools are gated behind login. */}
           {user && !isAdmin && (
             <Link to="/events">Events</Link>
           )}
 
           {!isAdmin && (
-            <Link to="/programs">Programs</Link>
+            <Link to="/competitions">Competitions</Link>
           )}
 
           {!isAdmin && (
@@ -145,6 +157,10 @@ export default function NavigationBar() {
 
           {user && !isAdmin && (
             <Link to="/booking">Book</Link>
+          )}
+
+          {user && !isAdmin && (
+            <Link to="/dashboard">My home</Link>
           )}
 
           {!isAdmin && (

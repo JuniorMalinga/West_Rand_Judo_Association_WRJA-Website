@@ -186,7 +186,7 @@
     "title": "Where is WRJA located?",
     "category": "faq",
     "keywords": ["location", "address", "where", "found", "premises", "office", "krugersdorp"],
-    "content": "The West Rand Judo Association premises is located at 3 Octavia, 49 Otto Street, Krugersdorp North. This is the office for the NPC only. Training takes place at our affiliated clubs: Golden Score Judo (104 Stegman St, Randgate, Randfontein) and KJK Judo (NGK Paardekraal, with additional training venues available)."
+    "content": "The West Rand Judo Association premises is located at 3 Octavia, 49 Otto Street, Krugersdorp North. This is the office for the NPC only. Training takes place at our affiliated clubs: Golden Score Judo (26 Covent Road, Greenhills, Randfontein) and KJK Judo (NGK Paardekraal, with additional training venues available)."
   },
   {
     "id": "contact-wrja",
@@ -200,7 +200,7 @@
     "title": "What is Golden Score Judo?",
     "category": "faq",
     "keywords": ["golden score", "club", "randfontein", "golden", "score", "affiliated"],
-    "content": "Golden Score Judo is one of the leading judo clubs on the West Rand. It was founded by Sensei Michelle Diamond (3rd Dan Black Belt, Sport Psychology degree). The club is located at 104 Stegman St, Randgate, Randfontein. They consistently develop athletes capable of competing successfully at provincial, national, and international levels, including representation at Commonwealth Championships, South African National Events, and African Championships."
+    "content": "Golden Score Judo is one of the leading judo clubs on the West Rand. It was founded by Sensei Michelle Diamond (3rd Dan Black Belt, Sport Psychology degree). The club is located at 26 Covent Road, Greenhills, Randfontein. They consistently develop athletes capable of competing successfully at provincial, national, and international levels, including representation at Commonwealth Championships, South African National Events, and African Championships."
   },
   {
     "id": "what-is-kjk-judo",
@@ -228,7 +228,7 @@
     "title": "What clubs are affiliated with WRJA?",
     "category": "faq",
     "keywords": ["clubs", "affiliated", "golden score", "kjk", "members", "locations"],
-    "content": "WRJA has two affiliated clubs: Golden Score Judo (104 Stegman St, Randgate, Randfontein) and KJK Judo Club (NGK Paardekraal with additional venues). Both clubs offer high-quality training and have produced athletes who compete at provincial, national, and international levels. Follow them on social media for news, results, and updates."
+    "content": "WRJA has two affiliated clubs: Golden Score Judo (26 Covent Road, Greenhills, Randfontein) and KJK Judo Club (NGK Paardekraal with additional venues). Both clubs offer high-quality training and have produced athletes who compete at provincial, national, and international levels. Follow them on social media for news, results, and updates."
   },
   {
     "id": "wrja-articles",

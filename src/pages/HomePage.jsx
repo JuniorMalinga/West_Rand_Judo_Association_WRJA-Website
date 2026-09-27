@@ -1,6 +1,6 @@
 import { useLocation } from "react-router-dom";
 import HomePageImageSlider from "../components/HomePageImageSlider";
-import ProgramsSection from "../components/ProgramsSection";
+import CompetitionsSection from "../components/CompetitionsSection";
 import AboutSection from "../components/AboutSection";
 import FeaturesSection from "../components/FeaturesSection";
 import TrainersSection from "../components/TrainersSection";
@@ -15,7 +15,7 @@ export default function HomePage() {
   return (
     <div className={`home-page ${justLoggedIn ? "home-page-login-entrance" : ""}`}>
       <HomePageImageSlider />
-      <ProgramsSection />
+      <CompetitionsSection />
       <AboutSection />
       <FeaturesSection />
       <TrainersSection />

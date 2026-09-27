@@ -218,7 +218,9 @@ section {
   transition:
     background-color 0.35s var(--ease),
     box-shadow 0.35s var(--ease),
-    border-color 0.35s var(--ease);
+    border-color 0.35s var(--ease),
+    transform 0.28s var(--ease),
+    opacity 0.28s var(--ease);
 }
 
 /*
@@ -259,6 +261,12 @@ section {
 .navigation-bar.home-navigation.navbar-scrolled {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+}
+
+.navigation-bar.home-navigation.navbar-hidden {
+  transform: translateY(-105%);
+  opacity: 0;
+  pointer-events: none;
 }
 
 .nav-inner {

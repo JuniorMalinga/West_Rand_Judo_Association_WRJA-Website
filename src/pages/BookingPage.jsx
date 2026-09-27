@@ -8,6 +8,7 @@ import trialbackground from "../assets/images/background/1125387-2500x1406-deskt
 import { useAuth } from "../context/AuthContext";
 
 const paymentMethods = ["EFT", "Cash at the dojo", "Card"];
+const weeklyAvailability = ["16:00", "17:30", "19:00"];
 
 export default function BookingPage() {
   const { user } = useAuth();
@@ -56,6 +57,7 @@ export default function BookingPage() {
   }, [assignedInstructors.length]);
 
   const activeInstructor = assignedInstructors[activeInstructorIndex];
+  const availableTimes = formData.preferredDate ? weeklyAvailability : [];
 
   // Check all required fields.
   // Notes are intentionally excluded because they are optional.
@@ -175,6 +177,14 @@ export default function BookingPage() {
                 </Reveal>
               )}
 
+              {selectedProgramSlug && (
+                <div className="booking-availability" role="status">
+                  <strong>Availability</strong>
+                  <span>{activeInstructor?.name || "Assigned instructor"} is available at the following times on your selected date:</span>
+                  <div className="booking-availability-slots">{availableTimes.length ? availableTimes.map((time) => <span key={time} className="booking-slot">{time}</span>) : <span className="booking-availability-muted">Choose a date to see available time slots.</span>}</div>
+                </div>
+              )}
+
               <div className="booking-form-row-2">
                 <label>
                   Full name
@@ -255,13 +265,15 @@ export default function BookingPage() {
                 <label>
                   Preferred time
 
-                  <input
-                    type="time"
+                  <select
                     name="preferredTime"
                     value={formData.preferredTime}
                     onChange={handleInputChange}
                     required
-                  />
+                  >
+                    <option value="" disabled>Select an available time</option>
+                    {availableTimes.map((time) => <option key={time} value={time}>{time}</option>)}
+                  </select>
                 </label>
               </div>
 

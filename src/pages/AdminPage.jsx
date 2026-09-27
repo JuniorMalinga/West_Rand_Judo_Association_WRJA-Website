@@ -5,10 +5,12 @@ import AdminNewsPanel from "../components/AdminNewsPanel";
 import AdminBookingsPanel from "../components/AdminBookingsPanel";
 import AdminContactsPanel from "../components/AdminContactsPanel";
 import AdminUsersPanel from "../components/AdminUsersPanel";
+import AdminCompetitionsPanel from "../components/AdminCompetitionsPanel";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const tabs = [
+  { slug: "competitions", label: "Competitions", Component: AdminCompetitionsPanel },
   { slug: "events", label: "Events", Component: AdminEventsPanel },
   { slug: "news", label: "News", Component: AdminNewsPanel },
   { slug: "bookings", label: "Bookings & Payments", Component: AdminBookingsPanel },
@@ -17,7 +19,7 @@ const tabs = [
 ];
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState("events");
+  const [activeTab, setActiveTab] = useState("competitions");
   const { isAdmin } = useAuth();
   const ActivePanel = tabs.find((tab) => tab.slug === activeTab).Component;
 

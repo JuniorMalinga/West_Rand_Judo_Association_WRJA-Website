@@ -4,7 +4,7 @@ import Reveal from "./Reveal";
 const locations = [
   {
     name: "Golden Score Judo Dojo",
-    address: "104 Stegman St, Randgate, Randfontein",
+    address: "26 Covent Road, Greenhills, Randfontein",
     coordinates: [27.7021, -26.1866],
   },
   {

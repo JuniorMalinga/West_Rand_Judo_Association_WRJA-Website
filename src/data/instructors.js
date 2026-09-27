@@ -3,8 +3,8 @@
 // Import images once provided. Add the new folder in
 // src/assets/images/instructors and import them here.
 
-import michelleDiamondImage from "../assets/images/instructors/sensei-michelle.jpg";
-import katjaBruwerImage from "../assets/images/instructors/sensei-katja.jpg";
+import michelleDiamondImage from "../assets/images/Instructors/sensei-michelle.jpg";
+import katjaBruwerImage from "../assets/images/Instructors/sensei-katja.jpg";
 
 const instructors = [
   {

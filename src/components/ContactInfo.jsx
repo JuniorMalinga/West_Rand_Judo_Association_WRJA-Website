@@ -4,7 +4,7 @@ import Reveal from "./Reveal";
 const locations = [
   {
     name: "Golden Score Judo Dojo",
-    address: "104 Stegman St, Randgate, Randfontein",
+    address: "26 Covent Road, Greenhills, Randfontein",
     note: "School classes and additional outside venues available",
     contacts: [
       { label: "Office", phone: "078 870 9131", email: "simone@goldenscore.co.za" },

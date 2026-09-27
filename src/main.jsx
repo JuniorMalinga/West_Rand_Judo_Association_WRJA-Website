@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import "./styles/base.css";
 import "./styles/home.css";
 import "./styles/programs.css";
+import "./styles/competitions.css";
 import "./styles/events.css";
 import "./styles/news.css";
 import "./styles/about.css";
