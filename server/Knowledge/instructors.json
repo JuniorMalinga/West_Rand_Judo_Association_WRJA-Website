@@ -1,23 +1,167 @@
 [
   {
-    "id": "head-instructor",
-    "title": "Head Instructor - Sensei Michael van der Merwe",
+    "id": "katja-bruwer",
+    "title": "Instructor - Katja Bruwer",
     "category": "instructor",
-    "keywords": ["instructor", "coach", "teacher", "sensei", "head", "Michael"],
-    "content": "Sensei Michael van der Merwe is the Head Instructor at WRJA. He holds a 5th Dan black belt and has over 30 years of judo experience. Sensei Michael has represented South Africa at multiple international competitions and has been coaching for 20 years. He is passionate about developing judo talent in the West Rand."
+    "keywords": [
+      "instructor",
+      "coach",
+      "teacher",
+      "sensei",
+      "Katja",
+      "Bruwer",
+      "KJK",
+      "7th Dan",
+      "Kata",
+      "Kumite"
+    ],
+    "content": "Katja Bruwer is a full-time coach at KJK Judo Club and holds the rank of 7th Dan. She is an IJF Level 2 Coach as well as an AJU and IJF Kata Judge. She coaches judoka across all age groups, with experience in both Kumite and Kata. Katja is also a qualified First Aider and is accredited through a Safeguarding Course. She holds a BA Honours Degree in Industrial Psychology."
   },
   {
-    "id": "assistant-instructor",
-    "title": "Assistant Instructor - Sensei Sarah Naidoo",
+    "id": "michelle-diamond",
+    "title": "Founder & Head Coach - Michelle Diamond",
     "category": "instructor",
-    "keywords": ["instructor", "coach", "teacher", "sensei", "assistant", "Sarah"],
-    "content": "Sensei Sarah Naidoo is the Assistant Instructor at WRJA. She holds a 3rd Dan black belt and has been training in judo for 18 years. Sensei Sarah specializes in women's judo and children's programs. She is a certified coaching instructor and has trained several provincial champions."
+    "keywords": [
+      "instructor",
+      "coach",
+      "teacher",
+      "sensei",
+      "Michelle",
+      "Diamond",
+      "Golden Score",
+      "3rd Dan",
+      "Sport Psychology",
+      "founder"
+    ],
+    "content": "Michelle Diamond is the founder, owner, and head coach of Golden Score Judo. She holds a 3rd Dan Black Belt and a degree in Sport Psychology. Michelle has many years of coaching and athlete development experience and focuses on developing competitive athletes while also building character, discipline, respect, and personal growth. Under her leadership, Golden Score Judo athletes have represented at Commonwealth Championships, South African National Events, African Championships, and other major competitions."
   },
   {
-    "id": "junior-coach",
-    "title": "Junior Coach - Sensei Thabo Moloi",
+    "id": "reece-hunter-erasmus",
+    "title": "Coach - Reece-Hunter Erasmus",
     "category": "instructor",
-    "keywords": ["coach", "junior", "kids", "children", "Thabo", "young"],
-    "content": "Sensei Thabo Moloi is the Junior Coach at WRJA. He holds a 2nd Dan black belt and has 12 years of judo experience. Sensei Thabo specializes in teaching children and beginners. He is known for his patient, fun, and encouraging coaching style that helps young judokas develop their skills."
+    "keywords": [
+      "instructor",
+      "coach",
+      "teacher",
+      "sensei",
+      "Reece",
+      "Reece-Hunter",
+      "Erasmus",
+      "KJK",
+      "3rd Dan",
+      "referee",
+      "Kumite",
+      "Kata"
+    ],
+    "content": "Reece-Hunter Erasmus is a full-time coach at KJK Judo Club and holds the rank of 3rd Dan. He is a JSA Level 2 Coach and JSA National C Referee. He coaches judoka across all age groups and specialises in developing beginners as well as advanced athletes in both Kumite and Kata. He is also a qualified First Aider and is accredited through a Safeguarding Course."
+  },
+  {
+    "id": "shasa-mercedez-erasmus",
+    "title": "Coach - Shasa-Mercedez Erasmus",
+    "category": "instructor",
+    "keywords": [
+      "instructor",
+      "coach",
+      "teacher",
+      "sensei",
+      "Shasa",
+      "Shasa-Mercedez",
+      "Erasmus",
+      "KJK",
+      "Provincial C Referee",
+      "young judoka"
+    ],
+    "content": "Shasa-Mercedez Erasmus is a full-time coach at KJK Judo Club. She is a Provincial C Referee and is currently completing the JSA Level 1 Coaching Course. She holds a First Aid qualification and is accredited through a Safeguarding Course. Shasa-Mercedez coaches young judoka at both schools and club level and helps develop the next generation of athletes."
+  },
+  {
+    "id": "niel-bruwer",
+    "title": "Coach - Niel Bruwer",
+    "category": "instructor",
+    "keywords": [
+      "instructor",
+      "coach",
+      "teacher",
+      "sensei",
+      "Niel",
+      "Bruwer",
+      "KJK",
+      "1st Dan",
+      "nutrition",
+      "Kumite",
+      "Kata"
+    ],
+    "content": "Niel Bruwer is a part-time coach at KJK Judo Club and holds the rank of 1st Dan. He is currently completing the JSA Level 1 Coaching Course and is a Provincial C Referee. Niel is a qualified First Aider and is accredited through a Safeguarding Course. He teaches at both schools and club level and specialises in Kumite and Kata. Niel holds a BSc degree in Dietetics and a Master of Science in Nutrition."
+  },
+  {
+    "id": "jean-kotze",
+    "title": "Assistant Coach - Jean Kotze",
+    "category": "instructor",
+    "keywords": [
+      "instructor",
+      "coach",
+      "assistant",
+      "teacher",
+      "Jean",
+      "Kotze",
+      "KJK",
+      "1st Dan",
+      "technical official"
+    ],
+    "content": "Jean Kotze is a part-time assistant coach at KJK Judo Club and holds the rank of 1st Dan. Jean is accredited through a Safeguarding Course and serves as a Local Technical Official. As an assistant coach, Jean supports the development of judoka at club level. Jean is currently a scholar and has an interest in the culinary arts."
+  },
+  {
+    "id": "carien-du-plessis",
+    "title": "Head of Fitness & Conditioning - Carien du Plessis",
+    "category": "instructor",
+    "keywords": [
+      "instructor",
+      "coach",
+      "fitness",
+      "conditioning",
+      "Carien",
+      "du Plessis",
+      "Sho Dan",
+      "1st Dan",
+      "fitness coach",
+      "athlete development"
+    ],
+    "content": "Carien du Plessis is the Head of Fitness & Conditioning and has 14 years of judo experience. She began judo in 2012 at the age of eight and has competed at district, provincial, national, and international level. Her international experience includes the 2023 Commonwealth Championships and the 2025 African Championships. Carien holds a Sho Dan, or 1st Dan black belt. She focuses on fitness, conditioning, athlete development, commitment, perseverance, confidence, and self-belief."
+  },
+  {
+    "id": "okende-shombo-djibril",
+    "title": "Coach PJ - Okende Shombo Djibril",
+    "category": "instructor",
+    "keywords": [
+      "instructor",
+      "coach",
+      "Coach PJ",
+      "Okende",
+      "Shombo",
+      "Djibril",
+      "Congo",
+      "Kinshasa",
+      "judo",
+      "resilience",
+      "Uchi Mata"
+    ],
+    "content": "Okende Shombo Djibril, known as Coach PJ, began his judo journey at the age of eight in 2002 in Township Mombele, Kinshasa, Democratic Republic of Congo. He was introduced to judo by his brother Raoul Lodi and Sensei Jossy Poison. After stepping away from judo during his teenage years due to difficult circumstances in his community, he returned to the sport after completing matric. He later moved to South Africa and returned to judo after meeting Sensei Danni, who introduced him to Sensei Michelle in 2020. Coach PJ's favourite throw is Uchi Mata. He focuses on helping athletes become stronger, more confident, and more successful than they thought possible."
+  },
+  {
+    "id": "johan-collins",
+    "title": "Coach - Johan Collins",
+    "category": "instructor",
+    "keywords": [
+      "instructor",
+      "coach",
+      "teacher",
+      "Johan",
+      "Collins",
+      "Golden Score",
+      "15 years",
+      "Uchi Mata",
+      "youth development",
+      "personal development"
+    ],
+    "content": "Johan Collins began his judo journey at the age of six and has 15 years of experience in the sport. His journey has been shaped by discipline, perseverance, friendship, competition, and personal growth. His favourite throw is Uchi Mata, which he values for its timing, balance, and precision. Johan enjoys watching judoka develop both their judo ability and their confidence and character. He values the principles of Seiryoku Zenyo and Jita Kyoei and believes judo teaches discipline, humility, resilience, self-control, respect, patience, community, and personal growth."
   }
 ]

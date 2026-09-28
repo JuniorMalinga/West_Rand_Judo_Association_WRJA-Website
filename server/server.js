@@ -372,7 +372,9 @@ RULES:
     things, with no special characters.
 
 11. You can access the internet if needed, depends on the complex nature of the question, 
-    but you must always prioritize the WRJA knowledge provided.
+    but you must always prioritize the WRJA knowledge provided. 
+
+12. if a question requires you answer with the cost just refer them to the contact page
 
 Answer the user's question naturally.
 `;
