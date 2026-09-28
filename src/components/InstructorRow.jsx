@@ -5,7 +5,7 @@ import Reveal from "./Reveal";
 export default function InstructorRow({ instructor, reverse }) {
   return (
     <Reveal className={`instructor-row ${reverse ? "program-row-reverse" : ""}`}>
-      <img src={instructor.image} alt={instructor.name} className="instructor-image" />
+      <img src={instructor.image} alt={instructor.name} className="instructor-image" style={{ objectPosition: instructor.imagePosition || "center" }} />
 
       <div className="instructor-content">
         <h2>{instructor.name}</h2>

@@ -14,7 +14,7 @@ export default function TrainersSection() {
           <Reveal key={instructor.slug} delay={index * 120}>
             <div
               className="trainer-card"
-              style={{ backgroundImage: `url(${instructor.image})` }}
+              style={{ backgroundImage: `url(${instructor.image})`, backgroundPosition: instructor.imagePosition || "center" }}
             >
               <div className="trainer-info">
                 <h3>{instructor.name}</h3>

@@ -242,3 +242,66 @@
     width: calc(100vw - 24px);
   }
 }
+
+/* ---------- Expanded (centred) chat ---------- */
+.chat-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chat-panel-expand {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  font-size: 18px;
+  cursor: pointer;
+  transition: color 0.25s var(--ease), transform 0.25s var(--ease);
+}
+
+.chat-panel-expand:hover {
+  color: var(--accent);
+  transform: scale(1.15);
+}
+
+.chat-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: -1;
+  animation: chatBackdropIn 0.3s var(--ease);
+}
+
+@keyframes chatBackdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.chat-panel-expanded {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: min(820px, calc(100vw - 32px));
+  height: min(760px, calc(100vh - 48px));
+  transform: translate(-50%, -50%);
+  transform-origin: center;
+  animation: chatPanelExpandIn 0.3s var(--ease);
+}
+
+@keyframes chatPanelExpandIn {
+  from { opacity: 0.6; transform: translate(-50%, -48%) scale(0.92); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.chat-panel-expanded .chat-bubble {
+  font-size: 15px;
+  max-width: 70%;
+}
+
+.chat-panel-expanded .chat-panel-input input {
+  font-size: 15px;
+}
+
+.chat-widget-expanded .chat-toggle {
+  visibility: hidden;
+}

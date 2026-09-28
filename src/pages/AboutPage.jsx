@@ -1,6 +1,5 @@
 import PageHeader from "../components/PageHeader";
 import AboutSection from "../components/AboutSection";
-import ProgramsSection from "../components/ProgramsSection";
 import FeaturesSection from "../components/FeaturesSection";
 import TrainersSection from "../components/TrainersSection";
 import NewsSection from "../components/NewsSection";
@@ -27,7 +26,6 @@ export default function AboutPage() {
           reference layout, just with WRJA's real content instead of
           the boxing-demo placeholders. */}
       <AboutSection />
-      <ProgramsSection />
       <FeaturesSection />
       <TrainersSection />
       <NewsSection />

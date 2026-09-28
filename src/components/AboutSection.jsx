@@ -19,7 +19,7 @@ export default function AboutSection() {
         <p className="about-body">
           West Rand Judo Association has grown into a close-knit community
           of athletes, parents, and coaches united by a shared respect for
-          the sport. Our programs balance competitive development with the
+          the sport. Our competitions balance competitive development with the
           discipline and humility that judo is built on.
         </p>
         <div className="about-signature">

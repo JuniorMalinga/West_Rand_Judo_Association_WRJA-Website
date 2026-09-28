@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { sendChatMessage } from "../services/geminiChat";
 
 const quickReplies = [
-  "What programs do you offer?",
+  "What competitions are coming up?",
   "Where are you located?",
 ];
 
@@ -11,8 +11,8 @@ const quickReplies = [
 function getFallbackReply(userMessage) {
   const message = userMessage.toLowerCase();
 
-  if (message.includes("program") || message.includes("judo")) {
-    return "We offer Kids, Adult, and Women's Judo programs. You can see all the details on our Programs page!";
+  if (message.includes("competition") || message.includes("judo")) {
+    return "You can see all upcoming competitions, registration links and payment details on our Competitions page once you're logged in.";
   }
   if (message.includes("locat") || message.includes("where") || message.includes("address")) {
     return "Our affiliated clubs train in Randfontein and Krugersdorp — check the Contact page for exact addresses and a map.";
@@ -26,8 +26,9 @@ function getFallbackReply(userMessage) {
 
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [messages, setMessages] = useState([
-    { id: 1, from: "bot", text: "Hi! I'm the WRJA assistant. Ask me about programs, events, payments, or where to find us." },
+    { id: 1, from: "bot", text: "Hi! I'm the WRJA assistant. Ask me about competitions, events, payments, or where to find us." },
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -67,21 +68,34 @@ export default function ChatWidget() {
   };
 
   return (
-    <div className="chat-widget">
+    <div className={`chat-widget ${isOpen && isExpanded ? "chat-widget-expanded" : ""}`}>
+      {isOpen && isExpanded && (
+        <div className="chat-backdrop" onClick={() => setIsExpanded(false)} aria-hidden="true" />
+      )}
       {isOpen && (
-        <div className="chat-panel">
+        <div className={`chat-panel ${isExpanded ? "chat-panel-expanded" : ""}`}>
           <div className="chat-panel-header">
             <div>
               <p className="chat-panel-title">WRJA Assistant</p>
               <p className="chat-panel-subtitle">Usually replies right away</p>
             </div>
+            <div className="chat-panel-actions">
+            <button
+              className="chat-panel-expand"
+              onClick={() => setIsExpanded((expanded) => !expanded)}
+              aria-label={isExpanded ? "Shrink chat" : "Expand chat"}
+              title={isExpanded ? "Shrink chat" : "Expand chat"}
+            >
+              {isExpanded ? "\u2921" : "\u2922"}
+            </button>
             <button
               className="chat-panel-close"
-              onClick={() => setIsOpen(false)}
+              onClick={() => { setIsOpen(false); setIsExpanded(false); }}
               aria-label="Close chat"
             >
               &times;
             </button>
+            </div>
           </div>
 
           <div className="chat-panel-messages">
@@ -124,7 +138,7 @@ export default function ChatWidget() {
 
       <button
         className={`chat-toggle ${isOpen ? "chat-toggle-open" : ""}`}
-        onClick={() => setIsOpen((open) => !open)}
+        onClick={() => { setIsOpen((open) => !open); setIsExpanded(false); }}
         aria-label={isOpen ? "Close chat" : "Open chat"}
       >
         {isOpen ? "\u00d7" : "\ud83e\udd4b"}
