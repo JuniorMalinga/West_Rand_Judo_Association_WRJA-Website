@@ -10,6 +10,7 @@ server/node_modules/
 
 # Build output
 dist/
-server/dist/ 
-src.zip
-src (2).zip
+server/dist/
+
+# Local database and uploads
+server/data/
