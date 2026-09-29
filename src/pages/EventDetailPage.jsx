@@ -1,11 +1,19 @@
 import { useParams, Link } from "react-router-dom";
 import PageHeader from "../components/PageHeader";
 import Reveal from "../components/Reveal";
-import events from "../data/events";
+import FormStatus from "../components/FormStatus";
+import HoneypotField from "../components/HoneypotField";
+import { useCollectionState } from "../hooks/useCollection";
+import useEnquiryForm from "../hooks/useEnquiryForm";
+import { eventsStore } from "../data/events";
 
 export default function EventDetailPage() {
   const { id } = useParams();
+  const { items: events, loaded } = useCollectionState(eventsStore);
   const event = events.find((item) => String(item.id) === id);
+  const enquiry = useEnquiryForm({ source: `Event enquiry: ${event?.name || id}` });
+
+  if (!event && !loaded) return <div className="simple-page"><p>Loading event…</p></div>;
 
   if (!event) {
     return (
@@ -16,7 +24,7 @@ export default function EventDetailPage() {
     );
   }
 
-  const formattedDate = new Date(event.date).toLocaleDateString("en-ZA", {
+  const formattedDate = new Date(`${event.date}T12:00:00`).toLocaleDateString("en-ZA", {
     weekday: "long",
     year: "numeric",
     month: "long",
@@ -79,14 +87,15 @@ export default function EventDetailPage() {
         <h2>Enquire about this event</h2>
         <p>Have a question about this event? Send us a message and we'll get back to you.</p>
 
-        {/* Non-functional for now — no submit handling wired up yet. */}
-        <form className="event-enquiry-form" onSubmit={(event) => event.preventDefault()}>
+        <form className="event-enquiry-form" onSubmit={enquiry.submit}>
+          <HoneypotField value={enquiry.values.website} onChange={enquiry.setField("website")} />
           <div className="event-enquiry-row">
-            <input type="text" placeholder="Your name" required />
-            <input type="email" placeholder="Your email" required />
+            <input type="text" placeholder="Your name" value={enquiry.values.name} onChange={enquiry.setField("name")} required />
+            <input type="email" placeholder="Your email" value={enquiry.values.email} onChange={enquiry.setField("email")} required />
           </div>
-          <textarea rows="4" placeholder="Your question" required />
-          <button type="submit" className="btn btn-accent">Send enquiry</button>
+          <textarea rows="4" placeholder="Your question" value={enquiry.values.message} onChange={enquiry.setField("message")} required />
+          <button type="submit" className="btn btn-accent" disabled={enquiry.sending}>{enquiry.sending ? "Sending…" : "Send enquiry"}</button>
+          <FormStatus status={enquiry.status} />
         </form>
       </Reveal>
     </div>

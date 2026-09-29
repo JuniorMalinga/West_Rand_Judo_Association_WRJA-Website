@@ -1,4 +1,5 @@
-const CHAT_SERVER_URL = import.meta.env.VITE_CHAT_SERVER_URL || "http://localhost:5000";
+// Same-origin by default (Vite proxies /api to the server in development).
+const CHAT_SERVER_URL = import.meta.env.VITE_CHAT_SERVER_URL || "";
 
 export async function sendChatMessage(conversationHistory) {
   const latestUserMessage = [...conversationHistory].reverse().find((message) => message.from === "user");
@@ -8,7 +9,7 @@ export async function sendChatMessage(conversationHistory) {
 
   const response = await fetch(`${CHAT_SERVER_URL}/api/chat`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "X-Requested-With": "wrja-web" },
     body: JSON.stringify({ message: latestUserMessage.text }),
   });
 

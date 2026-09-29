@@ -4,13 +4,15 @@ import NewsHeroSlider from "../components/NewsImageSlider";
 import NewsSidebar from "../components/NewsSidebar";
 import NewsPost from "../components/NewsPost";
 import Pagination from "../components/Pagination";
-import newsPosts from "../data/newsPosts";
+import { newsStore } from "../data/newsPosts";
+import useCollection from "../hooks/useCollection";
 
 const POSTS_PER_PAGE = 4;
 
 export default function NewsPage() {
+  const newsPosts = useCollection(newsStore);
   const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = Math.ceil(newsPosts.length / POSTS_PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(newsPosts.length / POSTS_PER_PAGE));
 
   const visiblePosts = newsPosts.slice(
     (currentPage - 1) * POSTS_PER_PAGE,

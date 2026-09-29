@@ -305,3 +305,7 @@
 .chat-widget-expanded .chat-toggle {
   visibility: hidden;
 }
+
+
+.chat-panel-human { margin: 0; padding: 8px 16px; background: var(--bg-light-2); border-top: 1px solid var(--border); font-size: 12px; text-align: center; color: var(--text-dark-muted); }
+.chat-panel-human a { color: var(--accent-dark); font-weight: 700; text-decoration: underline; }

@@ -4,7 +4,8 @@ import UpcomingEventsList from "../components/UpcomingEventsList";
 import EventsCalendar from "../components/EventsCalendar";
 import Reveal from "../components/Reveal";
 import CompetitionCard from "../components/CompetitionCard";
-import { getCompetitions } from "../data/competitions";
+import { competitionsStore } from "../data/competitions";
+import useCollection from "../hooks/useCollection";
 import wrjaLogo from "../assets/images/Logo/wrja-logo.png";
 
 const hubCards = [
@@ -62,7 +63,7 @@ function CalendarView() {
 }
 
 function CompetitionsView() {
-  const competitions = getCompetitions()
+  const competitions = [...useCollection(competitionsStore)]
     .filter((item) => !["Schools competition", "Club ordering"].includes(item.type))
     .sort((a, b) => a.displayOrder - b.displayOrder);
 
@@ -81,7 +82,7 @@ function CompetitionsView() {
 }
 
 function SchoolsView() {
-  const competitions = getCompetitions().filter((item) => ["sa-schools-novice", "sa-schools-advanced"].includes(item.slug));
+  const competitions = useCollection(competitionsStore).filter((item) => ["sa-schools-novice", "sa-schools-advanced"].includes(item.slug));
 
   return (
     <>
@@ -98,7 +99,7 @@ function SchoolsView() {
 }
 
 function StoreView() {
-  const tracksuit = getCompetitions().find((item) => item.slug === "tracksuit-ordering");
+  const tracksuit = useCollection(competitionsStore).find((item) => item.slug === "tracksuit-ordering");
 
   return (
     <>
@@ -123,7 +124,7 @@ function StoreView() {
               <div className="events-store-card-topline"><p className="eyebrow">WRJA &amp; JSA</p><span className="events-store-stock">Official kit</span></div>
               <h2>Tracksuits</h2>
               <p>Official WRJA and JSA tracksuits for athletes, coaches and supporters. Select your requirements through the WRJA ordering flow.</p>
-              <div className="events-store-card-footer"><strong>Order by enquiry</strong>{tracksuit ? <Link to={`/events/competitions/${tracksuit.slug}`} className="btn btn-accent">Shop tracksuits</Link> : <Link to="/contact" className="btn btn-accent">Contact WRJA</Link>}</div>
+              <div className="events-store-card-footer"><strong>Order by enquiry</strong>{tracksuit ? <Link to={`/events/competitions/${tracksuit.slug}`} className="btn btn-accent">Shop tracksuits</Link> : <Link to="/contact?topic=Tracksuit%20order" className="btn btn-accent">Contact WRJA</Link>}</div>
             </div>
           </article>
         </Reveal>
@@ -136,7 +137,7 @@ function StoreView() {
               <div className="events-store-card-topline"><p className="eyebrow">CLUB MATERIALS</p><span className="events-store-stock">Made to order</span></div>
               <h2>WRJA Posters</h2>
               <p>Bring the WRJA spirit to your dojo, school or event space with official association posters.</p>
-              <div className="events-store-card-footer"><strong>Order by enquiry</strong><Link to="/contact" className="btn btn-outline-dark">Shop posters</Link></div>
+              <div className="events-store-card-footer"><strong>Order by enquiry</strong><Link to="/contact?topic=WRJA%20poster%20order" className="btn btn-outline-dark">Shop posters</Link></div>
             </div>
           </article>
         </Reveal>

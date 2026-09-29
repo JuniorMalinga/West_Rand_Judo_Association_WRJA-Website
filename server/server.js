@@ -1,11 +1,16 @@
 import express from "express";
-import cors from "cors";
 import dotenv from "dotenv";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { randomUUID } from "crypto";
+import { PUBLIC_UPLOADS } from "./db.js";
+import { seedIfEmpty } from "./seed.js";
+import * as repo from "./repo.js";
+import { attachUser, requireAdmin } from "./auth.js";
+import apiRouter from "./routes/api.js";
+import { corsMiddleware, csrfGuard, errorHandler, notFoundApi, rateLimit, securityHeaders } from "./security.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -27,24 +32,29 @@ console.log("========================================");
 console.log("Starting WRJA Assistant with Gemini AI...");
 console.log("========================================");
 
-// CORS configuration
-app.use(cors({
-  origin: true,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
-}));
+// ---- Security & middleware ----
+// Order matters: headers -> CORS (locked to known origins) -> body parsing ->
+// session lookup -> CSRF guard.
+app.disable("x-powered-by");
+app.set("trust proxy", process.env.TRUST_PROXY === "true" ? 1 : false);
+app.use(securityHeaders);
+app.use(corsMiddleware);
 
-app.use(express.json());
+// Uploads (base64 images / proof of payment) get a bigger body limit on just
+// their own routes; everything else is capped at 100 KB.
+app.use("/api/admin/uploads", express.json({ limit: "8mb" }));
+app.use("/api/payments", express.json({ limit: "8mb" }));
+app.use(express.json({ limit: "100kb" }));
 
-// Log all incoming requests
+// Request log – method and path only. Bodies are never logged (they can
+// contain passwords).
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  if (req.method === 'POST') {
-    console.log('Request body:', req.body);
-  }
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   next();
 });
+
+app.use(attachUser);
+app.use("/api", csrfGuard);
 
 // Initialize Gemini AI (with fallback API keys)
 console.log("\nInitializing Gemini AI...");
@@ -80,12 +90,11 @@ function loadGeminiApiKeys() {
 const geminiApiKeys = loadGeminiApiKeys();
 
 if (geminiApiKeys.length === 0) {
-  throw new Error(
-    "Missing Gemini API key(s) in server/.env.local. Set GEMINI_API_KEY (and optionally GEMINI_API_KEY_2, GEMINI_API_KEY_3, ... or GEMINI_API_KEYS as a comma-separated list) for fallback support."
-  );
+  // The chatbot is optional – the rest of the site (admin, events, news...) must still run.
+  console.warn("No Gemini API key(s) in server/.env.local – the chatbot will be unavailable.");
+} else {
+  console.log(`Found ${geminiApiKeys.length} Gemini API key(s) configured`);
 }
-
-console.log(`Found ${geminiApiKeys.length} Gemini API key(s) configured`);
 
 // Build a model instance per key so we can fail over between them
 const geminiModels = geminiApiKeys.map(key => {
@@ -394,6 +403,7 @@ function withTimeout(promise, ms) {
 }
 
 async function generateWRJAResponse(userMessage, sessionId) {
+  if (geminiModels.length === 0) throw new Error("No Gemini API keys configured");
   console.log("\n========================================");
   console.log("Generating response for:", userMessage);
   
@@ -465,10 +475,9 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-app.post("/api/chat", async (req, res) => {
+app.post("/api/chat", rateLimit({ windowMs: 60 * 1000, max: 20, message: "You're sending messages too quickly. Please wait a moment." }), async (req, res) => {
   console.log("\n========================================");
   console.log("Chat endpoint called");
-  console.log("Request body:", req.body);
 
   try {
     const { message } = req.body;
@@ -552,7 +561,7 @@ app.post("/api/chat/reset", (req, res) => {
 });
 
 // Reload the Knowledge/*.json files without restarting the server
-app.post("/api/knowledge/refresh", (req, res) => {
+app.post("/api/knowledge/refresh", requireAdmin, (req, res) => {
   try {
     loadKnowledgeBase();
     res.json({ success: true, message: "Knowledge base reloaded." });
@@ -561,6 +570,37 @@ app.post("/api/knowledge/refresh", (req, res) => {
     res.status(500).json({ success: false, error: "Failed to reload knowledge base." });
   }
 });
+
+// ---- Site API (auth, competitions, events, news, messages, payments, admin) ----
+app.use("/api", apiRouter);
+app.use("/api", notFoundApi);
+
+// Uploaded public images. Filenames are random, so they can be cached for a long time.
+app.use("/uploads/public", express.static(PUBLIC_UPLOADS, {
+  index: false,
+  dotfiles: "deny",
+  maxAge: "7d",
+  setHeaders: (res) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Content-Security-Policy", "default-src 'none'; img-src 'self'; sandbox");
+  },
+}));
+
+// Production: serve the built React app from this same server (one origin =
+// no CORS and the session cookie just works). Run `npm run build` first.
+const distDir = join(__dirname, "..", "dist");
+if (fs.existsSync(join(distDir, "index.html"))) {
+  app.use(express.static(distDir, { index: false, maxAge: "1h" }));
+  app.use((req, res, next) => {
+    if (req.method !== "GET" || req.path.startsWith("/api/") || req.path.startsWith("/uploads/")) return next();
+    return res.sendFile(join(distDir, "index.html"));
+  });
+}
+
+app.use(errorHandler);
+
+await seedIfEmpty();
+setInterval(() => repo.purgeExpiredSessions().catch(() => {}), 60 * 60 * 1000).unref();
 
 app.listen(PORT, () => {
   console.log("\n========================================");

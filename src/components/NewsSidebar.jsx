@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
-import newsPosts from "../data/newsPosts";
+import { newsStore } from "../data/newsPosts";
+import useCollection from "../hooks/useCollection";
 
 const tags = ["Judo", "Judo club", "Champion", "Athlete", "Fitness", "Dojo", "Grading", "Training"];
 
 export default function NewsSidebar() {
+  const newsPosts = useCollection(newsStore);
   const recentPosts = newsPosts.slice(0, 3);
 
   return (

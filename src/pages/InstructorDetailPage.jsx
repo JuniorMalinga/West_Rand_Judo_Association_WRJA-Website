@@ -3,6 +3,9 @@ import { useParams, Link } from "react-router-dom";
 import PageHeader from "../components/PageHeader";
 import Reveal from "../components/Reveal";
 import instructors from "../data/instructors";
+import FormStatus from "../components/FormStatus";
+import HoneypotField from "../components/HoneypotField";
+import useEnquiryForm from "../hooks/useEnquiryForm";
 
 const tabs = ["Biography", "Skills", "Message"];
 
@@ -10,6 +13,7 @@ export default function InstructorDetailPage() {
   const { slug } = useParams();
   const instructor = instructors.find((item) => item.slug === slug);
   const [activeTab, setActiveTab] = useState("Biography");
+  const messageForm = useEnquiryForm({ source: `Message for ${instructor?.name || slug}` });
 
   if (!instructor) {
     return (
@@ -115,35 +119,44 @@ export default function InstructorDetailPage() {
             )}
 
             {activeTab === "Message" && (
-              /* Non-functional for now — no submit handling wired up yet. */
               <form
                 className="instructor-message-form"
-                onSubmit={(event) => event.preventDefault()}
+                onSubmit={messageForm.submit}
               >
+                <HoneypotField value={messageForm.values.website} onChange={messageForm.setField("website")} />
                 <input
                   type="text"
                   placeholder="Name"
+                  value={messageForm.values.name}
+                  onChange={messageForm.setField("name")}
                   required
                 />
 
                 <input
                   type="email"
                   placeholder="Email Address"
+                  value={messageForm.values.email}
+                  onChange={messageForm.setField("email")}
                   required
                 />
 
                 <textarea
                   rows="5"
                   placeholder="Message"
+                  value={messageForm.values.message}
+                  onChange={messageForm.setField("message")}
                   required
                 />
 
                 <button
                   type="submit"
                   className="btn btn-accent"
+                  disabled={messageForm.sending}
                 >
-                  Send message
+                  {messageForm.sending ? "Sending…" : "Send message"}
                 </button>
+
+                <FormStatus status={messageForm.status} />
               </form>
             )}
           </div>

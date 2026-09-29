@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { sendChatMessage } from "../services/geminiChat";
 
 const quickReplies = [
@@ -123,6 +124,10 @@ export default function ChatWidget() {
               ))}
             </div>
           )}
+
+          <p className="chat-panel-human">
+            Prefer a person? <Link to="/contact" onClick={() => setIsExpanded(false)}>Send WRJA a message</Link>
+          </p>
 
           <form className="chat-panel-input" onSubmit={handleSubmit}>
             <input

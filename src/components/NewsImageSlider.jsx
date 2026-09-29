@@ -11,8 +11,7 @@ const slides = [
   {
     number: "01",
     type: "video",
-    poster:
-      "https://placehold.co/1600x900/1a1a1a/555555?text=Video+Poster+Placeholder",
+    poster: Newsimageslide2,
     videoSrc: Newsvideoslide,
     heading: (
       <>
@@ -29,9 +28,9 @@ const slides = [
     image: Newsimageslide2,
     heading: (
       <>
-        <span className="text-accent">Choose</span> your
+        <span className="text-accent">Follow</span> every
         <br />
-        judo <span className="text-accent">program</span>
+        judo <span className="text-accent">competition</span>
       </>
     ),
   },

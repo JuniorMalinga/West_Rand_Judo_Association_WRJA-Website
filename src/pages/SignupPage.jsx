@@ -38,7 +38,7 @@ export default function SignupPage() {
     event.preventDefault();
     setErrorMessage("");
     if (form.password !== form.confirmPassword) return setErrorMessage("Passwords don't match.");
-    if (form.password.length < 6) return setErrorMessage("Your password must be at least 6 characters.");
+    if (form.password.length < 8 || !/[A-Za-z]/.test(form.password) || !/\d/.test(form.password)) return setErrorMessage("Your password must be at least 8 characters and include a letter and a number.");
     if (!accepted) return setErrorMessage("Please accept the club's terms and privacy policy.");
     if (role === "athlete") {
       if (!form.dateOfBirth) return setErrorMessage("Please enter your date of birth.");
@@ -46,7 +46,7 @@ export default function SignupPage() {
     }
     setIsSubmitting(true);
     try {
-      signUp({ firstName: form.firstName, lastName: form.lastName, email: form.email, phone: form.phone || null, dateOfBirth: role === "athlete" ? form.dateOfBirth : null, password: form.password, role });
+      await signUp({ firstName: form.firstName, lastName: form.lastName, email: form.email, phone: form.phone || null, dateOfBirth: role === "athlete" ? form.dateOfBirth : null, password: form.password, role });
       setIsConfirming(true);
       window.setTimeout(() => setShowSuccess(true), 1500);
     } catch (error) {
@@ -65,7 +65,7 @@ export default function SignupPage() {
         <div className="signup-grid-two"><SignupField animationIndex="0" icon="person" label="First name" value={form.firstName} onChange={update("firstName")} placeholder="First name" /><SignupField animationIndex="1" icon="person" label="Last name" value={form.lastName} onChange={update("lastName")} placeholder="Last name" /></div>
         <div className="signup-grid-two"><SignupField animationIndex="2" icon="person" label="Email address" type="email" value={form.email} onChange={update("email")} placeholder="you@example.com" /><SignupField animationIndex="3" icon="person" label="Phone number" type="tel" value={form.phone} onChange={update("phone")} placeholder="Optional" required={false} /></div>
         {role === "athlete" && <SignupField animationIndex="4" icon="calendar" label="Date of birth" type="date" value={form.dateOfBirth} onChange={update("dateOfBirth")} />}
-        <div className="signup-grid-two"><SignupField animationIndex="5" icon="lock" label="Password" type="password" value={form.password} onChange={update("password")} placeholder="At least 6 characters" /><SignupField animationIndex="6" icon="lock" label="Confirm password" type="password" value={form.confirmPassword} onChange={update("confirmPassword")} placeholder="Repeat password" /></div>
+        <div className="signup-grid-two"><SignupField animationIndex="5" icon="lock" label="Password" type="password" value={form.password} onChange={update("password")} placeholder="At least 8 characters" /><SignupField animationIndex="6" icon="lock" label="Confirm password" type="password" value={form.confirmPassword} onChange={update("confirmPassword")} placeholder="Repeat password" /></div>
         <label className="reference-remember signup-terms"><input type="checkbox" checked={accepted} onChange={(event) => setAccepted(event.target.checked)} required /><span>I agree to the club&apos;s terms and privacy policy.</span></label>
         {errorMessage && <p className="auth-error">{errorMessage}</p>}
         <button type="submit" className="reference-login-button" disabled={isSubmitting}>{isSubmitting ? "Creating account..." : "Create account"}</button>

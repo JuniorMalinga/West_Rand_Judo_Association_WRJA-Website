@@ -133,3 +133,15 @@
   filter: saturate(0.85);
   transition: filter 0.4s var(--ease);
 }
+
+/* ---------- Form feedback (all "contact the club" forms) ---------- */
+.form-status { margin: 0; padding: 12px 14px; border-radius: var(--radius); font-size: 14px; line-height: 1.5; }
+.form-status-success { background: #dcf5e0; color: #1e7a34; }
+.form-status-error { background: #fbdede; color: #a12727; }
+.contact-form button:disabled, .event-enquiry-form button:disabled, .instructor-message-form button:disabled { opacity: .6; cursor: not-allowed; }
+.contact-location-detail a, .contact-location-address a { transition: color .2s var(--ease); }
+.contact-location-detail a:hover, .contact-location-address a:hover { color: var(--accent-dark); text-decoration: underline; }
+.footer-contact-line { font-size: 13px; }
+.footer-contact-line a, .footer-contact-link { color: var(--accent); }
+.footer-contact-line a:hover, .footer-contact-link:hover { text-decoration: underline; }
+.competition-contact-link { color: var(--accent-dark); font-weight: 700; text-decoration: underline; }

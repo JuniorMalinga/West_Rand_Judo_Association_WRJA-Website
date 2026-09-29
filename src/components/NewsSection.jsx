@@ -2,9 +2,11 @@ import Reveal from "./Reveal";
 
 // FIX: Import the shared news data instead of maintaining
 // a separate newsItems array in this component.
-import newsPosts from "../data/newsPosts";
+import { newsStore } from "../data/newsPosts";
+import useCollection from "../hooks/useCollection";
 
 export default function NewsSection() {
+  const newsPosts = useCollection(newsStore).slice(0, 4);
   return (
     <section className="news">
       <Reveal className="news-header">

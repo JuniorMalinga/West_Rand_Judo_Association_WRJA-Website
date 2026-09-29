@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import PageHeader from "../components/PageHeader";
 import Reveal from "../components/Reveal";
-import { getCompetitionStatus, getCompetitions } from "../data/competitions";
+import { competitionsStore, getCompetitionStatus } from "../data/competitions";
+import { useCollectionState } from "../hooks/useCollection";
 
 function formatDate(date) {
   if (!date) return "Date to be announced";
@@ -31,7 +31,7 @@ function TracksuitOrderingPage({ competition }) {
           <div className="merch-order-panel">
             <div><p className="eyebrow">YOUR ORDER</p><h2>Reserve your tracksuit</h2><p>Complete the ordering details, then follow the WRJA payment instructions and submit your Proof of Payment.</p></div>
             <div className="merch-order-actions">
-              {hasOrderLink ? <a href={competition.registrationUrl} target="_blank" rel="noopener noreferrer" className="btn btn-accent">Start your order</a> : <Link to="/contact" className="btn btn-accent">Enquire to order</Link>}
+              {hasOrderLink ? <a href={competition.registrationUrl} target="_blank" rel="noopener noreferrer" className="btn btn-accent">Start your order</a> : <Link to="/contact?topic=Tracksuit%20order" className="btn btn-accent">Enquire to order</Link>}
               {competition.paymentRequired && <Link to={`/events/competitions/${competition.slug}/payment`} className="btn btn-outline-light">Payment &amp; POP upload</Link>}
             </div>
           </div>
@@ -47,13 +47,10 @@ function TracksuitOrderingPage({ competition }) {
 
 export default function CompetitionDetailPage() {
   const { slug } = useParams();
-  const [competition, setCompetition] = useState(() => getCompetitions().find((item) => item.slug === slug));
-  useEffect(() => {
-    const refresh = () => setCompetition(getCompetitions().find((item) => item.slug === slug));
-    window.addEventListener("wrja:competitions-updated", refresh);
-    return () => window.removeEventListener("wrja:competitions-updated", refresh);
-  }, [slug]);
+  const { items, loaded } = useCollectionState(competitionsStore);
+  const competition = items.find((item) => item.slug === slug);
 
+  if (!competition && !loaded) return <div className="simple-page"><p>Loading…</p></div>;
   if (!competition) return <div className="simple-page"><h1>Competition not found</h1><Link to="/events/competitions">Back to Events competitions</Link></div>;
   if (competition.slug === "tracksuit-ordering") return <TracksuitOrderingPage competition={competition} />;
 
@@ -66,7 +63,7 @@ export default function CompetitionDetailPage() {
         <span className="competition-type">{competition.type}</span><span className="competition-status competition-status-inline">{status}</span>
         <h1>{competition.name}</h1><p className="competition-detail-description">{competition.description}</p>
         <div className="competition-detail-facts"><p>📅 <strong>Date</strong><br />{formatDate(competition.date)}</p><p>📍 <strong>Location</strong><br />{competition.location}</p>{competition.registrationDeadline && <p>⏳ <strong>Registration deadline</strong><br />{formatDate(competition.registrationDeadline)}</p>}</div>
-        <div className="competition-detail-panel"><h3>Registration</h3><p>{competition.additionalInfo}</p>{competition.registrationUrl ? <a href={competition.registrationUrl} target="_blank" rel="noopener noreferrer" className="btn btn-accent">{competition.registrationType === "internal" ? "Register now" : "Open external registration"}</a> : <p className="competition-pending">The registration link will be published by WRJA when entries open.</p>}</div>
+        <div className="competition-detail-panel"><h3>Registration</h3><p>{competition.additionalInfo}</p>{competition.registrationUrl ? <a href={competition.registrationUrl} target="_blank" rel="noopener noreferrer" className="btn btn-accent">{competition.registrationType === "internal" ? "Register now" : "Open external registration"}</a> : <p className="competition-pending">The registration link will be published by WRJA when entries open. <Link to={`/contact?topic=${encodeURIComponent(competition.name)}`} className="competition-contact-link">Ask WRJA about this competition</Link></p>}</div>
         {competition.paymentRequired && <div className="competition-detail-panel competition-payment-panel"><h3>Payment to WRJA</h3><p>View the payment details and upload your Proof of Payment from one dedicated page.</p><Link to={`/events/competitions/${competition.slug}/payment`} className="btn btn-accent">View payment details &amp; upload POP</Link></div>}
         <Link to="/events/competitions" className="btn btn-outline-dark">← Back to Events competitions</Link>
       </Reveal>

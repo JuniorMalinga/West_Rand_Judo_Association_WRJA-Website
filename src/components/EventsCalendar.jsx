@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import events from "../data/events";
+import { eventsStore } from "../data/events";
+import useCollection from "../hooks/useCollection";
 
 const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const monthNames = [
@@ -40,6 +41,7 @@ function buildMonthGrid(year, month) {
 }
 
 export default function EventsCalendar() {
+  const events = useCollection(eventsStore);
   const today = new Date();
   const [viewDate, setViewDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [selectedDay, setSelectedDay] = useState(null);

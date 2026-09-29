@@ -74,7 +74,7 @@ export default function LoginPage() {
     try {
       const session = await signIn(email, password);
       setIsAuthenticating(true);
-      window.setTimeout(() => navigate(session.profile.role === "admin" ? "/admin" : "/"), 1350);
+      window.setTimeout(() => navigate(session.profile.role === "admin" ? "/admin" : (location.state?.from?.pathname || "/")), 1350);
     } catch (error) {
       setErrorMessage(error.message || "Unable to log in.");
       setIsSubmitting(false);

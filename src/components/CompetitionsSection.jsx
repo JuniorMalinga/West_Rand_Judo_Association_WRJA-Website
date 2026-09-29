@@ -1,13 +1,14 @@
 import { Link } from "react-router-dom";
 import Reveal from "./Reveal";
 import CompetitionCard from "./CompetitionCard";
-import { getCompetitions } from "../data/competitions";
+import { competitionsStore } from "../data/competitions";
+import useCollection from "../hooks/useCollection";
 import { useAuth } from "../context/AuthContext";
 
 export default function CompetitionsSection() {
   const { user } = useAuth();
   const isLoggedIn = Boolean(user);
-  const competitions = getCompetitions().slice(0, 3);
+  const competitions = [...useCollection(competitionsStore)].sort((a, b) => a.displayOrder - b.displayOrder).slice(0, 3);
 
   return (
     <section className="competitions-home-section">

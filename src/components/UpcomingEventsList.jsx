@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import Reveal from "./Reveal";
-import events from "../data/events";
+import { eventsStore } from "../data/events";
+import useCollection from "../hooks/useCollection";
 
 const monthNames = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -13,6 +14,7 @@ function formatDateBadge(dateString) {
 }
 
 export default function UpcomingEventsList() {
+  const events = useCollection(eventsStore);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const upcoming = events

@@ -1,4 +1,7 @@
+import { Link } from "react-router-dom";
 import wrjaLogo from "../assets/images/Logo/wrja-logo.png";
+import { clubLocations } from "../data/clubContacts";
+import { toTelHref } from "../lib/format";
 
 // Import the real gallery data instead of using placeholder images.
 import galleryItems from "../data/galleryItems";
@@ -48,6 +51,20 @@ export default function SiteFooter() {
           <p>
             For training enquiries, contact Golden Score Judo or KJK Judo
             Club directly.
+          </p>
+
+          {clubLocations.flatMap((location) => location.contacts.map((contact) => (
+            <p key={`${location.name}-${contact.label}`} className="footer-contact-line">
+              <strong>{contact.label === "Contact" ? location.name : `${location.name} – ${contact.label}`}</strong>
+              <br />
+              <a href={toTelHref(contact.phone)}>{contact.phone}</a>
+              {" · "}
+              <a href={`mailto:${contact.email}`}>{contact.email}</a>
+            </p>
+          )))}
+
+          <p>
+            <Link to="/contact" className="footer-contact-link">Send us a message &rarr;</Link>
           </p>
         </div>
 

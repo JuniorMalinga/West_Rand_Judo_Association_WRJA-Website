@@ -1,45 +1,54 @@
-import { useMemo } from "react";
-import { getCompetitions, getCompetitionStatus } from "../data/competitions";
-import seedEvents from "../data/events";
 import { useAuth } from "../context/AuthContext";
+import { formatBytes } from "../lib/format";
 
-const EVENTS_KEY = "wrja.events";
-const MESSAGES_KEY = "wrja.contact.messages";
+export default function AdminOverviewPanel({ counts, onNavigate }) {
+  const { displayName } = useAuth();
+  const c = counts || {};
+  const unread = c.unreadMessages || 0;
+  const pending = c.pendingPayments || 0;
+  const num = (value) => (counts ? value ?? 0 : "–");
 
-function readArray(key, fallback) {
-  try {
-    const stored = window.localStorage.getItem(key);
-    return stored ? JSON.parse(stored) : fallback;
-  } catch {
-    return fallback;
-  }
-}
+  const stats = [
+    { label: "Competitions", value: num(c.competitions), tone: "gold", detail: "Managed on the site" },
+    { label: "Upcoming events", value: num(c.upcomingEvents), tone: "dark", detail: `${c.events ?? 0} event records` },
+    { label: "Member accounts", value: num(c.members), tone: "light", detail: `${c.users ?? 0} accounts in total` },
+    { label: "Unread messages", value: num(unread), tone: "light", detail: unread ? "Needs a reply" : "Inbox clear" },
+  ];
 
-export default function AdminOverviewPanel({ onNavigate }) {
-  const { users, displayName } = useAuth();
-  const competitions = getCompetitions();
-  const events = readArray(EVENTS_KEY, seedEvents);
-  const messages = readArray(MESSAGES_KEY, []);
-  const pop = readArray("wrja.pop", null);
-  const openCompetitions = competitions.filter((item) => ["Registration Open", "Registration Closing Soon"].includes(getCompetitionStatus(item))).length;
-  const upcomingEvents = events.filter((item) => item.date && new Date(`${item.date}T12:00:00`) >= new Date()).length;
-  const stats = useMemo(() => [
-    { label: "Live competitions", value: openCompetitions, tone: "gold", detail: `${competitions.length} total managed` },
-    { label: "Upcoming events", value: upcomingEvents, tone: "dark", detail: `${events.length} event records` },
-    { label: "Member accounts", value: users.length, tone: "light", detail: `${users.filter((user) => user.role !== "admin").length} members` },
-    { label: "Messages", value: messages.length, tone: "light", detail: messages.length ? "Needs attention" : "Inbox clear" },
-  ], [competitions.length, events.length, messages.length, openCompetitions, upcomingEvents, users]);
+  const actions = [
+    { tab: "competitions", title: "Manage competitions", detail: "Registration, payment links and images" },
+    { tab: "events", title: "Publish an event", detail: "Dates, venues, images and QR codes" },
+    { tab: "news", title: "Post news", detail: `${c.news ?? 0} posts published` },
+    { tab: "messages", title: "Review messages", detail: unread ? `${unread} unread` : "Respond to club enquiries" },
+    { tab: "payments", title: "Review payments", detail: pending ? `${pending} awaiting review` : "Proof of payment uploads" },
+    { tab: "users", title: "Manage members", detail: "Accounts and access roles" },
+  ];
 
   return (
     <div className="admin-overview">
       <div className="admin-welcome-card">
-        <div><p className="eyebrow">CONTROL CENTRE</p><h2>Good to see you, {displayName}.</h2><p>Manage what members see across Events, Competitions, payments and the WRJA community.</p></div>
+        <div><p className="eyebrow">CONTROL CENTRE</p><h2>Good to see you, {displayName}.</h2><p>Manage what members see across Events, Competitions, News, payments and the WRJA community.</p></div>
         <div className="admin-welcome-mark">WRJA<span>ADMIN</span></div>
       </div>
       <div className="admin-stat-grid">{stats.map((stat) => <article className={`admin-stat-card admin-stat-${stat.tone}`} key={stat.label}><span>{stat.label}</span><strong>{stat.value}</strong><small>{stat.detail}</small></article>)}</div>
       <div className="admin-overview-grid">
-        <section className="admin-command-card"><div className="admin-section-title"><div><p className="eyebrow">QUICK ACTIONS</p><h3>Keep the site current</h3></div></div><div className="admin-quick-actions"><button onClick={() => onNavigate("competitions")}><span>01</span><b>Manage competitions</b><small>Registration and payment links</small><i>→</i></button><button onClick={() => onNavigate("events")}><span>02</span><b>Publish an event</b><small>Dates, venues and applications</small><i>→</i></button><button onClick={() => onNavigate("messages")}><span>03</span><b>Review messages</b><small>Respond to club enquiries</small><i>→</i></button><button onClick={() => onNavigate("users")}><span>04</span><b>Manage members</b><small>Accounts and access roles</small><i>→</i></button></div></section>
-        <section className="admin-health-card"><p className="eyebrow">SYSTEM HEALTH</p><h3>Everything is local and ready.</h3><div className="admin-health-row"><span><i className="admin-health-dot" />Authentication</span><b>Connected</b></div><div className="admin-health-row"><span><i className="admin-health-dot" />Competition links</span><b>Editable</b></div><div className="admin-health-row"><span><i className="admin-health-dot" />POP submissions</span><b>{pop ? "1 recent" : "Awaiting uploads"}</b></div><p className="admin-health-note">Changes are saved in this browser and reflected in the public preview immediately.</p></section>
+        <section className="admin-command-card">
+          <div className="admin-section-title"><div><p className="eyebrow">QUICK ACTIONS</p><h3>Keep the site current</h3></div></div>
+          <div className="admin-quick-actions">
+            {actions.map((action, index) => (
+              <button key={action.tab} onClick={() => onNavigate(action.tab)}><span>{String(index + 1).padStart(2, "0")}</span><b>{action.title}</b><small>{action.detail}</small><i>→</i></button>
+            ))}
+          </div>
+        </section>
+        <section className="admin-health-card">
+          <p className="eyebrow">SYSTEM HEALTH</p>
+          <h3>{counts ? "Connected to the WRJA database." : "Connecting to the server…"}</h3>
+          <div className="admin-health-row"><span><i className="admin-health-dot" />Database</span><b>{counts ? "Local SQLite" : "…"}</b></div>
+          <div className="admin-health-row"><span><i className="admin-health-dot" />Contact inbox</span><b>{unread ? `${unread} unread` : "Clear"}</b></div>
+          <div className="admin-health-row"><span><i className="admin-health-dot" />POP submissions</span><b>{pending ? `${pending} pending` : "Up to date"}</b></div>
+          <div className="admin-health-row"><span><i className="admin-health-dot" />Uploaded files</span><b>{counts ? formatBytes(c.uploadsBytes || 0) : "…"}</b></div>
+          <p className="admin-health-note">Everything is saved on the server, so changes are visible to every visitor straight away.</p>
+        </section>
       </div>
     </div>
   );

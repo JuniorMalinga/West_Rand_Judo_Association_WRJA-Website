@@ -816,3 +816,10 @@ section {
 .nav-links-login-transition > *:nth-child(n + 7) {
   animation-delay: 3.1s;
 }
+
+
+/* ---------- Initial "who is logged in?" check ---------- */
+.app-loading { display: grid; min-height: 100vh; place-content: center; justify-items: center; gap: 16px; background: var(--bg-dark, #181818); color: rgba(255,255,255,.7); font-size: 14px; }
+.app-loading span { width: 34px; height: 34px; border: 3px solid rgba(255,255,255,.15); border-top-color: var(--accent); border-radius: 50%; animation: appLoadingSpin .8s linear infinite; }
+.app-loading p { margin: 0; }
+@keyframes appLoadingSpin { to { transform: rotate(360deg); } }

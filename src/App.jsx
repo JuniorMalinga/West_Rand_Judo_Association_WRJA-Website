@@ -29,8 +29,27 @@ function AdminExperienceGuard({ children }) {
   return isAdmin && pathname !== "/admin" ? <Navigate to="/admin" replace /> : children;
 }
 
+// Route guards. These are for a smooth experience only – the server is what
+// actually refuses data to people who aren't allowed it.
+function RequireAuth({ children }) {
+  const { user } = useAuth();
+  const location = useLocation();
+  return user ? children : <Navigate to="/login" replace state={{ from: location }} />;
+}
+
+function RequireAdmin({ children }) {
+  const { isAdmin } = useAuth();
+  return isAdmin ? children : <Navigate to="/login" replace />;
+}
+
 function AppContent() {
   const { pathname } = useLocation();
+  const { loading } = useAuth();
+
+  // Wait for the server to say who (if anyone) is logged in, so a member never
+  // sees a flash of the logged-out site or gets bounced to /login by mistake.
+  if (loading) return <div className="app-loading" role="status" aria-busy="true"><span /><p>Loading WRJA…</p></div>;
+
   return (
     <>
       {pathname !== "/admin" && <NavigationBar />}
@@ -40,14 +59,14 @@ function AppContent() {
           <Route path="*" element={<NotFoundPage />} />
           <Route path="/" element={<HomePage />} />
           <Route path="/about" element={<AboutPage />} />
-          <Route path="/events" element={<EventsPage />} />
-          <Route path="/events/calendar" element={<EventsPage section="calendar" />} />
-          <Route path="/events/competitions" element={<EventsPage section="competitions" />} />
-          <Route path="/events/competitions/:slug/payment" element={<CompetitionPaymentPage />} />
-          <Route path="/events/competitions/:slug" element={<CompetitionDetailPage />} />
-          <Route path="/events/schools" element={<EventsPage section="schools" />} />
-          <Route path="/events/store" element={<EventsPage section="store" />} />
-          <Route path="/events/:id" element={<EventDetailPage />} />
+          <Route path="/events" element={<RequireAuth><EventsPage /></RequireAuth>} />
+          <Route path="/events/calendar" element={<RequireAuth><EventsPage section="calendar" /></RequireAuth>} />
+          <Route path="/events/competitions" element={<RequireAuth><EventsPage section="competitions" /></RequireAuth>} />
+          <Route path="/events/competitions/:slug/payment" element={<RequireAuth><CompetitionPaymentPage /></RequireAuth>} />
+          <Route path="/events/competitions/:slug" element={<RequireAuth><CompetitionDetailPage /></RequireAuth>} />
+          <Route path="/events/schools" element={<RequireAuth><EventsPage section="schools" /></RequireAuth>} />
+          <Route path="/events/store" element={<RequireAuth><EventsPage section="store" /></RequireAuth>} />
+          <Route path="/events/:id" element={<RequireAuth><EventDetailPage /></RequireAuth>} />
           <Route path="/programs" element={<Navigate to="/events/competitions" replace />} />
           <Route path="/programs/:slug" element={<Navigate to="/events/competitions" replace />} />
           <Route path="/gallery" element={<GalleryPage />} />
@@ -57,9 +76,9 @@ function AppContent() {
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
-          <Route path="/proof-of-payment" element={<ProofOfPaymentPage />} />
+          <Route path="/proof-of-payment" element={<RequireAuth><ProofOfPaymentPage /></RequireAuth>} />
           <Route path="/instructors/:slug" element={<InstructorDetailPage />} />
-          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/admin" element={<RequireAdmin><AdminPage /></RequireAdmin>} />
         </Routes>
       </AdminExperienceGuard>
       {pathname !== "/admin" && <SiteFooter />}
