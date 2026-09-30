@@ -1,112 +1,90 @@
-// Authentication: password hashing, server-side sessions and access guards.
-
-import crypto from "crypto";
-import { promisify } from "util";
-import * as repo from "./repo.js";
+// Supabase Auth is the only source of passwords and sessions.
+import { createClient } from "@supabase/supabase-js";
 import { HttpError } from "./security.js";
 
-const scrypt = promisify(crypto.scrypt);
+const ACCESS = "wrja_access";
+const REFRESH = "wrja_refresh";
+const cookieOptions = (req) => `Path=/; HttpOnly; SameSite=Lax${req.secure || process.env.NODE_ENV === "production" ? "; Secure" : ""}`;
 
-const COOKIE_NAME = "wrja_session";
-const MEMBER_SESSION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-const ADMIN_SESSION_MS = 8 * 60 * 60 * 1000; // administrators re-authenticate daily
-
-// ---- Passwords --------------------------------------------------------------
-export async function hashPassword(password) {
-  const salt = crypto.randomBytes(16);
-  const hash = await scrypt(password, salt, 64);
-  return `scrypt$${salt.toString("hex")}$${hash.toString("hex")}`;
+function cookies(header = "") {
+  return Object.fromEntries(header.split(";").map((part) => {
+    const i = part.indexOf("=");
+    if (i < 0) return ["", ""];
+    try { return [part.slice(0, i).trim(), decodeURIComponent(part.slice(i + 1).trim())]; }
+    catch { return ["", ""]; }
+  }));
 }
 
-export async function verifyPassword(password, stored) {
-  const [scheme, saltHex, hashHex] = String(stored || "").split("$");
-  if (scheme !== "scrypt" || !saltHex || !hashHex) return false;
-  const expected = Buffer.from(hashHex, "hex");
-  const actual = await scrypt(password, Buffer.from(saltHex, "hex"), expected.length);
-  return crypto.timingSafeEqual(actual, expected);
-}
-
-// A throwaway hash so "unknown email" takes as long as "wrong password"
-// (prevents telling whether an account exists by response time).
-export const DUMMY_HASH = await hashPassword(crypto.randomBytes(12).toString("hex"));
-
-// ---- Cookies ----------------------------------------------------------------
-function parseCookies(header = "") {
-  const cookies = {};
-  for (const part of header.split(";")) {
-    const index = part.indexOf("=");
-    if (index === -1) continue;
-    const name = part.slice(0, index).trim();
-    if (!name) continue;
-    try {
-      cookies[name] = decodeURIComponent(part.slice(index + 1).trim());
-    } catch {
-      // ignore malformed cookie values
-    }
-  }
-  return cookies;
-}
-
-function cookieHeader(value, maxAgeSeconds, req) {
-  const secure = req.secure || process.env.NODE_ENV === "production" ? "; Secure" : "";
-  return `${COOKIE_NAME}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSeconds}${secure}`;
-}
-
-const hashToken = (token) => crypto.createHash("sha256").update(token).digest("hex");
-
-// ---- Sessions ---------------------------------------------------------------
-export async function startSession(req, res, user) {
-  const token = crypto.randomBytes(32).toString("base64url");
-  const lifetime = user.role === "admin" ? ADMIN_SESSION_MS : MEMBER_SESSION_MS;
-  await repo.createSession({
-    tokenHash: hashToken(token),
-    userId: user.id,
-    expiresAt: new Date(Date.now() + lifetime).toISOString(),
-    ip: req.ip,
-    userAgent: String(req.headers["user-agent"] || "").slice(0, 200),
+export function authClient() {
+  if (!(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL) || !(process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY))
+    throw new Error("Configure SUPABASE_URL and SUPABASE_ANON_KEY in server/.env.local.");
+  return createClient(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL, process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
-  res.setHeader("Set-Cookie", cookieHeader(token, Math.floor(lifetime / 1000), req));
 }
 
-export async function endSession(req, res) {
-  const token = parseCookies(req.headers.cookie)[COOKIE_NAME];
-  if (token) await repo.deleteSession(hashToken(token));
-  res.setHeader("Set-Cookie", cookieHeader("", 0, req));
+export function setSession(req, res, session) {
+  const options = cookieOptions(req);
+  res.setHeader("Set-Cookie", [
+    `${ACCESS}=${encodeURIComponent(session.access_token)}; ${options}; Max-Age=${Math.max(0, session.expires_in || 3600)}`,
+    `${REFRESH}=${encodeURIComponent(session.refresh_token)}; ${options}; Max-Age=604800`,
+  ]);
 }
 
-export function currentSessionHash(req) {
-  const token = parseCookies(req.headers.cookie)[COOKIE_NAME];
-  return token ? hashToken(token) : null;
+export function clearSession(req, res) {
+  const options = cookieOptions(req);
+  res.setHeader("Set-Cookie", [
+    `${ACCESS}=; ${options}; Max-Age=0`,
+    `${REFRESH}=; ${options}; Max-Age=0`,
+  ]);
 }
 
-// Runs on every request: turns the cookie into req.user (or null).
-// The role is read from the database each time, so demoting or deleting a user
-// takes effect immediately.
+export async function loadProfile(client, user) {
+  const { data, error } = await client.from("profiles")
+    .select("id, first_name, last_name, email, phone, profile_role, is_active")
+    .eq("id", user.id).maybeSingle();
+  if (error) throw new HttpError(503, "Unable to load your WRJA profile.");
+  if (!data || !data.is_active) throw new HttpError(403, "Your WRJA profile is unavailable or inactive.");
+  return { id: data.id, firstName: data.first_name, lastName: data.last_name,
+    email: data.email || user.email, phone: data.phone || "",
+    dateOfBirth: null, role: data.profile_role === "administrator" ? "admin" : data.profile_role };
+}
+
 export async function attachUser(req, res, next) {
   req.user = null;
-  const token = parseCookies(req.headers.cookie)[COOKIE_NAME];
-  if (!token) return next();
-
-  const session = await repo.getSession(hashToken(token));
-  if (!session) return next();
-
-  if (new Date(session.expiresAt).getTime() <= Date.now()) {
-    await repo.deleteSession(session.tokenHash);
-    return next();
-  }
-
-  req.user = session.user;
-  req.sessionHash = session.tokenHash;
-  return next();
+  try {
+    const stored = cookies(req.headers.cookie);
+    let accessToken = stored[ACCESS];
+    if (!accessToken && !stored[REFRESH]) return next();
+    const client = authClient();
+    let { data: { user }, error } = accessToken
+      ? await client.auth.getUser(accessToken) : { data: { user: null }, error: true };
+    if ((error || !user) && stored[REFRESH]) {
+      const refreshed = await client.auth.refreshSession({ refresh_token: stored[REFRESH] });
+      if (refreshed.error || !refreshed.data.session) { clearSession(req, res); return next(); }
+      setSession(req, res, refreshed.data.session);
+      accessToken = refreshed.data.session.access_token;
+      user = refreshed.data.user;
+    }
+    if (!user) { clearSession(req, res); return next(); }
+    // User-scoped reads enforce the existing profiles RLS policy.
+    const scoped = createClient(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL, process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      global: { headers: { Authorization: `Bearer ${accessToken}` } },
+    });
+    req.user = await loadProfile(scoped, user);
+    req.accessToken = accessToken;
+    next();
+  } catch (error) { next(error); }
 }
 
 export function requireAuth(req, res, next) {
   if (!req.user) return next(new HttpError(401, "Please log in to continue."));
-  return next();
+  next();
 }
 
 export function requireAdmin(req, res, next) {
   if (!req.user) return next(new HttpError(401, "Please log in to continue."));
   if (req.user.role !== "admin") return next(new HttpError(403, "You don't have permission to do that."));
-  return next();
+  next();
 }

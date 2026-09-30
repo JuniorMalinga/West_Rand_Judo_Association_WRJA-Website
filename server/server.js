@@ -5,9 +5,7 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { randomUUID } from "crypto";
-import { PUBLIC_UPLOADS } from "./db.js";
-import { seedIfEmpty } from "./seed.js";
-import * as repo from "./repo.js";
+import { PUBLIC_UPLOADS, ensureSeedAssets } from "./uploads.js";
 import { attachUser, requireAdmin } from "./auth.js";
 import apiRouter from "./routes/api.js";
 import {
@@ -1251,15 +1249,8 @@ app.use(errorHandler);
 // START SERVER
 // ============================================================
 
-await seedIfEmpty();
-
-setInterval(
-  () =>
-    repo
-      .purgeExpiredSessions()
-      .catch(() => {}),
-  60 * 60 * 1000
-).unref();
+// Public seed/default images remain local until the public-media Storage change.
+ensureSeedAssets();
 
 app.listen(PORT, () => {
   console.log("\n========================================");

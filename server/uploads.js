@@ -10,9 +10,14 @@ import path from "path";
 import { randomUUID } from "crypto";
 import { fileURLToPath } from "url";
 import { HttpError } from "./security.js";
-import { PRIVATE_UPLOADS, PUBLIC_UPLOADS } from "./db.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+export const DATA_DIR = process.env.WRJA_DATA_DIR || path.join(__dirname, "data");
+export const UPLOAD_DIR = path.join(DATA_DIR, "uploads");
+export const PUBLIC_UPLOADS = path.join(UPLOAD_DIR, "public");
+
+fs.mkdirSync(PUBLIC_UPLOADS, { recursive: true });
+
 
 const EXTENSIONS = {
   "image/jpeg": "jpg",
@@ -46,22 +51,22 @@ function decode(dataUrl, maxBytes) {
   return buffer;
 }
 
-export function savePublicImage(dataUrl) {
+export function preparePublicImage(dataUrl) {
   const buffer = decode(dataUrl, MAX_IMAGE_BYTES);
   const type = sniffType(buffer);
-  if (!type || type === "application/pdf") throw new HttpError(400, "Please upload a JPG, PNG, WebP or GIF image.");
-  const name = `${randomUUID()}.${EXTENSIONS[type]}`;
-  fs.writeFileSync(path.join(PUBLIC_UPLOADS, name), buffer);
-  return `/uploads/public/${name}`;
+  if (!type || type === "application/pdf") {
+    throw new HttpError(400, "Please upload a JPG, PNG, WebP or GIF image.");
+  }
+  return { buffer, type, size: buffer.length };
 }
 
-export function savePrivateProof(dataUrl) {
+export function preparePrivateProof(dataUrl) {
   const buffer = decode(dataUrl, MAX_POP_BYTES);
   const type = sniffType(buffer);
-  if (!type || type === "image/gif") throw new HttpError(400, "Please upload a PDF, JPG or PNG file.");
-  const storedName = `${randomUUID()}.${EXTENSIONS[type]}`;
-  fs.writeFileSync(path.join(PRIVATE_UPLOADS, storedName), buffer, { mode: 0o600 });
-  return { storedName, type, size: buffer.length };
+  if (!type || type === "image/gif" || type === "image/webp") {
+    throw new HttpError(400, "Please upload a PDF, JPG or PNG file.");
+  }
+  return { buffer, type, size: buffer.length };
 }
 
 export function privateFilePath(storedName) {
@@ -80,13 +85,6 @@ export function deleteFileQuietly(filePath) {
 
 // Remove an uploaded public image once nothing references it. Built-in seed
 // and default images are never deleted.
-export function deletePublicImage(urlPath) {
-  const match = /^\/uploads\/public\/([A-Za-z0-9._-]+)$/.exec(urlPath || "");
-  if (!match) return;
-  if (match[1].startsWith("seed-") || match[1].startsWith("default-")) return;
-  deleteFileQuietly(path.join(PUBLIC_UPLOADS, match[1]));
-}
-
 // Make sure the built-in images exist in the uploads folder.
 export function ensureSeedAssets() {
   const source = path.join(__dirname, "seed-assets");
@@ -99,7 +97,7 @@ export function ensureSeedAssets() {
 
 export function uploadsSizeBytes() {
   let total = 0;
-  for (const dir of [PUBLIC_UPLOADS, PRIVATE_UPLOADS]) {
+  for (const dir of [PUBLIC_UPLOADS]) {
     for (const file of fs.readdirSync(dir)) {
       try {
         total += fs.statSync(path.join(dir, file)).size;

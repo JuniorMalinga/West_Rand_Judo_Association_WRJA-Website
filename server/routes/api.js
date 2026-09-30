@@ -1,23 +1,17 @@
 import { Router } from "express";
-import * as repo from "../repo.js";
+import * as eventsRepo from "../eventsRepo.js";
+import * as newsRepo from "../newsRepo.js";
+import * as contactMessagesRepo from "../contactMessagesRepo.js";
+import * as paymentsRepo from "../paymentsRepo.js";
+import * as systemRepo from "../systemRepo.js";
+import * as mediaRepo from "../mediaRepo.js";
 import * as v from "../validate.js";
-import {
-  currentSessionHash,
-  DUMMY_HASH,
-  endSession,
-  hashPassword,
-  requireAdmin,
-  requireAuth,
-  startSession,
-  verifyPassword,
-} from "../auth.js";
+import { authClient, clearSession, loadProfile, setSession, requireAdmin, requireAuth } from "../auth.js";
+import { createUserClient } from "../supabase.js";
 import { createLimiter, HttpError, rateLimit } from "../security.js";
 import {
-  deleteFileQuietly,
-  deletePublicImage,
-  privateFilePath,
-  savePrivateProof,
-  savePublicImage,
+  preparePrivateProof,
+  preparePublicImage,
   uploadsSizeBytes,
 } from "../uploads.js";
 
@@ -48,18 +42,18 @@ router.post("/auth/login", async (req, res) => {
     throw new HttpError(429, `Too many failed attempts. Please try again in ${Math.ceil(wait / 60)} minute(s).`);
   }
 
-  const user = await repo.findUserByEmail(email);
-  const valid = await verifyPassword(password, user ? user.passwordHash : DUMMY_HASH);
-
-  if (!user || !valid) {
+  const client = authClient();
+  const { data, error } = await client.auth.signInWithPassword({ email, password });
+  if (error || !data.session) {
     loginFailuresByIp.hit(req.ip);
     loginFailuresByEmail.hit(email);
     throw new HttpError(401, "Invalid email or password.");
   }
-
+  // Never trust a role supplied by the browser or user metadata.
+  const profile = await loadProfile(createUserClient(data.session.access_token), data.user);
   loginFailuresByEmail.reset(email);
-  await startSession(req, res, user);
-  res.json({ success: true, user: publicUser(user) });
+  setSession(req, res, data.session);
+  res.json({ success: true, user: publicUser(profile) });
 });
 
 router.post("/auth/signup", rateLimit({ windowMs: HOUR, max: 10, message: "Too many sign-ups from this connection. Please try again later." }), async (req, res) => {
@@ -78,15 +72,22 @@ router.post("/auth/signup", rateLimit({ windowMs: HOUR, max: 10, message: "Too m
     dateOfBirth,
     role,
   };
-  const passwordHash = await hashPassword(v.password(body.password));
-
-  if (await repo.findUserByEmail(data.email)) throw new HttpError(409, "An account with this email already exists.");
-  const user = await repo.createUser({ ...data, passwordHash });
-  res.status(201).json({ success: true, user: publicUser(user) });
+  const password = v.password(body.password);
+  const client = authClient();
+  const { data: signedUp, error } = await client.auth.signUp({
+    email: data.email, password,
+    options: { data: { first_name: data.firstName, last_name: data.lastName,
+      phone: data.phone, date_of_birth: data.dateOfBirth, profile_role: data.role } },
+  });
+  if (error) throw new HttpError(400, error.message);
+  // The database must create profiles with a trusted trigger; client metadata
+  // is a signup request, not proof of a privileged role.
+  res.status(201).json({ success: true, user: { ...data, id: signedUp.user?.id || null } });
 });
 
 router.post("/auth/logout", async (req, res) => {
-  await endSession(req, res);
+  // Clearing both HttpOnly cookies signs out this browser.
+  clearSession(req, res);
   res.json({ success: true });
 });
 
@@ -116,16 +117,16 @@ function serializeCompetition(c, loggedIn) {
 }
 
 router.get("/competitions", async (req, res) => {
-  const items = await repo.listCompetitions();
+  const items = await eventsRepo.listCompetitions(req.accessToken);
   res.json({ items: items.map((c) => serializeCompetition(c, Boolean(req.user))) });
 });
 
 router.get("/events", requireAuth, async (req, res) => {
-  res.json({ items: await repo.listEvents() });
+  res.json({ items: await eventsRepo.listEvents(req.accessToken) });
 });
 
 router.get("/news", async (req, res) => {
-  res.json({ items: await repo.listNews() });
+  res.json({ items: await newsRepo.listNews(req.accessToken) });
 });
 
 router.post(
@@ -143,7 +144,7 @@ router.post(
       message: v.text(body.message, { field: "Message", max: 3000, required: true, min: 5 }),
       source: v.text(body.source, { field: "Source", max: 120 }) || "Contact page",
     };
-    await repo.addMessage(message);
+    await contactMessagesRepo.addMessage(message, req.accessToken, req.user?.id || null);
     return res.status(201).json({ success: true });
   }
 );
@@ -158,45 +159,43 @@ router.post(
     let competitionName = "Other / not listed";
     let competitionSlug = "";
     if (body.competitionSlug) {
-      const competition = await repo.getCompetition(String(body.competitionSlug));
+      const competition = await eventsRepo.getCompetition(String(body.competitionSlug), req.accessToken);
       if (!competition) throw new HttpError(400, "That competition doesn't exist.");
       competitionName = competition.name;
       competitionSlug = competition.slug;
     }
 
-    const saved = savePrivateProof(body.dataUrl);
-    const payment = await repo.addPayment({
+    const preparedFile = preparePrivateProof(body.dataUrl);
+    const fileName = v.text(
+      String(body.fileName || "proof").replace(/[^\w .()-]/g, "_"),
+      { field: "File name", max: 120 }
+    ) || "proof";
+
+    const payment = await paymentsRepo.addPayment({
+      accessToken: req.accessToken,
       userId: req.user.id,
-      userName: `${req.user.firstName} ${req.user.lastName}`.trim(),
-      userEmail: req.user.email,
+      fileName,
+      preparedFile,
       competitionSlug,
-      competitionName,
-      fileName: v.text(String(body.fileName || "proof").replace(/[^\w .()-]/g, "_"), { field: "File name", max: 120 }) || "proof",
-      fileSize: saved.size,
-      fileType: saved.type,
-      storedName: saved.storedName,
     });
     res.status(201).json({ success: true, item: payment });
   }
 );
 
 router.get("/payments/mine", requireAuth, async (req, res) => {
-  res.json({ items: await repo.listPaymentsForUser(req.user.id) });
+  res.json({ items: await paymentsRepo.listPaymentsForUser(req.user.id, req.accessToken) });
 });
 
 // The file itself: only the person who uploaded it, or an admin.
 router.get("/payments/:id/file", requireAuth, async (req, res) => {
-  const payment = await repo.getPaymentWithFile(req.params.id);
-  if (!payment || (req.user.role !== "admin" && payment.userId !== req.user.id)) throw new HttpError(404, "File not found.");
-  const filePath = privateFilePath(payment.storedName);
-  if (!filePath) throw new HttpError(404, "File not found.");
+  const payment = await paymentsRepo.getPaymentWithFile(req.params.id, req.accessToken);
+  if (!payment) throw new HttpError(404, "File not found.");
 
-  res.setHeader("Content-Type", payment.fileType); // verified against the file signature at upload
+  const file = await paymentsRepo.downloadPaymentFile(payment.storagePath, req.accessToken);
+  res.setHeader("Content-Type", payment.fileType);
   res.setHeader("Content-Disposition", `inline; filename="${payment.fileName.replace(/"/g, "")}"`);
   res.setHeader("Cache-Control", "private, no-store");
-  res.sendFile(filePath, (error) => {
-    if (error && !res.headersSent) res.status(404).json({ success: false, error: "File not found." });
-  });
+  res.send(file);
 });
 
 // =============================================================================
@@ -206,12 +205,14 @@ const admin = Router();
 admin.use(requireAdmin);
 
 admin.get("/counts", async (req, res) => {
-  res.json({ ...(await repo.adminCounts()), uploadsBytes: uploadsSizeBytes() });
+  res.json({ ...(await systemRepo.adminCounts(req.accessToken)), uploadsBytes: uploadsSizeBytes() });
 });
 
 // ---- Image uploads ----------------------------------------------------------
 admin.post("/uploads", rateLimit({ windowMs: HOUR, max: 200, key: (req) => `up:${req.user.id}` }), async (req, res) => {
-  res.status(201).json({ url: savePublicImage(req.body?.dataUrl) });
+  const image = preparePublicImage(req.body?.dataUrl);
+  const uploaded = await mediaRepo.uploadPublicImage(image, req.accessToken);
+  res.status(201).json({ url: uploaded.url });
 });
 
 // ---- Competitions -----------------------------------------------------------
@@ -245,32 +246,34 @@ function cleanCompetition(body) {
 const slugify = (value) =>
   String(value).toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "competition";
 
-async function cleanupImages(paths) {
-  for (const p of paths) if (p && !(await repo.isImageReferenced(p))) deletePublicImage(p);
+async function cleanupImages(paths, accessToken) {
+  for (const p of paths) {
+    if (p && !(await eventsRepo.isEventImageReferenced(p, accessToken)) && !(await newsRepo.isNewsImageReferenced(p, accessToken))) deletePublicImage(p);
+  }
 }
 
 admin.post("/competitions", async (req, res) => {
   const data = cleanCompetition(req.body || {});
-  const existing = await repo.competitionSlugs();
+  const existing = await eventsRepo.competitionSlugs(req.accessToken);
   let slug = slugify(data.name);
   for (let n = 2; existing.includes(slug); n += 1) slug = `${slugify(data.name)}-${n}`;
-  const item = await repo.saveCompetition({ ...data, id: slug, slug }, { create: true });
+  const item = await eventsRepo.saveCompetition({ ...data, id: slug, slug }, { create: true, accessToken: req.accessToken });
   res.status(201).json({ item });
 });
 
 admin.put("/competitions/:id", async (req, res) => {
-  const current = await repo.getCompetition(req.params.id);
+  const current = await eventsRepo.getCompetition(req.params.id, req.accessToken);
   if (!current) throw new HttpError(404, "Competition not found.");
-  const item = await repo.saveCompetition({ ...cleanCompetition(req.body || {}), id: current.id, slug: current.slug }, { create: false });
-  await cleanupImages([current.image]);
+  const item = await eventsRepo.saveCompetition({ ...cleanCompetition(req.body || {}), id: current.id, slug: current.slug }, { create: false, accessToken: req.accessToken });
+  await cleanupImages([current.image], req.accessToken);
   res.json({ item });
 });
 
 admin.delete("/competitions/:id", async (req, res) => {
-  const current = await repo.getCompetition(req.params.id);
+  const current = await eventsRepo.getCompetition(req.params.id, req.accessToken);
   if (!current) throw new HttpError(404, "Competition not found.");
-  await repo.deleteCompetition(current.id);
-  await cleanupImages([current.image]);
+  await eventsRepo.deleteCompetition(current.slug, req.accessToken);
+  await cleanupImages([current.image], req.accessToken);
   res.json({ success: true });
 });
 
@@ -289,30 +292,31 @@ function cleanEvent(body) {
 }
 
 const idParam = (value) => {
-  const id = Number(value);
-  if (!Number.isInteger(id) || id < 1) throw new HttpError(404, "Not found.");
+  const id = String(value || "").trim();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id))
+    throw new HttpError(404, "Not found.");
   return id;
 };
 
 admin.post("/events", async (req, res) => {
-  res.status(201).json({ item: await repo.saveEvent(cleanEvent(req.body || {}), { create: true }) });
+  res.status(201).json({ item: await eventsRepo.saveEvent(cleanEvent(req.body || {}), { create: true, accessToken: req.accessToken }) });
 });
 
 admin.put("/events/:id", async (req, res) => {
   const id = idParam(req.params.id);
-  const current = await repo.getEvent(id);
+  const current = await eventsRepo.getEvent(id, req.accessToken);
   if (!current) throw new HttpError(404, "Event not found.");
-  const item = await repo.saveEvent({ ...cleanEvent(req.body || {}), id }, { create: false });
-  await cleanupImages([current.image, current.qrCodeImage]);
+  const item = await eventsRepo.saveEvent({ ...cleanEvent(req.body || {}), id }, { create: false, accessToken: req.accessToken });
+  await cleanupImages([current.image, current.qrCodeImage], req.accessToken);
   res.json({ item });
 });
 
 admin.delete("/events/:id", async (req, res) => {
   const id = idParam(req.params.id);
-  const current = await repo.getEvent(id);
+  const current = await eventsRepo.getEvent(id, req.accessToken);
   if (!current) throw new HttpError(404, "Event not found.");
-  await repo.deleteEvent(id);
-  await cleanupImages([current.image, current.qrCodeImage]);
+  await eventsRepo.deleteEvent(id, req.accessToken);
+  await cleanupImages([current.image, current.qrCodeImage], req.accessToken);
   res.json({ success: true });
 });
 
@@ -336,129 +340,70 @@ function cleanNews(body) {
 }
 
 admin.post("/news", async (req, res) => {
-  res.status(201).json({ item: await repo.saveNews(cleanNews(req.body || {}), { create: true }) });
+  res.status(201).json({ item: await newsRepo.saveNews(cleanNews(req.body || {}), { create: true, accessToken: req.accessToken }) });
 });
 
 admin.put("/news/:id", async (req, res) => {
-  const id = idParam(req.params.id);
-  const current = await repo.getNews(id);
+  const id = req.params.id;
+  const current = await newsRepo.getNews(id, req.accessToken);
   if (!current) throw new HttpError(404, "Post not found.");
-  const item = await repo.saveNews({ ...cleanNews(req.body || {}), id }, { create: false });
-  await cleanupImages([current.image]);
+  const item = await newsRepo.saveNews({ ...cleanNews(req.body || {}), id }, { create: false, accessToken: req.accessToken });
+  await cleanupImages([current.image], req.accessToken);
   res.json({ item });
 });
 
 admin.delete("/news/:id", async (req, res) => {
-  const id = idParam(req.params.id);
-  const current = await repo.getNews(id);
+  const id = req.params.id;
+  const current = await newsRepo.getNews(id, req.accessToken);
   if (!current) throw new HttpError(404, "Post not found.");
-  await repo.deleteNews(id);
-  await cleanupImages([current.image]);
+  await newsRepo.deleteNews(id, req.accessToken);
+  await cleanupImages([current.image], req.accessToken);
   res.json({ success: true });
 });
 
 // ---- Messages ---------------------------------------------------------------
-admin.get("/messages", async (req, res) => res.json({ items: await repo.listMessages() }));
+admin.get("/messages", async (req, res) => res.json({ items: await contactMessagesRepo.listMessages(req.accessToken) }));
 
 admin.post("/messages/read-all", async (req, res) => {
-  await repo.markAllMessagesRead();
+  await contactMessagesRepo.markAllMessagesRead(req.accessToken);
   res.json({ success: true });
 });
 
 admin.patch("/messages/:id", async (req, res) => {
   const status = v.oneOf(req.body?.status, ["new", "read"], "Status");
-  const item = await repo.setMessageStatus(req.params.id, status);
+  const item = await contactMessagesRepo.setMessageStatus(req.params.id, status, req.accessToken);
   if (!item) throw new HttpError(404, "Message not found.");
   res.json({ item });
 });
 
 admin.delete("/messages/:id", async (req, res) => {
-  if (!(await repo.deleteMessage(req.params.id))) throw new HttpError(404, "Message not found.");
+  if (!(await contactMessagesRepo.deleteMessage(req.params.id, req.accessToken))) throw new HttpError(404, "Message not found.");
   res.json({ success: true });
 });
 
 // ---- Payments ---------------------------------------------------------------
-admin.get("/payments", async (req, res) => res.json({ items: await repo.listPayments() }));
+admin.get("/payments", async (req, res) => res.json({ items: await paymentsRepo.listPayments(req.accessToken) }));
 
 admin.patch("/payments/:id", async (req, res) => {
   const status = v.oneOf(req.body?.status, ["Submitted for review", "Approved", "Rejected"], "Status");
-  const item = await repo.setPaymentStatus(req.params.id, status);
+  const item = await paymentsRepo.setPaymentStatus(req.params.id, status, req.accessToken);
   if (!item) throw new HttpError(404, "Submission not found.");
   res.json({ item });
 });
 
 admin.delete("/payments/:id", async (req, res) => {
-  const removed = await repo.deletePayment(req.params.id);
-  if (!removed) throw new HttpError(404, "Submission not found.");
-  const filePath = privateFilePath(removed.storedName);
-  if (filePath) deleteFileQuietly(filePath);
+  if (!(await paymentsRepo.deletePayment(req.params.id, req.accessToken))) {
+    throw new HttpError(404, "Submission not found.");
+  }
   res.json({ success: true });
 });
 
 // ---- Users ------------------------------------------------------------------
 const ROLES = ["athlete", "guardian", "admin"];
 
-admin.get("/users", async (req, res) => res.json({ items: (await repo.listUsers()).map(publicUser) }));
-
-admin.post("/users", async (req, res) => {
-  const body = req.body || {};
-  const data = {
-    firstName: v.text(body.firstName, { field: "First name", max: 60, required: true }),
-    lastName: v.text(body.lastName, { field: "Last name", max: 60, required: true }),
-    email: v.email(body.email),
-    phone: v.text(body.phone, { field: "Phone", max: 40 }),
-    role: v.oneOf(body.role || "athlete", ROLES, "Role"),
-  };
-  const passwordHash = await hashPassword(v.password(body.password));
-  if (await repo.findUserByEmail(data.email)) throw new HttpError(409, "An account with this email already exists.");
-  res.status(201).json({ item: publicUser(await repo.createUser({ ...data, passwordHash })) });
-});
-
-admin.put("/users/:id", async (req, res) => {
-  const body = req.body || {};
-  const current = await repo.findUserById(req.params.id);
-  if (!current) throw new HttpError(404, "User not found.");
-
-  const changes = {
-    firstName: v.text(body.firstName, { field: "First name", max: 60, required: true }),
-    lastName: v.text(body.lastName, { field: "Last name", max: 60, required: true }),
-    email: v.email(body.email),
-    phone: v.text(body.phone, { field: "Phone", max: 40 }),
-    role: v.oneOf(body.role || current.role, ROLES, "Role"),
-  };
-
-  const isSelf = current.id === req.user.id;
-  if (isSelf && changes.role !== current.role) throw new HttpError(400, "You can't change your own role.");
-  if (current.role === "admin" && changes.role !== "admin" && (await repo.countAdmins()) <= 1) {
-    throw new HttpError(400, "There must be at least one administrator.");
-  }
-
-  const other = await repo.findUserByEmail(changes.email);
-  if (other && other.id !== current.id) throw new HttpError(409, "An account with this email already exists.");
-
-  let passwordChanged = false;
-  if (body.password) {
-    changes.passwordHash = await hashPassword(v.password(body.password));
-    passwordChanged = true;
-  }
-
-  const item = await repo.updateUser(current.id, changes);
-
-  // A changed password or role signs that person out everywhere (except this browser if it's you).
-  if (passwordChanged || changes.role !== current.role) {
-    await repo.deleteUserSessions(current.id, isSelf ? currentSessionHash(req) : null);
-  }
-  res.json({ item: publicUser(item) });
-});
-
-admin.delete("/users/:id", async (req, res) => {
-  const current = await repo.findUserById(req.params.id);
-  if (!current) throw new HttpError(404, "User not found.");
-  if (current.id === req.user.id) throw new HttpError(400, "You can't delete your own account.");
-  if (current.role === "admin") throw new HttpError(400, "Administrators can't be deleted.");
-  await repo.deleteUser(current.id);
-  res.json({ success: true });
-});
+// Disabled until Supabase Auth admin user management is implemented.
+admin.all("/users", (_req, _res, next) => next(new HttpError(501, "Supabase user management is not yet available.")));
+admin.all("/users/:id", (_req, _res, next) => next(new HttpError(501, "Supabase user management is not yet available.")));
 
 router.use("/admin", admin);
 
