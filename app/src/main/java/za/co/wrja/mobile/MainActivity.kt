@@ -609,11 +609,17 @@ internal fun LoginScreen(
 
 @Composable private fun ContentCards(page: String) {
 
+    if (page == "home") {
+        WebsiteHome()
+        return
+    }
     if (page == "programs") {
         WebsitePrograms()
         return
     }
     if (page == "events") {
+        WebsiteEventsHub()
+        Spacer(Modifier.height(24.dp))
         EventsCalendarPreview()
         Spacer(Modifier.height(24.dp))
         SupabaseEvents()

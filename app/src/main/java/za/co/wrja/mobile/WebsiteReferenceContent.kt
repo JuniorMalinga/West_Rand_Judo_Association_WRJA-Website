@@ -57,6 +57,41 @@ private val SiteMuted = Color(0xFFA6A6A6)
 }
 
 private data class WebsitePhoto(val category: String, val image: Int, val caption: String)
+private data class WebsiteInstructor(
+    val image: Int,
+    val name: String,
+    val role: String,
+    val summary: String
+)
+
+@Composable fun WebsiteHome() {
+    Card(Modifier.fillMaxWidth().padding(bottom = 20.dp)) {
+        Column {
+            Image(painterResource(R.drawable.home_cover_1), "WRJA judoka", Modifier.fillMaxWidth().height(210.dp), contentScale = ContentScale.Crop)
+            Column(Modifier.padding(18.dp)) {
+                Text("STEP ONTO THE COMPETITION MAT.", color = SiteGold, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(6.dp))
+                Text("Your WRJA journey starts here.", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(7.dp)); Text("Explore competitions, experienced coaching and a supportive club community across the West Rand.", color = SiteMuted)
+            }
+        }
+    }
+    Row(Modifier.fillMaxWidth()) {
+        HomeFeature(R.drawable.home_cover_2, "TRAIN WITH PURPOSE", "Coaching, discipline and growth.", Modifier.weight(1f))
+        HomeFeature(R.drawable.home_cover_3, "GROW WITH YOUR CLUB", "From first class to the competition mat.", Modifier.weight(1f))
+    }
+    Spacer(Modifier.height(20.dp))
+    Text("WHAT'S NEXT", color = SiteGold, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+    Spacer(Modifier.height(6.dp)); Text("Everything happening around the mat.", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+    Spacer(Modifier.height(8.dp)); Text("View WRJA events, competition information, training pathways and club news from one place.", color = SiteMuted)
+}
+
+@Composable private fun HomeFeature(image: Int, title: String, copy: String, modifier: Modifier) {
+    Card(modifier.padding(4.dp)) { Column {
+        Image(painterResource(image), title, Modifier.fillMaxWidth().height(122.dp), contentScale = ContentScale.Crop)
+        Column(Modifier.padding(12.dp)) { Text(title, color = SiteGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold); Spacer(Modifier.height(5.dp)); Text(copy, style = MaterialTheme.typography.bodySmall, color = SiteMuted) }
+    } }
+}
 
 @Composable fun WebsiteGallery() {
     var category by rememberSaveable { mutableStateOf("All") }
@@ -82,21 +117,54 @@ private data class WebsitePhoto(val category: String, val image: Int, val captio
 }
 
 @Composable fun WebsiteAbout() {
-    Text("ABOUT WEST RAND JUDO ASSOCIATION", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-    Spacer(Modifier.height(8.dp)); Text("Building character on and off the mat. WRJA is a close-knit community of athletes, parents and coaches united by respect for judo.", color = SiteMuted)
+    Card(Modifier.fillMaxWidth()) { Column {
+        Image(painterResource(R.drawable.wrja_committee), "WRJA committee", Modifier.fillMaxWidth().height(210.dp), contentScale = ContentScale.Crop)
+        Column(Modifier.padding(18.dp)) {
+            Text("ABOUT WEST RAND JUDO ASSOCIATION", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(8.dp)); Text("Building character on and off the mat. WRJA is a close-knit community of athletes, parents and coaches united by respect for judo.", color = SiteMuted)
+        }
+    } }
+    Spacer(Modifier.height(22.dp)); Text("OUR MISSION", color = SiteGold, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+    Spacer(Modifier.height(8.dp)); Text("To develop confident, disciplined and respectful individuals through high-quality judo coaching, sportsmanship, inclusivity and opportunity on and off the mat.", color = SiteMuted)
     Spacer(Modifier.height(20.dp)); Text("OUR INSTRUCTORS & FACILITATORS", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+    Spacer(Modifier.height(6.dp)); Text("Experienced coaches and facilitators building a strong judo community across the West Rand.", color = SiteMuted)
     listOf(
-        Triple(R.drawable.sensei_katja, "Sensei Katja Bruwer", "Director — KJK Judo Club • 7th Dan, former SA National Team captain and IJF-qualified coach."),
-        Triple(R.drawable.sensei_michelle, "Sensei Michelle Diamond", "Founder & Director — Golden Score Judo • 3rd Dan Black Belt and Sport Psychology graduate.")
-    ).forEach { (image, name, detail) ->
+        WebsiteInstructor(R.drawable.sensei_michelle, "Michelle Diamond", "Founder & Director — Golden Score Judo", "3rd Dan Black Belt, Sport Psychology graduate and founder of Golden Score Judo."),
+        WebsiteInstructor(R.drawable.sensei_katja, "Katja Bruwer", "Full-Time Coach — KJK Judo Club", "7th Dan, IJF Level 2 Coach, AJU & IJF Kata Judge and coach across all age groups."),
+        WebsiteInstructor(R.drawable.sensei_neil, "Niel Bruwer", "Part-Time Coach — KJK Judo Club", "1st Dan, Provincial C Referee, nutrition specialist and school/club coach."),
+        WebsiteInstructor(R.drawable.sensei_reece, "Reece-Hunter Erasmus", "Full-Time Coach — KJK Judo Club", "3rd Dan, JSA Level 2 Coach and National C Referee specialising in beginners, Kumite and Kata."),
+        WebsiteInstructor(R.drawable.sensei_shasha, "Shasa-Mercedez Erasmus", "Full-Time Coach — KJK Judo Club", "Provincial C Referee developing young judoka at school and club level."),
+        WebsiteInstructor(R.drawable.sensei_shombo, "Okende Shombo Djibril", "Coach PJ", "Coach and mentor whose judo journey began in Kinshasa and continues in South Africa."),
+        WebsiteInstructor(R.drawable.sensei_jean, "Jean Kotze", "Part-Time Assistant Coach — KJK Judo Club", "1st Dan, Safeguarding-accredited assistant coach and Local Technical Official."),
+        WebsiteInstructor(R.drawable.sensei_carien, "Carien du Plessis", "Head of Fitness & Conditioning", "Sho Dan competitive judoka with 14 years of judo experience."),
+        WebsiteInstructor(R.drawable.sensei_johan, "Johan Collins", "Coach — Golden Score Judo", "Coach with 15 years of judo experience, focused on judoka on and off the mat.")
+    ).forEach { instructor ->
         Card(Modifier.fillMaxWidth().padding(top = 14.dp)) { Column {
-            Image(painterResource(image), name, Modifier.fillMaxWidth().height(250.dp).padding(8.dp), contentScale = ContentScale.Fit)
-            Column(Modifier.padding(16.dp)) { Text(name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold); Spacer(Modifier.height(6.dp)); Text(detail, color = SiteMuted) }
+            Image(painterResource(instructor.image), instructor.name, Modifier.fillMaxWidth().height(250.dp).padding(8.dp), contentScale = ContentScale.Fit)
+            Column(Modifier.padding(16.dp)) { Text(instructor.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold); Spacer(Modifier.height(4.dp)); Text(instructor.role.uppercase(), color = SiteGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold); Spacer(Modifier.height(6.dp)); Text(instructor.summary, color = SiteMuted) }
         } }
     }
     Spacer(Modifier.height(22.dp)); Text("FOLLOW OUR CLUBS", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-    listOf("Golden Score Judo" to "Website • Facebook • Instagram", "KJK Judo Club" to "Website • Facebook • Instagram", "West Rand Judo Association" to "Facebook").forEach { (club, links) ->
-        Card(Modifier.fillMaxWidth().padding(top = 10.dp)) { Column(Modifier.padding(16.dp)) { Text(club, fontWeight = FontWeight.Bold); Text(links, color = SiteGold) } }
+    listOf("Golden Score Judo", "KJK Judo Club", "West Rand Judo Association").forEach { club ->
+        Card(Modifier.fillMaxWidth().padding(top = 10.dp)) { Column(Modifier.padding(16.dp)) { Text(club, fontWeight = FontWeight.Bold); Text("Find us on social media!", color = SiteGold) } }
+    }
+}
+
+@Composable fun WebsiteEventsHub() {
+    Text("YOUR WRJA EVENT HUB", color = SiteGold, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+    Spacer(Modifier.height(7.dp)); Text("Everything happening around the mat.", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+    Spacer(Modifier.height(8.dp)); Text("Explore the calendar, competitions, school pathways and official WRJA kit from one clear starting point.", color = SiteMuted)
+    Spacer(Modifier.height(18.dp))
+    listOf(
+        Triple("01", "Calendar", "View upcoming WRJA events, training milestones and important dates."),
+        Triple("02", "Competitions", "Find registrations, payment requirements and information for every competition."),
+        Triple("03", "Schools", "Explore SA Schools Novice and SA Schools Advanced pathways."),
+        Triple("04", "Store", "Order WRJA and JSA tracksuits and request official WRJA posters.")
+    ).forEach { (number, title, description) ->
+        Card(Modifier.fillMaxWidth().padding(bottom = 12.dp)) { Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(number, color = SiteGold, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.width(16.dp)); Column { Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold); Spacer(Modifier.height(4.dp)); Text(description, color = SiteMuted, style = MaterialTheme.typography.bodySmall) }
+        } }
     }
 }
 
