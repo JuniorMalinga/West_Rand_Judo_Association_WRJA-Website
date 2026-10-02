@@ -4,12 +4,14 @@ import { api } from "../lib/api";
 // Live numbers for the admin sidebar and overview (unread messages, pending payments...).
 export default function useAdminCounts(enabled = true) {
   const [counts, setCounts] = useState(null);
+  const [connectionStatus, setConnectionStatus] = useState("checking");
 
   const refresh = useCallback(async () => {
     try {
       setCounts(await api("/api/admin/counts"));
+      setConnectionStatus("online");
     } catch {
-      // not an admin, or the server is down – leave the last known value
+      setConnectionStatus("offline");
     }
   }, []);
 
@@ -24,5 +26,5 @@ export default function useAdminCounts(enabled = true) {
     };
   }, [enabled, refresh]);
 
-  return { counts, refresh };
+  return { counts, refresh, connectionStatus };
 }

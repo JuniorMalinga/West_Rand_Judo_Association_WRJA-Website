@@ -26,7 +26,11 @@
 .admin-topbar h1 { margin: 5px 0 0; font-size: clamp(30px, 4vw, 46px); letter-spacing: -.03em; }
 .admin-topbar-actions { display: flex; align-items: center; gap: 11px; }
 .admin-live-pill { display: flex; align-items: center; gap: 7px; padding: 8px 11px; border-radius: 999px; background: #e4f4e5; color: #25733a; font-size: 10px; font-weight: 800; }
-.admin-live-pill i, .admin-health-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #43ad5b; }
+.admin-live-pill i, .admin-health-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; }
+.admin-live-pill i, .admin-health-row-online .admin-health-dot { background: #43ad5b; }
+.admin-health-row-warning .admin-health-dot { background: #e6ae35; }
+.admin-health-row-offline .admin-health-dot { background: #e25b55; }
+.admin-health-row-checking .admin-health-dot { background: #8d98a7; }
 .admin-refresh { padding: 9px 12px; border: 1px solid #d4d0c5; border-radius: 7px; background: transparent; color: var(--text-dark-muted); font: inherit; font-size: 11px; cursor: pointer; }
 .admin-refresh:hover { border-color: var(--accent); color: var(--text-dark); }
 .admin-toast { max-width: 1220px; margin: -13px auto 20px; padding: 11px 14px; border-radius: 7px; background: #e4f4e5; color: #25733a; font-size: 12px; }

@@ -1,12 +1,14 @@
 import { useAuth } from "../context/AuthContext";
 import { formatBytes } from "../lib/format";
 
-export default function AdminOverviewPanel({ counts, onNavigate }) {
+export default function AdminOverviewPanel({ counts, connectionStatus = "checking", onNavigate }) {
   const { displayName } = useAuth();
   const c = counts || {};
   const unread = c.unreadMessages || 0;
   const pending = c.pendingPayments || 0;
   const num = (value) => (counts ? value ?? 0 : "–");
+  const statusFor = (condition) => connectionStatus === "offline" ? "offline" : condition ? "warning" : connectionStatus;
+  const databaseLabel = connectionStatus === "online" ? "Online" : connectionStatus === "offline" ? "Offline" : "Checking…";
 
   const stats = [
     { label: "Competitions", value: num(c.competitions), tone: "gold", detail: "Managed on the site" },
@@ -42,11 +44,11 @@ export default function AdminOverviewPanel({ counts, onNavigate }) {
         </section>
         <section className="admin-health-card">
           <p className="eyebrow">SYSTEM HEALTH</p>
-          <h3>{counts ? "Connected to the WRJA database." : "Connecting to the server…"}</h3>
-          <div className="admin-health-row"><span><i className="admin-health-dot" />Database</span><b>{counts ? "Local SQLite" : "…"}</b></div>
-          <div className="admin-health-row"><span><i className="admin-health-dot" />Contact inbox</span><b>{unread ? `${unread} unread` : "Clear"}</b></div>
-          <div className="admin-health-row"><span><i className="admin-health-dot" />POP submissions</span><b>{pending ? `${pending} pending` : "Up to date"}</b></div>
-          <div className="admin-health-row"><span><i className="admin-health-dot" />Uploaded files</span><b>{counts ? formatBytes(c.uploadsBytes || 0) : "…"}</b></div>
+          <h3>{connectionStatus === "online" ? "Connected to the WRJA database." : connectionStatus === "offline" ? "Database connection unavailable." : "Checking the database connection…"}</h3>
+          <div className={`admin-health-row admin-health-row-${connectionStatus}`}><span><i className="admin-health-dot" />Database</span><b>{databaseLabel}</b></div>
+          <div className={`admin-health-row admin-health-row-${statusFor(unread > 0)}`}><span><i className="admin-health-dot" />Contact inbox</span><b>{connectionStatus === "offline" ? "Offline" : unread ? `${unread} unread` : connectionStatus === "online" ? "Clear" : "Checking…"}</b></div>
+          <div className={`admin-health-row admin-health-row-${statusFor(pending > 0)}`}><span><i className="admin-health-dot" />POP submissions</span><b>{connectionStatus === "offline" ? "Offline" : pending ? `${pending} pending` : connectionStatus === "online" ? "Up to date" : "Checking…"}</b></div>
+          <div className={`admin-health-row admin-health-row-${connectionStatus}`}><span><i className="admin-health-dot" />Uploaded files</span><b>{connectionStatus === "online" ? formatBytes(c.uploadsBytes || 0) : connectionStatus === "offline" ? "Offline" : "Checking…"}</b></div>
           <p className="admin-health-note">Everything is saved on the server, so changes are visible to every visitor straight away.</p>
         </section>
       </div>

@@ -40,7 +40,7 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [notice, setNotice] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
-  const { counts, refresh: refreshCounts } = useAdminCounts(isAdmin);
+  const { counts, refresh: refreshCounts, connectionStatus } = useAdminCounts(isAdmin);
 
   useEffect(() => {
     const handleTabRequest = (event) => setActiveTab(event.detail || "overview");
@@ -96,7 +96,7 @@ export default function AdminPage() {
         </header>
         {notice && <div className="admin-toast" role="status">{notice}</div>}
         {activeTab === "overview"
-          ? <AdminOverviewPanel key={refreshKey} counts={counts} onNavigate={goTo} />
+          ? <AdminOverviewPanel key={refreshKey} counts={counts} connectionStatus={connectionStatus} onNavigate={goTo} />
           : <section className="admin-panel-wrap"><ActivePanel key={`${activeTab}-${refreshKey}`} /></section>}
       </main>
     </div>
