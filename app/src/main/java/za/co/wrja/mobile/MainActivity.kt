@@ -618,11 +618,16 @@ internal fun LoginScreen(
         return
     }
     if (page == "events") {
-        WebsiteEventsHub()
-        Spacer(Modifier.height(24.dp))
-        EventsCalendarPreview()
-        Spacer(Modifier.height(24.dp))
-        SupabaseEvents()
+        var showPayments by rememberSaveable { mutableStateOf(false) }
+        if (showPayments) {
+            EftPaymentsScreen(onBack = { showPayments = false })
+        } else {
+            WebsiteEventsHub(onCompetitionsClick = { showPayments = true })
+            Spacer(Modifier.height(24.dp))
+            EventsCalendarPreview()
+            Spacer(Modifier.height(24.dp))
+            SupabaseEvents()
+        }
         return
     }
     if (page == "news") {
@@ -667,9 +672,65 @@ internal fun LoginScreen(
     Card(Modifier.fillMaxWidth().padding(bottom = 16.dp)) { Column { Box(Modifier.fillMaxWidth().height(240.dp).background(Charcoal2), contentAlignment = Alignment.Center) { Image(painterResource(photo), null, Modifier.fillMaxSize().padding(8.dp), contentScale = ContentScale.Fit) }; Column(Modifier.padding(16.dp)) { Text(name, fontWeight = FontWeight.Bold, fontSize = 19.sp); Text(role.uppercase(), color = GoldDark, fontSize = 12.sp, fontWeight = FontWeight.Bold); Spacer(Modifier.height(6.dp)); Text(bio, color = Muted, fontSize = 14.sp, lineHeight = 20.sp) } } }
 }
 
-@Composable private fun EventsCalendarPreview() {
-    Spacer(Modifier.height(16.dp)); Text("AUGUST 2026", fontSize = 22.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()); Spacer(Modifier.height(12.dp));
-    Column(Modifier.fillMaxWidth().background(OffWhite)) { Row(Modifier.fillMaxWidth().background(GoldDark)) { listOf("M", "T", "W", "T", "F", "S", "S").forEach { Text(it, Modifier.weight(1f).padding(vertical = 10.dp), textAlign = TextAlign.Center, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold) } }; val days = listOf("", "", "", "", "", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31"); days.chunked(7).forEach { week -> Row(Modifier.fillMaxWidth()) { week.forEach { day -> Box(Modifier.weight(1f).aspectRatio(1f).padding(1.dp).background(if (day == "12") Gold else Color.White), contentAlignment = Alignment.Center) { Text(day, color = if (day == "12") Ink else Ink, fontSize = 13.sp, fontWeight = if (day == "12") FontWeight.Bold else FontWeight.Normal) } } } } }; Spacer(Modifier.height(14.dp)); Text("Dates are presentation-only at this stage. Event details will be connected when the scheduling backend is added.", color = Muted, fontSize = 13.sp, lineHeight = 19.sp)
+@Composable
+private fun EventsCalendarPreview() {
+    Spacer(Modifier.height(16.dp))
+    Text(
+        text = "AUGUST 2026",
+        fontSize = 22.sp,
+        fontWeight = FontWeight.Bold,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth()
+    )
+    Spacer(Modifier.height(12.dp))
+
+    // Keep the existing preview month. Every row must contain seven cells.
+    val days = List(5) { "" } + (1..31).map { it.toString() }
+    val trailingBlanks = (7 - days.size % 7) % 7
+    val cells = days + List(trailingBlanks) { "" }
+
+    Column(Modifier.fillMaxWidth().background(OffWhite)) {
+        Row(Modifier.fillMaxWidth().background(GoldDark)) {
+            listOf("M", "T", "W", "T", "F", "S", "S").forEach { label ->
+                Text(
+                    text = label,
+                    modifier = Modifier.weight(1f).padding(vertical = 10.dp),
+                    textAlign = TextAlign.Center,
+                    color = Charcoal,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+        cells.chunked(7).forEach { week ->
+            Row(Modifier.fillMaxWidth()) {
+                week.forEach { day ->
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .aspectRatio(1f)
+                            .padding(1.dp)
+                            .background(if (day == "12") Gold else Color.White),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = day,
+                            color = Charcoal,
+                            fontSize = 13.sp,
+                            fontWeight = if (day == "12") FontWeight.Bold else FontWeight.Normal
+                        )
+                    }
+                }
+            }
+        }
+    }
+    Spacer(Modifier.height(14.dp))
+    Text(
+        text = "Calendar preview only. For EFT payments, use the Competitions card above.",
+        color = Muted,
+        fontSize = 13.sp,
+        lineHeight = 19.sp
+    )
 }
 
 @Composable private fun NewsDetailList() {

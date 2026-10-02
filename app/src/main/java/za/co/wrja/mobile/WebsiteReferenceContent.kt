@@ -2,7 +2,6 @@ package za.co.wrja.mobile
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -150,7 +149,8 @@ private data class WebsiteInstructor(
     }
 }
 
-@Composable fun WebsiteEventsHub() {
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable fun WebsiteEventsHub(onCompetitionsClick: () -> Unit) {
     Text("YOUR WRJA EVENT HUB", color = SiteGold, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
     Spacer(Modifier.height(7.dp)); Text("Everything happening around the mat.", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
     Spacer(Modifier.height(8.dp)); Text("Explore the calendar, competitions, school pathways and official WRJA kit from one clear starting point.", color = SiteMuted)
@@ -161,10 +161,27 @@ private data class WebsiteInstructor(
         Triple("03", "Schools", "Explore SA Schools Novice and SA Schools Advanced pathways."),
         Triple("04", "Store", "Order WRJA and JSA tracksuits and request official WRJA posters.")
     ).forEach { (number, title, description) ->
-        Card(Modifier.fillMaxWidth().padding(bottom = 12.dp)) { Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(number, color = SiteGold, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.width(16.dp)); Column { Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold); Spacer(Modifier.height(4.dp)); Text(description, color = SiteMuted, style = MaterialTheme.typography.bodySmall) }
-        } }
+        val cardModifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+        val cardContent: @Composable ColumnScope.() -> Unit = {
+            Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(number, color = SiteGold, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.width(16.dp))
+                Column {
+                    Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(4.dp))
+                    Text(description, color = SiteMuted, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+        if (title == "Competitions") {
+            Card(
+                onClick = onCompetitionsClick,
+                modifier = cardModifier,
+                content = cardContent
+            )
+        } else {
+            Card(modifier = cardModifier, content = cardContent)
+        }
     }
 }
 
