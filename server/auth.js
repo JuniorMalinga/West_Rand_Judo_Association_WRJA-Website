@@ -17,7 +17,7 @@ function cookies(header = "") {
 
 export function authClient() {
   if (!(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL) || !(process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY))
-    throw new Error("Configure SUPABASE_URL and SUPABASE_ANON_KEY in server/.env.local.");
+    throw new Error("Configure SUPABASE_URL and SUPABASE_ANON_KEY in server/.env.");
   return createClient(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL, process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });

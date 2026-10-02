@@ -20,7 +20,7 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-dotenv.config({ path: join(__dirname, ".env.local") });
+dotenv.config({ path: join(__dirname, ".env") });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -78,7 +78,6 @@ console.log("\nInitializing Gemini AI...");
 // 1. GEMINI_API_KEYS="key1,key2,key3"
 // 2. GEMINI_API_KEY
 // 3. GEMINI_API_KEY_2, GEMINI_API_KEY_3, etc.
-// 4. VITE_GEMINI_API_KEY as legacy fallback
 function loadGeminiApiKeys() {
   const keys = [];
 
@@ -100,10 +99,6 @@ function loadGeminiApiKeys() {
   while (process.env[`GEMINI_API_KEY_${i}`]) {
     keys.push(process.env[`GEMINI_API_KEY_${i}`].trim());
     i++;
-  }
-
-  if (process.env.VITE_GEMINI_API_KEY) {
-    keys.push(process.env.VITE_GEMINI_API_KEY.trim());
   }
 
   // Remove duplicates while preserving order
@@ -143,7 +138,7 @@ const geminiModelNames = loadGeminiModels();
 
 if (geminiApiKeys.length === 0) {
   console.warn(
-    "No Gemini API key(s) in server/.env.local – the chatbot will be unavailable."
+    "No Gemini API key(s) in server/.env – the chatbot will be unavailable."
   );
 } else {
   console.log(

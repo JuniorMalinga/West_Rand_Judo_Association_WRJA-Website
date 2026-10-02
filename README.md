@@ -66,39 +66,31 @@ npm install
 cd ..
 ```
 
-### 3. Create the required `.env.local` files
+### 3. Create the required environment file
 
-**IMPORTANT:** The `.env.local` files are intentionally **not included in the GitHub repository** because they contain API credentials.
+**IMPORTANT:** `server/.env` is intentionally **not included in the GitHub repository** because it contains API credentials.
 
-Anyone cloning this project must create the required environment files manually.
+Anyone cloning this project must create this file manually.
 
-Create this file in the **root project folder**:
+Create this file inside the server folder:
 
 ```text
-.env.local
+server/.env
 ```
 
-Add:
+Add the values required by your deployment:
 
 ```env
 VITE_MAPBOX_TOKEN=your_mapbox_token_here
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+GEMINI_API_KEY=your_gemini_api_key
 ```
 
-Then create another file inside the server folder:
+Replace the placeholders with your own credentials. Never add a `VITE_` prefix to secret keys such as `SUPABASE_SERVICE_ROLE_KEY` or `GEMINI_API_KEY`.
 
-```text
-server/.env.local
-```
-
-Add:
-
-```env
-GEMINI_API_KEY=your_gemini_api_key_here
-```
-
-Replace the placeholder values with your own API credentials.
-
-**Do not copy API keys from someone else's environment file or commit your `.env.local` files to GitHub.**
+**Do not copy API keys from someone else's environment file or commit `server/.env` to GitHub.**
 
 ### Required Environment Files
 
@@ -107,10 +99,8 @@ Your project should look like:
 ```text
 wrja-website/
 │
-├── .env.local              ← YOU MUST CREATE THIS
-│
 ├── server/
-│   ├── .env.local          ← YOU MUST CREATE THIS
+│   ├── .env                ← YOU MUST CREATE THIS
 │   ├── server.js
 │   ├── package.json
 │   └── package-lock.json
@@ -118,7 +108,7 @@ wrja-website/
 └── ...
 ```
 
-The `.env.local` files are required for the application to work correctly.
+The `server/.env` file supplies both the backend and Vite frontend configuration.
 
 ## Run Locally
 
@@ -216,10 +206,10 @@ src/
 └── main.jsx
 
 server/
+├── .env
 ├── server.js
 ├── package.json
-├── package-lock.json
-└── .env.local
+└── package-lock.json
 ```
 
 ## AI Chatbot
@@ -250,23 +240,19 @@ The AI chatbot is currently under testing and debugging.
 
 ## Environment Security
 
-Never commit the following files to GitHub:
+Never commit the environment file to GitHub:
 
 ```text
-.env
-.env.local
 server/.env
-server/.env.local
 ```
 
 These files can contain private API credentials.
 
-The project should instead use placeholder/example files if environment variable documentation is required.
+Use `server/.env.example` with placeholder values if environment variable documentation is required.
 
 For example:
 
 ```text
-.env.example
 server/.env.example
 ```
 
@@ -363,10 +349,10 @@ The application reads the Mapbox token from:
 VITE_MAPBOX_TOKEN=your_mapbox_token_here
 ```
 
-The token must be placed in the root:
+The token must be placed in `server/.env`:
 
 ```text
-.env.local
+server/.env
 ```
 
 **Remember to create this file after cloning the repository.**

@@ -49,7 +49,7 @@ to `better-sqlite3` if `npm install` managed to install it.
   uploads and chat are rate-limited too; the contact form has a honeypot.
 * State-changing requests need the `X-Requested-With: wrja-web` header and an
   allowed origin (CSRF). CORS only allows known origins (`ALLOWED_ORIGINS` in
-  `.env.local` adds more). No request bodies are logged.
+  `server/.env` adds more). No request bodies are logged.
 * Uploads are checked by real file signature, size-capped and saved under
   random names; SVG/HTML is refused. Proof-of-payment files are **private**:
   only the uploader and admins can open them.
