@@ -35,7 +35,7 @@ const COMPETITIONS = [
 const GRADING_SHEET = "https://docs.google.com/spreadsheets/d/138pFFvZxT-s6YzoS4eAARgQkZGQdmlJ1i8FOzhauuYE/edit?gid=0#gid=0";
 
 const EVENTS = [
-  { name: "Placeholder grading", type: "Grading", date: "2026-09-12", location: "Special dojo", image: img("default-event.jpg"),
+  { name: "Placeholder grading", type: "Grading", date: "2026-09-12", location: "Special dojo", image: img("default-event.jpeg"),
     description: "Placeholder description of what this grading covers, who can attend, and what to bring.",
     applicationSheetUrl: GRADING_SHEET, qrCodeImage: img("seed-qr.png") },
   { name: "Placeholder provincial competition", type: "Competition", date: "2026-10-10", location: "Placeholder venue", image: img("seed-comp-2.jpg"),
@@ -44,7 +44,7 @@ const EVENTS = [
   { name: "Placeholder training camp", type: "Training camp", date: "2026-11-21", location: "Placeholder venue", image: img("seed-event-camp.jpg"),
     description: "Placeholder description of the training camp schedule and what athletes should bring.",
     applicationSheetUrl: "", qrCodeImage: "" },
-  { name: "Placeholder grading", type: "Grading", date: "2026-11-21", location: "Special dojo", image: img("default-event.jpg"),
+  { name: "Placeholder grading", type: "Grading", date: "2026-11-21", location: "Special dojo", image: img("default-event.jpeg"),
     description: "Placeholder description of what this grading covers, who can attend, and what to bring.",
     applicationSheetUrl: GRADING_SHEET, qrCodeImage: img("seed-qr.png") },
 ];

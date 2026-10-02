@@ -5,6 +5,9 @@ export default defineConfig({
   envDir: "./server",
   plugins: [react()],
   server: {
+    watch: {
+      ignored: ["**/server/data/**"],
+    },
     proxy: {
       "/api": {
         target: "http://localhost:5000",

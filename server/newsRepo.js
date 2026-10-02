@@ -29,7 +29,7 @@ const toNews = (row, client) => row && ({
   category: row.category || "",
   excerpt: row.excerpt || "",
   body: row.body || "",
-  image: row.image_path ? publicMediaUrl(row.image_path, client) : "/uploads/public/default-news.jpg",
+  image: row.image_path ? publicMediaUrl(row.image_path, client) : "/uploads/public/default-news.jpeg",
   source: row.source_name || "",
   url: row.source_url || "",
   hasVideo: Boolean(row.has_video),

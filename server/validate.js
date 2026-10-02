@@ -70,7 +70,7 @@ export function integer(value, { field, min = 0, max = 100000, fallback = 0 } = 
 export function uploadedImage(value, field = "Image") {
   const clean = String(value ?? "").trim();
   if (!clean) return "";
-  if (!/^\/uploads\/public\/[A-Za-z0-9._-]+\.(jpg|png|webp|gif)$/.test(clean)) {
+  if (!/^\/uploads\/public\/[A-Za-z0-9._-]+\.(jpe?g|png|webp|gif)$/.test(clean)) {
     throw new HttpError(400, `${field} must be uploaded through the admin uploader.`);
   }
   return clean;

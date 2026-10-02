@@ -238,7 +238,7 @@ function cleanCompetition(body) {
     paymentRequired,
     paymentInstructions: paymentRequired ? v.text(body.paymentInstructions, { field: "Payment instructions", max: 2000 }) : "",
     paymentUrl: paymentRequired ? v.httpUrl(body.paymentUrl, "Payment URL") : "",
-    image: v.uploadedImage(body.image) || "/uploads/public/default-competition.jpg",
+    image: v.uploadedImage(body.image) || "/uploads/public/default-competition.jpeg",
     additionalInfo: v.text(body.additionalInfo, { field: "Additional information", max: 2000 }),
     displayOrder: v.integer(body.displayOrder, { field: "Display order", min: 1, max: 9999, fallback: 99 }),
   };
@@ -286,7 +286,7 @@ function cleanEvent(body) {
     date: v.isoDate(body.date, { required: true }),
     location: v.text(body.location, { field: "Location", max: 160, required: true }),
     description: v.text(body.description, { field: "Description", max: 3000 }),
-    image: v.uploadedImage(body.image) || "/uploads/public/default-event.jpg",
+    image: v.uploadedImage(body.image) || "/uploads/public/default-event.jpeg",
     applicationSheetUrl: v.httpUrl(body.applicationSheetUrl, "Application link"),
     qrCodeImage: v.uploadedImage(body.qrCodeImage, "QR code"),
   };
@@ -334,7 +334,7 @@ function cleanNews(body) {
     category: v.text(body.category, { field: "Category", max: 60, required: true }),
     excerpt: v.text(body.excerpt, { field: "Summary", max: 1500, required: true }),
     body: v.text(body.body, { field: "Full story", max: 20000 }),
-    image: v.uploadedImage(body.image) || "/uploads/public/default-news.jpg",
+    image: v.uploadedImage(body.image) || "/uploads/public/default-news.jpeg",
     source: v.text(body.source, { field: "Source", max: 120 }),
     url: v.httpUrl(body.url, "Source URL"),
   };

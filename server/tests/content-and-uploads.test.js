@@ -82,11 +82,11 @@ describe("competitions, events and news", () => {
 
     const again = await admin.post("/api/admin/competitions", { name: "Spring Open & Kata", type: "Competition" });
     assert.equal(again.data.item.slug, "spring-open-and-kata-2", "slugs stay unique");
-    assert.equal(again.data.item.image, "/uploads/public/default-competition.jpg", "no image -> default");
+    assert.equal(again.data.item.image, "/uploads/public/default-competition.jpeg", "no image -> default");
 
     const edited = await admin.put("/api/admin/competitions/spring-open-and-kata", { ...created.data.item, name: "Spring Open", image: "" });
     assert.equal(edited.data.item.slug, "spring-open-and-kata", "slug is stable");
-    assert.equal(edited.data.item.image, "/uploads/public/default-competition.jpg");
+    assert.equal(edited.data.item.image, "/uploads/public/default-competition.jpeg");
     assert.ok(!publicFiles().includes(path.basename(up.url)), "old uploaded image is cleaned up");
 
     // members see it in full, visitors see the teaser
@@ -119,7 +119,7 @@ describe("competitions, events and news", () => {
     });
     assert.equal(created.status, 201);
     assert.equal(created.data.item.qrCodeImage, qr);
-    assert.equal(created.data.item.image, "/uploads/public/default-event.jpg");
+    assert.equal(created.data.item.image, "/uploads/public/default-event.jpeg");
 
     const list = (await admin.get("/api/events")).data.items;
     assert.ok(list.some((e) => e.id === created.data.item.id && e.qrCodeImage === qr));

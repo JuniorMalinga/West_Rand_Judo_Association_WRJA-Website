@@ -31,7 +31,7 @@ const toCompetition = (row, client) => row && ({
   paymentRequired: Boolean(row.payment_required),
   paymentInstructions: row.payment_instructions || "",
   paymentUrl: row.payment_url || "",
-  image: row.image_path ? publicMediaUrl(row.image_path, client) : "/uploads/public/default-competition.jpg",
+  image: row.image_path ? publicMediaUrl(row.image_path, client) : "/uploads/public/default-competition.jpeg",
   additionalInfo: row.additional_info || "",
   displayOrder: row.display_order ?? 99,
 });
@@ -55,7 +55,7 @@ const toEvent = (row, client) => row && ({
   date: row.event_date,
   location: row.location || "",
   description: row.description || "",
-  image: row.image_path ? publicMediaUrl(row.image_path, client) : "/uploads/public/default-event.jpg",
+  image: row.image_path ? publicMediaUrl(row.image_path, client) : "/uploads/public/default-event.jpeg",
   applicationSheetUrl: row.entry_form_path || "",
   qrCodeImage: row.qr_code_image_path ? publicMediaUrl(row.qr_code_image_path, client) : "",
 });
