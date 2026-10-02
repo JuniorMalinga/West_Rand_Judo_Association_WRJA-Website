@@ -90,7 +90,10 @@ export default function AdminPage() {
         <header className="admin-topbar">
           <div><p className="eyebrow">WRJA WEBSITE / ADMIN</p><h1>{tabs.find((tab) => tab.slug === activeTab)?.label}</h1></div>
           <div className="admin-topbar-actions">
-            <span className="admin-live-pill"><i /> Live database</span>
+            <span className={`admin-live-pill admin-live-pill-${connectionStatus}`} role="status" aria-live="polite">
+              <i />
+              {connectionStatus === "online" ? "Database online" : connectionStatus === "offline" ? "Database offline" : "Checking database…"}
+            </span>
             <button className="admin-refresh" onClick={refresh}>Refresh data</button>
           </div>
         </header>
