@@ -28,3 +28,16 @@ export function createUserClient(accessToken) {
     global: { headers: { Authorization: `Bearer ${accessToken}` } },
   });
 }
+
+export function createAdminClient() {
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const adminKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
+  if (!url || !adminKey) {
+    const error = new Error("Configure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in server/.env.local.");
+    error.status = 503;
+    throw error;
+  }
+  return createClient(url, adminKey, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
+}

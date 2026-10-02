@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useCollectionState } from "../hooks/useCollection";
 import useNotice from "../hooks/useNotice";
@@ -14,7 +14,17 @@ export default function AdminUsersPanel() {
   const [formState, setFormState] = useState(null);
   const [query, setQuery] = useState("");
   const [formError, setFormError] = useState("");
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [deletingUserId, setDeletingUserId] = useState(null);
+  const confirmDialogRef = useRef(null);
   const { notice, show } = useNotice();
+
+  useEffect(() => {
+    const dialog = confirmDialogRef.current;
+    if (!dialog) return;
+    if (confirmAction && !dialog.open) dialog.showModal();
+    if (!confirmAction && dialog.open) dialog.close();
+  }, [confirmAction]);
 
   const admins = users.filter((u) => u.role === "admin");
   const visible = users.filter((u) =>
@@ -23,40 +33,71 @@ export default function AdminUsersPanel() {
   const editingSelf = formState?.id && formState.id === currentUser?.id;
 
   const openAdd = () => { setFormError(""); setFormState({ id: null, ...emptyUser }); };
-  const openEdit = (user) => { setFormError(""); setFormState({ ...user, password: "" }); };
+  const openEdit = (user) => {
+    setFormError("");
+    setFormState({ ...user, password: "" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
   const closeForm = () => setFormState(null);
   const update = (field, value) => setFormState((current) => ({ ...current, [field]: value }));
 
-  const handleSave = async (event) => {
-    event.preventDefault();
-    setFormError("");
+  const saveUser = async (user) => {
     setSaving(true);
     try {
-      if (formState.id) {
-        const { password, ...rest } = formState;
-        await usersAdmin.update(formState.id, password ? { ...rest, password } : rest);
+      if (user.id) {
+        const { password, ...rest } = user;
+        await usersAdmin.update(user.id, password ? { ...rest, password } : rest);
         show("success", "User updated.");
       } else {
-        await usersAdmin.create(formState);
+        await usersAdmin.create(user);
         show("success", "User added.");
       }
+      setConfirmAction(null);
       closeForm();
     } catch (error) {
       setFormError(error.message);
+      setConfirmAction(null);
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (user) => {
-    if (!window.confirm(`Delete ${user.firstName} ${user.lastName}? They will no longer be able to log in.`)) return;
+  const handleSave = (event) => {
+    event.preventDefault();
+    setFormError("");
+    if (formState.id) {
+      setConfirmAction({ type: "update", user: { ...formState } });
+      return;
+    }
+    saveUser(formState);
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmAction) return;
+    if (confirmAction.type === "update") {
+      await saveUser(confirmAction.user);
+      return;
+    }
+
+    const userToDelete = confirmAction.user;
+    setConfirmAction(null);
+    setDeletingUserId(userToDelete.id);
+    setSaving(true);
     try {
-      await usersAdmin.remove(user.id);
+      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        await new Promise((resolve) => window.setTimeout(resolve, 800));
+      }
+      await usersAdmin.remove(userToDelete.id);
       show("success", "User deleted.");
     } catch (error) {
       show("error", error.message);
+    } finally {
+      setSaving(false);
+      setDeletingUserId(null);
     }
   };
+
+  const handleDelete = (user) => setConfirmAction({ type: "delete", user });
 
   return (
     <div className="admin-panel">
@@ -111,7 +152,7 @@ export default function AdminUsersPanel() {
           <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th /></tr></thead>
           <tbody>
             {visible.map((user) => (
-              <tr key={user.id}>
+              <tr key={user.id} className={deletingUserId === user.id ? "admin-user-row-deleting" : undefined}>
                 <td><strong>{user.firstName} {user.lastName}</strong>{user.id === currentUser?.id && <span className="admin-badge admin-badge-muted">You</span>}</td>
                 <td>{user.email}</td>
                 <td>{user.phone || <span className="admin-muted">—</span>}</td>
@@ -127,6 +168,35 @@ export default function AdminUsersPanel() {
           </tbody>
         </table>
       </div>
+
+      <dialog
+        ref={confirmDialogRef}
+        className="admin-confirm-dialog"
+        onCancel={(event) => { event.preventDefault(); setConfirmAction(null); }}
+      >
+        {confirmAction && (
+          <div className="admin-confirm-content">
+            <p className="admin-confirm-kicker">{confirmAction.type === "delete" ? "DELETE ACCOUNT" : "CONFIRM CHANGES"}</p>
+            <h2>{confirmAction.type === "delete" ? "Delete this user?" : "Save these changes?"}</h2>
+            <p>
+              {confirmAction.type === "delete"
+                ? `${confirmAction.user.firstName} ${confirmAction.user.lastName} will no longer be able to log in.`
+                : `Save the updates to ${confirmAction.user.firstName} ${confirmAction.user.lastName}?`}
+            </p>
+            <div className="admin-confirm-actions">
+              <button type="button" className="btn btn-outline-dark" onClick={() => setConfirmAction(null)} disabled={saving}>Cancel</button>
+              <button
+                type="button"
+                className={`btn ${confirmAction.type === "delete" ? "admin-confirm-delete" : "btn-accent"}`}
+                onClick={handleConfirmAction}
+                disabled={saving}
+              >
+                {saving ? "Working…" : confirmAction.type === "delete" ? "Delete user" : "Save changes"}
+              </button>
+            </div>
+          </div>
+        )}
+      </dialog>
     </div>
   );
 }

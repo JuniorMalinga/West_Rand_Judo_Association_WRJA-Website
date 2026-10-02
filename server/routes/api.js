@@ -5,6 +5,7 @@ import * as contactMessagesRepo from "../contactMessagesRepo.js";
 import * as paymentsRepo from "../paymentsRepo.js";
 import * as systemRepo from "../systemRepo.js";
 import * as mediaRepo from "../mediaRepo.js";
+import * as adminUsersRepo from "../adminUsersRepo.js";
 import * as v from "../validate.js";
 import { authClient, clearSession, loadProfile, setSession, requireAdmin, requireAuth } from "../auth.js";
 import { createUserClient } from "../supabase.js";
@@ -401,9 +402,53 @@ admin.delete("/payments/:id", async (req, res) => {
 // ---- Users ------------------------------------------------------------------
 const ROLES = ["athlete", "guardian", "admin"];
 
-// Disabled until Supabase Auth admin user management is implemented.
-admin.all("/users", (_req, _res, next) => next(new HttpError(501, "Supabase user management is not yet available.")));
-admin.all("/users/:id", (_req, _res, next) => next(new HttpError(501, "Supabase user management is not yet available.")));
+function cleanUser(body, { creating = false } = {}) {
+  const user = {
+    firstName: v.text(body.firstName, { field: "First name", max: 60, required: true }),
+    lastName: v.text(body.lastName, { field: "Last name", max: 60, required: true }),
+    email: v.email(body.email),
+    phone: v.text(body.phone, { field: "Phone", max: 40 }),
+    role: v.oneOf(body.role, ROLES, "Role"),
+  };
+  const password = String(body.password || "");
+  if (creating || password) user.password = v.password(password);
+  return user;
+}
+
+admin.get("/users", async (req, res) => {
+  res.json({ items: await adminUsersRepo.listUsers(req.accessToken) });
+});
+
+admin.post("/users", async (req, res) => {
+  const item = await adminUsersRepo.createUser(cleanUser(req.body || {}, { creating: true }));
+  res.status(201).json({ item });
+});
+
+admin.put("/users/:id", async (req, res) => {
+  const id = idParam(req.params.id);
+  const currentUsers = await adminUsersRepo.listUsers(req.accessToken);
+  const current = currentUsers.find((user) => user.id === id);
+  if (!current) throw new HttpError(404, "User not found.");
+
+  const changes = cleanUser(req.body || {});
+  if (id === req.user.id && changes.role !== "admin") throw new HttpError(400, "You can't change your own administrator role.");
+  if (current.role === "admin" && changes.role !== "admin" && currentUsers.filter((user) => user.role === "admin").length <= 1) {
+    throw new HttpError(400, "The last administrator can't be demoted.");
+  }
+
+  res.json({ item: await adminUsersRepo.updateUser(id, changes) });
+});
+
+admin.delete("/users/:id", async (req, res) => {
+  const id = idParam(req.params.id);
+  const current = (await adminUsersRepo.listUsers(req.accessToken)).find((user) => user.id === id);
+  if (!current) throw new HttpError(404, "User not found.");
+  if (id === req.user.id) throw new HttpError(400, "You can't delete your own account.");
+  if (current.role === "admin") throw new HttpError(400, "Administrators can't be deleted.");
+
+  await adminUsersRepo.deleteUser(id);
+  res.json({ success: true });
+});
 
 router.use("/admin", admin);
 
