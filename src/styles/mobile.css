@@ -7,11 +7,12 @@
   display: contents;
 }
 
-/* Stop sideways scrolling and oversized media everywhere */
-html,
+/* Stop sideways scrolling and oversized media everywhere.
+   "clip" hides overflow without turning the body into a scroll container,
+   so sticky elements like the admin sidebar keep working. */
 body {
   max-width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 img,
@@ -20,16 +21,6 @@ iframe,
 canvas,
 svg {
   max-width: 100%;
-}
-
-table {
-  display: block;
-  max-width: 100%;
-  overflow-x: auto;
-}
-
-.admin-panel-wrap {
-  overflow-x: auto;
 }
 
 /* ---------- Tablets and below ---------- */
