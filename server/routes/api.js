@@ -247,9 +247,19 @@ function cleanCompetition(body) {
 const slugify = (value) =>
   String(value).toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "competition";
 
+// Removes old images from Storage once nothing uses them. A cleanup problem
+// must never fail the request, because the main change has already been saved.
 async function cleanupImages(paths, accessToken) {
   for (const p of paths) {
-    if (p && !(await eventsRepo.isEventImageReferenced(p, accessToken)) && !(await newsRepo.isNewsImageReferenced(p, accessToken))) deletePublicImage(p);
+    if (!p) continue;
+    try {
+      const stillUsed =
+        (await eventsRepo.isEventImageReferenced(p, accessToken)) ||
+        (await newsRepo.isNewsImageReferenced(p, accessToken));
+      if (!stillUsed) await mediaRepo.deletePublicMedia(p, accessToken);
+    } catch (error) {
+      console.warn("Image cleanup skipped:", error.message);
+    }
   }
 }
 
