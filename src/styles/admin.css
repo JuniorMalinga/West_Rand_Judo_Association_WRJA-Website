@@ -213,6 +213,8 @@
 .admin-messages-list { display: grid; gap: 10px; }
 .admin-message-card { overflow: hidden; border: 1px solid #e8e4da; border-radius: 10px; background: #fff; transition: border-color .2s ease, box-shadow .2s ease; }
 .admin-message-card:hover { border-color: #d9d0b0; box-shadow: 0 6px 16px rgba(24,24,24,.05); }
+.admin-message-card-deleting { --shard-x: 12px; --shard-rotation: 4deg; animation: admin-user-shatter 700ms cubic-bezier(.22,.7,.32,1) both; }
+@media (prefers-reduced-motion: reduce) { .admin-message-card-deleting { animation: none; opacity: .45; } }
 .admin-message-unread { border-left: 3px solid var(--accent); background: #fffdf5; }
 .admin-message-header { display: flex; width: 100%; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 16px 18px 6px; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; }
 .admin-message-name { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--text-dark); font-size: 14px; font-weight: 800; }

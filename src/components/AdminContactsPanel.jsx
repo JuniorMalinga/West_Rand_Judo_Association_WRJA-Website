@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCollectionState } from "../hooks/useCollection";
 import useNotice from "../hooks/useNotice";
 import { deleteMessage, isUnread, markAllMessagesRead, messagesStore, setMessageStatus } from "../data/messages";
@@ -8,7 +8,17 @@ export default function AdminContactsPanel() {
   const { items: messages, loaded, error: loadError } = useCollectionState(messagesStore);
   const [filter, setFilter] = useState("all");
   const [openId, setOpenId] = useState(null);
+  const [confirmMessage, setConfirmMessage] = useState(null);
+  const [deletingMessageId, setDeletingMessageId] = useState(null);
+  const confirmDialogRef = useRef(null);
   const { notice, show } = useNotice();
+
+  useEffect(() => {
+    const dialog = confirmDialogRef.current;
+    if (!dialog) return;
+    if (confirmMessage && !dialog.open) dialog.showModal();
+    if (!confirmMessage && dialog.open) dialog.close();
+  }, [confirmMessage]);
 
   const unread = messages.filter(isUnread).length;
   const visible = filter === "unread" ? messages.filter(isUnread) : messages;
@@ -30,9 +40,20 @@ export default function AdminContactsPanel() {
     if (opening && isUnread(message)) setStatus(message.id, "read");
   };
 
-  const handleDelete = (message) => {
-    if (window.confirm(`Delete the message from ${message.name}?`)) {
-      run(() => deleteMessage(message.id), "Message deleted.");
+  const handleDelete = async () => {
+    if (!confirmMessage) return;
+
+    const messageToDelete = confirmMessage;
+    setConfirmMessage(null);
+    setDeletingMessageId(messageToDelete.id);
+
+    try {
+      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        await new Promise((resolve) => window.setTimeout(resolve, 800));
+      }
+      await run(() => deleteMessage(messageToDelete.id), "Message deleted.");
+    } finally {
+      setDeletingMessageId(null);
     }
   };
 
@@ -77,7 +98,10 @@ export default function AdminContactsPanel() {
           const isOpen = openId === message.id;
           const fresh = isUnread(message);
           return (
-            <article key={message.id} className={`admin-message-card ${fresh ? "admin-message-unread" : ""}`}>
+            <article
+              key={message.id}
+              className={`admin-message-card ${fresh ? "admin-message-unread" : ""} ${deletingMessageId === message.id ? "admin-message-card-deleting" : ""}`}
+            >
               <button className="admin-message-header" onClick={() => toggleOpen(message)} aria-expanded={isOpen}>
                 <div>
                   <p className="admin-message-name">{fresh && <i className="admin-unread-dot" />}{message.name}</p>
@@ -94,13 +118,31 @@ export default function AdminContactsPanel() {
                   <a className="btn btn-accent" href={replyHref(message)}>Reply by email</a>
                   {message.phone && <a className="btn btn-outline-dark" href={toTelHref(message.phone)}>Call</a>}
                   <button className="admin-link-button" onClick={() => setStatus(message.id, fresh ? "read" : "new")}>{fresh ? "Mark as read" : "Mark as unread"}</button>
-                  <button className="admin-link-button danger" onClick={() => handleDelete(message)}>Delete</button>
+                  <button className="admin-link-button danger" onClick={() => setConfirmMessage(message)} disabled={Boolean(deletingMessageId)}>Delete</button>
                 </div>
               )}
             </article>
           );
         })}
       </div>
+
+      <dialog
+        ref={confirmDialogRef}
+        className="admin-confirm-dialog"
+        onCancel={(event) => { event.preventDefault(); setConfirmMessage(null); }}
+      >
+        {confirmMessage && (
+          <div className="admin-confirm-content">
+            <p className="admin-confirm-kicker">DELETE MESSAGE</p>
+            <h2>Delete this message?</h2>
+            <p>The message from {confirmMessage.name} will be permanently deleted.</p>
+            <div className="admin-confirm-actions">
+              <button type="button" className="btn btn-outline-dark" onClick={() => setConfirmMessage(null)}>Cancel</button>
+              <button type="button" className="btn admin-confirm-delete" onClick={handleDelete}>Delete message</button>
+            </div>
+          </div>
+        )}
+      </dialog>
     </div>
   );
 }
