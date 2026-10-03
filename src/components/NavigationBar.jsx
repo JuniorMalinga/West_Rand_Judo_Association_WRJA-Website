@@ -26,6 +26,7 @@ export default function NavigationBar() {
     isAdmin,
     signOut,
     loginTransitionId,
+    loading,
   } = useAuth();
 
   const [showLoginWelcome, setShowLoginWelcome] = useState(false);
@@ -190,6 +191,7 @@ export default function NavigationBar() {
           )}
 
           <div
+            style={{ visibility: loading ? "hidden" : "visible" }}
             className={`nav-auth ${
               showLoginWelcome ? "nav-auth-login-transition" : ""
             }`}

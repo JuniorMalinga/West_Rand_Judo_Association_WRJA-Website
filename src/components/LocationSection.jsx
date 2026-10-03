@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Reveal from "./Reveal";
+import { useMapboxReady } from "../lib/loadMapbox";
 
 // Same three real locations as the Contact page map, shown here as a
 // quick overview so visitors don't have to leave the homepage to see
@@ -37,9 +38,10 @@ export default function LocationSection() {
 
   const token = import.meta.env.VITE_MAPBOX_TOKEN;
   const tokenLooksValid = isLikelyValidToken(token);
+  const mapboxReady = useMapboxReady();
 
   useEffect(() => {
-    if (!tokenLooksValid || !mapContainerRef.current || !window.mapboxgl || didInitializeRef.current) {
+    if (!tokenLooksValid || !mapContainerRef.current || !mapboxReady || didInitializeRef.current) {
       return;
     }
 
@@ -82,7 +84,7 @@ export default function LocationSection() {
     });
 
     mapRef.current = map;
-  }, [token, tokenLooksValid]);
+  }, [token, tokenLooksValid, mapboxReady]);
 
   const handleActivate = () => {
     setIsActive(true);

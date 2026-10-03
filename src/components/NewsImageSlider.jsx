@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import Newsvideoslide from "../assets/images/background/4932049_Taekwondo_Sport_1280x720.mp4";
+import Newsvideoslide from "../assets/images/background/news-video.mp4";
 import Newsimageslide2 from "../assets/images/background/sports-judo-belt-737250.jpeg";
 import Newsimageslide3 from "../assets/images/background/karsten-winegeart-0Wra5YYVQJE-unsplash.jpg";
 

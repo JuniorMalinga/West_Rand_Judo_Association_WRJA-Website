@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Reveal from "./Reveal";
+import { useMapboxReady } from "../lib/loadMapbox";
 
 const locations = [
   {
@@ -38,12 +39,13 @@ export default function ContactMap() {
 
   const token = import.meta.env.VITE_MAPBOX_TOKEN;
   const tokenLooksValid = isLikelyValidToken(token);
+  const mapboxReady = useMapboxReady();
 
   useEffect(() => {
     if (
       !tokenLooksValid ||
       !mapContainerRef.current ||
-      !window.mapboxgl ||
+      !mapboxReady ||
       didInitializeRef.current
     ) {
       return;
@@ -102,7 +104,7 @@ export default function ContactMap() {
     });
 
     mapRef.current = map;
-  }, [token, tokenLooksValid]);
+  }, [token, tokenLooksValid, mapboxReady]);
 
   const handleActivate = () => {
     setIsActive(true);

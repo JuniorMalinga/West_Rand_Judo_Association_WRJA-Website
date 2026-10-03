@@ -13,6 +13,7 @@ const slides = [
 
 export default function ImageSlider() { 
   const [activeIndex, setActiveIndex] = useState(0);
+  const [loaded, setLoaded] = useState(() => new Set([0]));
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -21,6 +22,16 @@ export default function ImageSlider() {
     return () => clearInterval(timer);
   }, []);
 
+  // Fetch a slide only when it is showing or about to show.
+  useEffect(() => {
+    setLoaded((previous) => {
+      const next = new Set(previous);
+      next.add(activeIndex);
+      next.add((activeIndex + 1) % slides.length);
+      return next;
+    });
+  }, [activeIndex]);
+
   return (
     <section className="image-slider">
       <div className="image-slides">
@@ -28,7 +39,7 @@ export default function ImageSlider() {
           <div
             key={slide.number}
             className={`image-slide ${index === activeIndex ? "image-slide-active" : ""}`}
-            style={{ backgroundImage: `url(${slide.image})` }}
+            style={loaded.has(index) ? { backgroundImage: `url(${slide.image})` } : undefined}
           />
         ))}
       </div>
