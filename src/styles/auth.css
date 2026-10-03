@@ -430,67 +430,6 @@ body:has(.login-page) {
   cursor: not-allowed;
 }
 
-.reference-divider {
-  display: flex;
-  align-items: center;
-  gap: clamp(9px, 1.5svh, 22px);
-  margin: clamp(18px, 2.7svh, 39px) 0 clamp(14px, 2svh, 29px);
-  color: #bcbcbc;
-  font-size: clamp(12px, 1.2svh, 17px);
-  white-space: nowrap;
-}
-
-.reference-divider span:first-child,
-.reference-divider span:last-child {
-  flex: 1;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.44);
-}
-
-.reference-socials {
-  display: flex;
-  justify-content: center;
-  gap: clamp(25px, 4.3svh, 62px);
-}
-
-.reference-socials button {
-  display: grid;
-  place-items: center;
-  width: clamp(52px, 5.25svh, 76px);
-  height: clamp(52px, 5.25svh, 76px);
-  border: 2px solid #eab91b;
-  border-radius: 50%;
-  background: #171717;
-  cursor: pointer;
-}
-
-.reference-socials strong {
-  font-family: Arial, sans-serif;
-  font-size: clamp(25px, 2.65svh, 38px);
-  line-height: 1;
-}
-
-.google-mark {
-  color: #4285f4;
-  text-shadow: 7px 0 #ea4335, 0 7px #34a853, -6px 0 #fbbc05;
-}
-
-.apple-mark {
-  color: #fff;
-  font-size: clamp(23px, 2.35svh, 34px) !important;
-}
-
-.facebook-mark {
-  display: grid;
-  place-items: center;
-  width: clamp(24px, 2.4svh, 35px);
-  height: clamp(24px, 2.4svh, 35px);
-  border-radius: 50%;
-  background: #1877f2;
-  color: #fff;
-  font-family: Georgia, serif !important;
-}
-
 .login-page .auth-card-footer {
   margin-top: clamp(18px, 2.3svh, 33px);
   color: #bdbdbd;
@@ -525,39 +464,10 @@ body:has(.login-page) {
 }
 
 
-/* ---------- Social icon refinement ---------- */
-.login-page .reference-socials {
-  align-items: center;
-  gap: clamp(28px, 4.8svh, 68px);
-}
-
-.login-page .reference-socials button {
-  flex: 0 0 clamp(54px, 5.4svh, 78px);
-  width: clamp(54px, 5.4svh, 78px);
-  height: clamp(54px, 5.4svh, 78px);
-  padding: clamp(13px, 1.25svh, 18px);
-  border: 2px solid #eab91b;
-  background: #171717;
-  transition: transform 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
-}
-
-.login-page .reference-socials button:hover {
-  background: #252525;
-  box-shadow: 0 0 0 4px rgba(234, 185, 27, 0.11);
-  transform: translateY(-2px);
-}
-
-.login-page .reference-socials button:focus-visible,
 .login-page .password-toggle:focus-visible,
 .login-page .reference-login-button:focus-visible {
   outline: 3px solid rgba(255, 216, 79, 0.75);
   outline-offset: 3px;
-}
-
-.login-page .reference-socials svg {
-  display: block;
-  width: 100%;
-  height: 100%;
 }
 
 .login-page .reference-auth-card {
@@ -575,12 +485,6 @@ body:has(.login-page) {
 
 .login-page .reference-form-options {
   min-height: 22px;
-}
-
-@media (max-width: 520px) {
-  .login-page .reference-socials {
-    gap: 30px;
-  }
 }
 
 /* Solid reference-style username and lock icons */

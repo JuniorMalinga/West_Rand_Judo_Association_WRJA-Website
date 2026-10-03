@@ -35,26 +35,6 @@ function EyeIcon({ hidden }) {
   );
 }
 
-function GoogleIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path fill="#4285F4" d="M21.35 12.22c0-.72-.06-1.42-.18-2.09H12v3.95h5.24a4.48 4.48 0 0 1-1.94 2.94v2.45h3.14c1.84-1.69 2.91-4.18 2.91-7.25Z" />
-      <path fill="#34A853" d="M12 21.5c2.63 0 4.84-.87 6.45-2.36l-3.14-2.45c-.87.58-1.98.92-3.31.92-2.55 0-4.71-1.72-5.49-4.03H3.26v2.53A9.74 9.74 0 0 0 12 21.5Z" />
-      <path fill="#FBBC05" d="M6.51 13.58A5.86 5.86 0 0 1 6.2 12c0-.55.11-1.09.31-1.58V7.89H3.26A9.5 9.5 0 0 0 2.25 12c0 1.48.35 2.88 1.01 4.11l3.25-2.53Z" />
-      <path fill="#EA4335" d="M12 6.39c1.43 0 2.71.49 3.72 1.46l2.79-2.79C16.84 3.48 14.63 2.5 12 2.5a9.74 9.74 0 0 0-8.74 5.39l3.25 2.53C7.29 8.11 9.45 6.39 12 6.39Z" />
-    </svg>
-  );
-}
-
-function FacebookIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <circle cx="12" cy="12" r="10" fill="#1877F2" />
-      <path fill="#fff" d="M13.35 19v-6h2.02l.3-2.35h-2.32V9.15c0-.68.19-1.15 1.17-1.15h1.25V5.9c-.22-.03-.98-.1-1.86-.1-1.84 0-3.1 1.12-3.1 3.18v1.67H8.73V13h2.08v6h2.54Z" />
-    </svg>
-  );
-}
-
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -164,16 +144,6 @@ export default function LoginPage() {
           {isAuthenticating && <p className="login-auth-signal" role="status">Securing your club access...</p>}
         </form>
 
-        <div className="reference-divider">
-          <span />
-          <span>or continue with</span>
-          <span />
-        </div>
-
-        <div className="reference-socials">
-          <button type="button" aria-label="Continue with Google"><GoogleIcon /></button>
-          <button type="button" aria-label="Continue with Facebook"><FacebookIcon /></button>
-        </div>
       </AuthCard>
     </main>
   );
