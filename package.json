@@ -20,8 +20,10 @@
     "react-router-dom": "^6.24.0"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.62.5",
     "@vitejs/plugin-react": "^4.3.1",
     "concurrently": "^8.2.2",
-    "vite": "^7.3.6"
+    "vite": "^7.3.6",
+    "wrangler": "^4.147.0"
   }
 }

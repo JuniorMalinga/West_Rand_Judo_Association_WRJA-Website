@@ -1,9 +1,11 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { cloudflare } from "@cloudflare/vite-plugin";
+
 
 export default defineConfig({
   envDir: "./server",
-  plugins: [react()],
+  plugins: [react(), cloudflare()],
   server: {
     watch: {
       ignored: ["**/server/data/**"],
@@ -14,7 +16,6 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
-
       // Proxy uploaded files to the Express backend.
       "/uploads": {
         target: "http://localhost:5000",
