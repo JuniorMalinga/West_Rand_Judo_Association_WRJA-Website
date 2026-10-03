@@ -72,6 +72,17 @@ export default function AdminCompetitionsPanel() {
 
   const handleSave = async (event) => {
     event.preventDefault();
+    const missing = [
+      ["name", "Competition name"],
+      ["type", "Type"],
+      ["date", "Date"],
+      ["location", "Location"],
+      ["description", "Description"],
+    ]
+      .filter(([key]) => !String(formState[key] ?? "").trim())
+      .map(([, label]) => label);
+    if (missing.length) return show("error", `Please fill in: ${missing.join(", ")}.`);
+
     if (formState.registrationUrl && !isHttpUrl(formState.registrationUrl)) return show("error", "Registration URL must start with http:// or https://");
     if (formState.paymentUrl && !isHttpUrl(formState.paymentUrl)) return show("error", "Payment URL must start with http:// or https://");
 
@@ -131,14 +142,14 @@ export default function AdminCompetitionsPanel() {
             </label>
           </div>
           <div className="admin-form-row-2">
-            <label>Date<input type="date" value={formState.date} onChange={(e) => update("date", e.target.value)} /></label>
-            <label>Location<input value={formState.location} onChange={(e) => update("location", e.target.value)} /></label>
+            <label>Date<input type="date" value={formState.date} onChange={(e) => update("date", e.target.value)} required /></label>
+            <label>Location<input value={formState.location} onChange={(e) => update("location", e.target.value)} required /></label>
           </div>
           <div className="admin-form-row-2">
             <label>Registration deadline<input type="date" value={formState.registrationDeadline} onChange={(e) => update("registrationDeadline", e.target.value)} /></label>
             <label>Display order<input type="number" min="1" value={formState.displayOrder} onChange={(e) => update("displayOrder", Number(e.target.value))} /></label>
           </div>
-          <label>Description<textarea rows="3" value={formState.description} onChange={(e) => update("description", e.target.value)} /></label>
+          <label>Description<textarea rows="3" value={formState.description} onChange={(e) => update("description", e.target.value)} required /></label>
 
           <ImageUploadField
             label="Card image"

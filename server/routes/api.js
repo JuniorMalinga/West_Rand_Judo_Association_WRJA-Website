@@ -228,9 +228,9 @@ function cleanCompetition(body) {
   return {
     name: v.text(body.name, { field: "Name", max: 120, required: true }),
     type: v.text(body.type, { field: "Type", max: 60, required: true }),
-    description: v.text(body.description, { field: "Description", max: 2000 }),
-    date: v.isoDate(body.date),
-    location: v.text(body.location, { field: "Location", max: 160 }),
+    description: v.text(body.description, { field: "Description", max: 2000, required: true }),
+    date: v.isoDate(body.date, { field: "Date", required: true }),
+    location: v.text(body.location, { field: "Location", max: 160, required: true }),
     registrationDeadline: v.isoDate(body.registrationDeadline, { field: "Registration deadline" }),
     registrationStatus: v.oneOf(body.registrationStatus || "Registration link pending", REGISTRATION_STATUSES, "Status"),
     registrationType: v.oneOf(body.registrationType || "external", REGISTRATION_TYPES, "Registration type"),
