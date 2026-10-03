@@ -5,6 +5,8 @@ import useNotice from "../hooks/useNotice";
 import { DEFAULT_EVENT_IMAGE, eventsAdmin, eventsStore } from "../data/events";
 import { formatDate, isHttpUrl } from "../lib/format";
 
+const EVENT_TYPES = ["Competition", "Grading", "Training camp"];
+
 const emptyEvent = {
   name: "",
   type: "",
@@ -33,7 +35,6 @@ export default function AdminEventsPanel() {
     if (!confirmEvent && dialog.open) dialog.close();
   }, [confirmEvent]);
 
-  const types = [...new Set(events.map((item) => item.type).filter(Boolean))];
   const todayIso = new Date().toISOString().slice(0, 10);
 
   const update = (field, value) => setFormState((current) => ({ ...current, [field]: value }));
@@ -99,8 +100,10 @@ export default function AdminEventsPanel() {
           <div className="admin-form-row-2">
             <label>Event name<input value={formState.name} onChange={(e) => update("name", e.target.value)} required /></label>
             <label>Type
-              <input list="event-types" value={formState.type} onChange={(e) => update("type", e.target.value)} placeholder="Grading, Competition, Training camp…" required />
-              <datalist id="event-types">{types.map((type) => <option key={type} value={type} />)}</datalist>
+              <select value={formState.type} onChange={(e) => update("type", e.target.value)} required>
+                <option value="" disabled>Select a type</option>
+                {EVENT_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
+              </select>
             </label>
           </div>
           <div className="admin-form-row-2">

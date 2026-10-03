@@ -292,7 +292,7 @@ admin.delete("/competitions/:id", async (req, res) => {
 function cleanEvent(body) {
   return {
     name: v.text(body.name, { field: "Event name", max: 140, required: true }),
-    type: v.text(body.type, { field: "Type", max: 60, required: true }),
+    type: v.oneOf(v.text(body.type, { field: "Type", max: 60, required: true }), ["Competition", "Grading", "Training camp"], "Type"),
     date: v.isoDate(body.date, { required: true }),
     location: v.text(body.location, { field: "Location", max: 160, required: true }),
     description: v.text(body.description, { field: "Description", max: 3000 }),
