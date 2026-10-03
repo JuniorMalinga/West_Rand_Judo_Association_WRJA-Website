@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ImageUploadField from "./ImageUploadField";
 import { useCollectionState } from "../hooks/useCollection";
 import useNotice from "../hooks/useNotice";
@@ -21,7 +21,17 @@ export default function AdminEventsPanel() {
   const [saving, setSaving] = useState(false);
   const events = useMemo(() => [...stored].sort((a, b) => String(a.date).localeCompare(String(b.date))), [stored]);
   const [formState, setFormState] = useState(null);
+  const [confirmEvent, setConfirmEvent] = useState(null);
+  const [deletingEventId, setDeletingEventId] = useState(null);
+  const confirmDialogRef = useRef(null);
   const { notice, show, clear } = useNotice();
+
+  useEffect(() => {
+    const dialog = confirmDialogRef.current;
+    if (!dialog) return;
+    if (confirmEvent && !dialog.open) dialog.showModal();
+    if (!confirmEvent && dialog.open) dialog.close();
+  }, [confirmEvent]);
 
   const types = [...new Set(events.map((item) => item.type).filter(Boolean))];
   const todayIso = new Date().toISOString().slice(0, 10);
@@ -51,13 +61,22 @@ export default function AdminEventsPanel() {
     }
   };
 
-  const handleDelete = async (event) => {
-    if (!window.confirm(`Delete "${event.name}"?`)) return;
+  const handleDelete = async () => {
+    if (!confirmEvent) return;
+    const eventToDelete = confirmEvent;
+    setConfirmEvent(null);
+    setDeletingEventId(eventToDelete.id);
+
     try {
-      await eventsAdmin.remove(event.id);
+      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        await new Promise((resolve) => window.setTimeout(resolve, 420));
+      }
+      await eventsAdmin.remove(eventToDelete.id);
       show("success", "Event deleted.");
     } catch (error) {
       show("error", error.message);
+    } finally {
+      setDeletingEventId(null);
     }
   };
 
@@ -124,7 +143,7 @@ export default function AdminEventsPanel() {
           <thead><tr><th>Image</th><th>Event</th><th>Date</th><th>Location</th><th>Application</th><th /></tr></thead>
           <tbody>
             {events.map((event) => (
-              <tr key={event.id}>
+              <tr key={event.id} className={deletingEventId === event.id ? "admin-row-deleting" : undefined}>
                 <td><img className="admin-thumb" src={event.image} alt="" /></td>
                 <td><strong>{event.name}</strong><div className="admin-table-subtext">{event.type}</div></td>
                 <td>{formatDate(event.date)}{event.date && event.date < todayIso && <span className="admin-badge admin-badge-muted">Past</span>}</td>
@@ -134,7 +153,7 @@ export default function AdminEventsPanel() {
                   {event.qrCodeImage && <span className="admin-badge">QR</span>}
                   {!event.applicationSheetUrl && !event.qrCodeImage && <span className="admin-muted">None</span>}
                 </td>
-                <td className="admin-table-actions"><button onClick={() => openEdit(event)}>Edit</button><button className="danger" onClick={() => handleDelete(event)}>Delete</button></td>
+                <td className="admin-table-actions"><button onClick={() => openEdit(event)}>Edit</button><button className="danger" onClick={() => setConfirmEvent(event)} disabled={Boolean(deletingEventId)}>Delete</button></td>
               </tr>
             ))}
             {!loaded && <tr><td colSpan="6" className="admin-empty-cell">Loading…</td></tr>}
@@ -142,6 +161,24 @@ export default function AdminEventsPanel() {
           </tbody>
         </table>
       </div>
+
+      <dialog
+        ref={confirmDialogRef}
+        className="admin-confirm-dialog"
+        onCancel={(event) => { event.preventDefault(); setConfirmEvent(null); }}
+      >
+        {confirmEvent && (
+          <div className="admin-confirm-content">
+            <p className="admin-confirm-kicker">DELETE EVENT</p>
+            <h2>Delete this event?</h2>
+            <p>“{confirmEvent.name}” will be removed from the calendar and public event pages.</p>
+            <div className="admin-confirm-actions">
+              <button type="button" className="btn btn-outline-dark" onClick={() => setConfirmEvent(null)}>Cancel</button>
+              <button type="button" className="btn admin-confirm-delete" onClick={handleDelete}>Delete event</button>
+            </div>
+          </div>
+        )}
+      </dialog>
     </div>
   );
 }

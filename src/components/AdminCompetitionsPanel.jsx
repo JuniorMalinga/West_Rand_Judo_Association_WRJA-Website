@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ImageUploadField from "./ImageUploadField";
 import { useCollectionState } from "../hooks/useCollection";
 import useNotice from "../hooks/useNotice";
@@ -39,7 +39,17 @@ export default function AdminCompetitionsPanel() {
   const [formState, setFormState] = useState(null);
   const [isNew, setIsNew] = useState(false);
   const [query, setQuery] = useState("");
+  const [confirmCompetition, setConfirmCompetition] = useState(null);
+  const [deletingCompetitionId, setDeletingCompetitionId] = useState(null);
+  const confirmDialogRef = useRef(null);
   const { notice, show, clear } = useNotice();
+
+  useEffect(() => {
+    const dialog = confirmDialogRef.current;
+    if (!dialog) return;
+    if (confirmCompetition && !dialog.open) dialog.showModal();
+    if (!confirmCompetition && dialog.open) dialog.close();
+  }, [confirmCompetition]);
 
   const types = [...new Set(competitions.map((item) => item.type))];
   const visible = competitions.filter((item) =>
@@ -78,14 +88,22 @@ export default function AdminCompetitionsPanel() {
     }
   };
 
-  const handleDelete = async (competition) => {
-    const extra = competition.slug === "tracksuit-ordering" ? "\n\nNote: the Store page uses this entry for tracksuit ordering." : "";
-    if (!window.confirm(`Delete "${competition.name}"?${extra}`)) return;
+  const handleDelete = async () => {
+    if (!confirmCompetition) return;
+    const competitionToDelete = confirmCompetition;
+    setConfirmCompetition(null);
+    setDeletingCompetitionId(competitionToDelete.id);
+
     try {
-      await competitionsAdmin.remove(competition.id);
+      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        await new Promise((resolve) => window.setTimeout(resolve, 420));
+      }
+      await competitionsAdmin.remove(competitionToDelete.id);
       show("success", "Competition deleted.");
     } catch (error) {
       show("error", error.message);
+    } finally {
+      setDeletingCompetitionId(null);
     }
   };
 
@@ -170,14 +188,14 @@ export default function AdminCompetitionsPanel() {
           <thead><tr><th>Image</th><th>Competition</th><th>Date</th><th>Status</th><th>Registration</th><th>Payment</th><th /></tr></thead>
           <tbody>
             {visible.map((competition) => (
-              <tr key={competition.id}>
+              <tr key={competition.id} className={deletingCompetitionId === competition.id ? "admin-row-deleting" : undefined}>
                 <td><img className="admin-thumb" src={competition.image} alt="" /></td>
                 <td><strong>{competition.name}</strong><div className="admin-table-subtext">{competition.type}</div></td>
                 <td>{formatDate(competition.date)}</td>
                 <td><span className="admin-badge">{getCompetitionStatus(competition)}</span></td>
                 <td>{competition.registrationUrl ? <a href={competition.registrationUrl} target="_blank" rel="noreferrer">Open link</a> : <span className="admin-muted">Not set</span>}</td>
                 <td>{competition.paymentRequired ? "Required" : <span className="admin-muted">Not required</span>}</td>
-                <td className="admin-table-actions"><button onClick={() => openEdit(competition)}>Edit</button><button className="danger" onClick={() => handleDelete(competition)}>Delete</button></td>
+                <td className="admin-table-actions"><button onClick={() => openEdit(competition)}>Edit</button><button className="danger" onClick={() => setConfirmCompetition(competition)} disabled={Boolean(deletingCompetitionId)}>Delete</button></td>
               </tr>
             ))}
             {!loaded && <tr><td colSpan="7" className="admin-empty-cell">Loading…</td></tr>}
@@ -185,6 +203,27 @@ export default function AdminCompetitionsPanel() {
           </tbody>
         </table>
       </div>
+
+      <dialog
+        ref={confirmDialogRef}
+        className="admin-confirm-dialog"
+        onCancel={(event) => { event.preventDefault(); setConfirmCompetition(null); }}
+      >
+        {confirmCompetition && (
+          <div className="admin-confirm-content">
+            <p className="admin-confirm-kicker">DELETE COMPETITION</p>
+            <h2>Delete this competition?</h2>
+            <p>
+              “{confirmCompetition.name}” will be removed from the site.
+              {confirmCompetition.slug === "tracksuit-ordering" && " The Store page uses this entry for tracksuit ordering."}
+            </p>
+            <div className="admin-confirm-actions">
+              <button type="button" className="btn btn-outline-dark" onClick={() => setConfirmCompetition(null)}>Cancel</button>
+              <button type="button" className="btn admin-confirm-delete" onClick={handleDelete}>Delete competition</button>
+            </div>
+          </div>
+        )}
+      </dialog>
     </div>
   );
 }

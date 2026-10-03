@@ -49,7 +49,7 @@ export default function AdminContactsPanel() {
 
     try {
       if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        await new Promise((resolve) => window.setTimeout(resolve, 800));
+        await new Promise((resolve) => window.setTimeout(resolve, 420));
       }
       await run(() => deleteMessage(messageToDelete.id), "Message deleted.");
     } finally {
