@@ -1247,16 +1247,16 @@ app.use(errorHandler);
 // Public seed/default images remain local until the public-media Storage change.
 ensureSeedAssets();
 
-app.listen(PORT, () => {
-  console.log("\n========================================");
-  console.log(
-    `WRJA AI server running at http://localhost:${PORT}`
-  );
-  console.log(
-    `Health check: http://localhost:${PORT}/api/health`
-  );
-  console.log(
-    `Chat endpoint: http://localhost:${PORT}/api/chat`
-  );
-  console.log("========================================\n");
-});
+// On Vercel the app is exported and run as a serverless function.
+// Locally, it still starts a normal server.
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log("\n========================================");
+    console.log(`WRJA AI server running at http://localhost:${PORT}`);
+    console.log(`Health check: http://localhost:${PORT}/api/health`);
+    console.log(`Chat endpoint: http://localhost:${PORT}/api/chat`);
+    console.log("========================================\n");
+  });
+}
+
+export default app;
