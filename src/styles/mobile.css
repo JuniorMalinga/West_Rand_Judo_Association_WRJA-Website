@@ -2,6 +2,11 @@
    Mobile fixes. Imported last in main.jsx so it overrides the rest.
    ============================================================ */
 
+/* The menu wrapper is invisible on desktop */
+.nav-menu {
+  display: contents;
+}
+
 /* Stop sideways scrolling and oversized media everywhere */
 html,
 body {
@@ -29,11 +34,197 @@ table {
 
 /* ---------- Tablets and below ---------- */
 @media (max-width: 900px) {
+  /* ----- Header ----- */
+  .nav-inner {
+    padding: 10px 16px;
+    gap: 12px;
+  }
+
+  .nav-logo-image {
+    height: 36px;
+  }
+
+  .nav-logo-badge {
+    padding: 4px 10px;
+  }
+
+  .nav-toggle {
+    margin-left: auto;
+    padding: 10px;
+  }
+
+  .nav-toggle span {
+    width: 24px;
+  }
+
+  /* ----- Slide-down menu ----- */
+  .nav-menu {
+    display: none;
+  }
+
+  .nav-menu.nav-menu-open {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: calc(100vh - 70px);
+    max-height: calc(100dvh - 70px);
+    overflow-y: auto;
+    padding: 8px 20px 28px;
+    background: var(--bg-dark);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 16px 30px rgba(0, 0, 0, 0.4);
+  }
+
+  .nav-menu .nav-links {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 0;
+    flex: none;
+    width: 100%;
+  }
+
+  .nav-menu .nav-links a {
+    display: block;
+    padding: 14px 0;
+    font-size: 16px;
+  }
+
+  .nav-menu .nav-links > a {
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ----- Pages dropdown (tap to open) ----- */
+  .nav-menu .nav-dropdown {
+    display: block;
+    width: 100%;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-menu .nav-dropdown-trigger {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 14px 0;
+    font-size: 16px;
+  }
+
+  .nav-menu .nav-dropdown-trigger::after {
+    content: "+";
+    color: var(--accent);
+    font-size: 20px;
+  }
+
+  .nav-menu .nav-dropdown-open > .nav-dropdown-trigger::after {
+    content: "-";
+  }
+
+  .nav-menu .nav-dropdown-menu,
+  .nav-menu .nav-flyout-menu {
+    display: none;
+    position: static;
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+    min-width: 0;
+    width: 100%;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    padding: 0 0 8px 16px;
+  }
+
+  /* Hover must not control the menu on touch screens */
+  .nav-menu .nav-dropdown:hover .nav-dropdown-menu,
+  .nav-menu .nav-has-flyout:hover .nav-flyout-menu {
+    display: none;
+  }
+
+  .nav-menu .nav-dropdown.nav-dropdown-open .nav-dropdown-menu {
+    display: block;
+  }
+
+  .nav-menu .nav-has-flyout.nav-flyout-open .nav-flyout-menu {
+    display: block;
+  }
+
+  .nav-menu .nav-dropdown-menu a,
+  .nav-menu .nav-dropdown-item > span {
+    display: block;
+    padding: 12px 0;
+    font-size: 15px;
+    white-space: normal;
+    cursor: pointer;
+  }
+
+  .nav-menu .nav-dropdown-item {
+    padding: 0;
+  }
+
+  .nav-menu .nav-flyout-menu a {
+    padding: 10px 0;
+    font-size: 14px;
+  }
+
+  /* ----- Login buttons ----- */
+  .nav-menu .nav-auth {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding-top: 20px;
+  }
+
+  .nav-menu .nav-auth .btn {
+    flex: 1 1 120px;
+  }
+
+  .nav-menu .nav-welcome {
+    width: 100%;
+  }
+
+  /* ----- Hero ----- */
+  .image-slider {
+    min-height: 100vh;
+    min-height: 100svh;
+    padding: 110px 20px 56px;
+  }
+
+  .image-content {
+    padding: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .image-title {
+    font-size: clamp(32px, 9.5vw, 44px);
+  }
+
+  .image-number {
+    width: 36px;
+    height: 36px;
+  }
+
+  .image-actions {
+    flex-wrap: wrap;
+  }
+
+  .image-actions .btn {
+    flex: 1 1 140px;
+  }
+
+  /* ----- Footer ----- */
   .site-footer {
     padding: 48px 24px;
   }
 
-  /* Two column layouts become one column */
+  /* ----- Two column layouts become one column ----- */
   .about-intro,
   .instructor-row,
   .login-page,
@@ -46,7 +237,7 @@ table {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  /* Three and four column grids become two columns */
+  /* ----- Three and four column grids become two columns ----- */
   .programs-grid,
   .news-grid,
   .club-links-grid,
@@ -58,16 +249,8 @@ table {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  /* Old rule could be wider than the screen on small phones */
   .trainers-grid {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
-  }
-
-  /* Mobile menu: scroll if it is taller than the screen */
-  .nav-links-open {
-    max-height: calc(100vh - 80px);
-    overflow-y: auto;
-    align-items: flex-start;
   }
 }
 
@@ -75,6 +258,39 @@ table {
 @media (max-width: 600px) {
   section {
     padding: 48px 16px;
+  }
+
+  /* Sections that add their own large side padding */
+  .features,
+  .simple-page,
+  .not-found-page,
+  .competitions-home-section {
+    padding: 48px 16px;
+  }
+
+  .feature-item {
+    padding: 24px 20px;
+  }
+
+  .auth-section {
+    padding: 40px 16px;
+  }
+
+  .auth-card {
+    padding: 28px 20px;
+  }
+
+  .event-application-section {
+    padding: 28px 18px;
+  }
+
+  .events-category-actions {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .news-image-content {
+    padding: 0 16px 40px;
   }
 
   .site-footer {
@@ -114,14 +330,14 @@ table {
     max-width: 383px;
   }
 
-  /* Buttons are easier to tap */
+  /* Easier to tap */
   button,
   .btn,
   a.btn {
     min-height: 44px;
   }
 
-  /* Inputs stay at 16px so iPhones do not zoom in on focus */
+  /* 16px inputs stop iPhones zooming in on focus */
   input,
   select,
   textarea {
