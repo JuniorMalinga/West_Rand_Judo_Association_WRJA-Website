@@ -1,0 +1,130 @@
+/* ============================================================
+   Mobile fixes. Imported last in main.jsx so it overrides the rest.
+   ============================================================ */
+
+/* Stop sideways scrolling and oversized media everywhere */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+img,
+video,
+iframe,
+canvas,
+svg {
+  max-width: 100%;
+}
+
+table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.admin-panel-wrap {
+  overflow-x: auto;
+}
+
+/* ---------- Tablets and below ---------- */
+@media (max-width: 900px) {
+  .site-footer {
+    padding: 48px 24px;
+  }
+
+  /* Two column layouts become one column */
+  .about-intro,
+  .instructor-row,
+  .login-page,
+  .free-trial-form,
+  .competition-detail-layout,
+  .competition-payment-layout,
+  .merch-product-hero,
+  .merch-product-details,
+  .dashboard-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Three and four column grids become two columns */
+  .programs-grid,
+  .news-grid,
+  .club-links-grid,
+  .competitions-grid,
+  .competitions-home-grid,
+  .merch-benefit-grid,
+  .events-hub-grid,
+  .gallery-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Old rule could be wider than the screen on small phones */
+  .trainers-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  }
+
+  /* Mobile menu: scroll if it is taller than the screen */
+  .nav-links-open {
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+    align-items: flex-start;
+  }
+}
+
+/* ---------- Phones ---------- */
+@media (max-width: 600px) {
+  section {
+    padding: 48px 16px;
+  }
+
+  .site-footer {
+    padding: 40px 16px;
+  }
+
+  h1 {
+    font-size: clamp(28px, 8vw, 40px);
+    line-height: 1.15;
+  }
+
+  h2 {
+    font-size: clamp(22px, 6vw, 30px);
+    line-height: 1.2;
+  }
+
+  /* Everything becomes a single column */
+  .programs-grid,
+  .features-grid,
+  .news-grid,
+  .club-links-grid,
+  .competitions-grid,
+  .competitions-home-grid,
+  .merch-benefit-grid,
+  .events-hub-grid,
+  .competition-detail-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .gallery-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Chat widget fits the screen */
+  .chat-panel {
+    width: calc(100vw - 24px);
+    max-width: 383px;
+  }
+
+  /* Buttons are easier to tap */
+  button,
+  .btn,
+  a.btn {
+    min-height: 44px;
+  }
+
+  /* Inputs stay at 16px so iPhones do not zoom in on focus */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}

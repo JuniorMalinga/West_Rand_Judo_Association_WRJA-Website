@@ -16,6 +16,7 @@ import "./styles/notfound.css";
 import "./styles/faq.css";
 import "./styles/instructors.css";
 import "./styles/eventdetail.css";
+import "./styles/mobile.css";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
