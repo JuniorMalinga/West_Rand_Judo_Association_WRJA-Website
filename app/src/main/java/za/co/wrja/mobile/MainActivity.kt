@@ -682,63 +682,7 @@ internal fun LoginScreen(
 
 @Composable
 private fun EventsCalendarPreview() {
-    Spacer(Modifier.height(16.dp))
-    Text(
-        text = "AUGUST 2026",
-        fontSize = 22.sp,
-        fontWeight = FontWeight.Bold,
-        textAlign = TextAlign.Center,
-        modifier = Modifier.fillMaxWidth()
-    )
-    Spacer(Modifier.height(12.dp))
-
-    // Keep the existing preview month. Every row must contain seven cells.
-    val days = List(5) { "" } + (1..31).map { it.toString() }
-    val trailingBlanks = (7 - days.size % 7) % 7
-    val cells = days + List(trailingBlanks) { "" }
-
-    Column(Modifier.fillMaxWidth().background(OffWhite)) {
-        Row(Modifier.fillMaxWidth().background(GoldDark)) {
-            listOf("M", "T", "W", "T", "F", "S", "S").forEach { label ->
-                Text(
-                    text = label,
-                    modifier = Modifier.weight(1f).padding(vertical = 10.dp),
-                    textAlign = TextAlign.Center,
-                    color = Charcoal,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-        cells.chunked(7).forEach { week ->
-            Row(Modifier.fillMaxWidth()) {
-                week.forEach { day ->
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .aspectRatio(1f)
-                            .padding(1.dp)
-                            .background(if (day == "12") Gold else Color.White),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = day,
-                            color = Charcoal,
-                            fontSize = 13.sp,
-                            fontWeight = if (day == "12") FontWeight.Bold else FontWeight.Normal
-                        )
-                    }
-                }
-            }
-        }
-    }
-    Spacer(Modifier.height(14.dp))
-    Text(
-        text = "Calendar preview only. For EFT payments, use the Competitions card above.",
-        color = Muted,
-        fontSize = 13.sp,
-        lineHeight = 19.sp
-    )
+    CompetitionCalendar()
 }
 
 @Composable private fun NewsDetailList() {
