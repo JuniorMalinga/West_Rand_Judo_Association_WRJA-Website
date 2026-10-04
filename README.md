@@ -12,7 +12,7 @@ The website covers:
 * Photo gallery
 * User login and sign-up with real accounts
 * A private admin console for the committee
-* Contact form and location
+* Contact form with automatic confirmation emails
 * Live Mapbox maps
 * AI chatbot powered by Google Gemini
 
@@ -31,6 +31,7 @@ Currently:
 * Events, competitions, news, contact messages and payment records are stored in Supabase and managed from the admin console.
 * Images are stored in Supabase Storage. Proof of payment files are kept in a private bucket.
 * The Gemini AI chatbot runs through the Express backend, so the API key never reaches the browser.
+* The contact form sends a professional confirmation email to the visitor through Brevo SMTP.
 * The admin console is fully connected to the backend and database.
 * The site is deployed on Vercel as one project: the React frontend and the Express API.
 
@@ -43,6 +44,7 @@ Currently:
 * News list and news article pages
 * Competitions list and competition detail pages
 * Contact form with rate limiting and a hidden honeypot field against bots
+* Automatic confirmation email sent to the visitor after they submit the contact form
 * AI chatbot that answers questions about WRJA clubs, programs, events and FAQs
 * Mobile friendly layout with a tap-to-open navigation menu
 
@@ -75,6 +77,8 @@ Currently:
 * Supabase (Postgres, Auth, Storage)
 * Google Gemini AI
 * Mapbox GL JS
+* Nodemailer (sending email over SMTP)
+* Brevo (SMTP email provider, free plan)
 * Vercel (hosting and serverless functions)
 * Git/GitHub
 
@@ -91,9 +95,10 @@ Express API   (Vercel serverless function, or a Node server locally)
    +--> Supabase Postgres   events, competitions, news, payments, profiles
    +--> Supabase Storage    public-media (public), payment-proofs (private)
    +--> Google Gemini       chatbot
+   +--> Brevo SMTP          confirmation emails
 ```
 
-The browser never holds a secret key. All privileged work happens in the Express API, which is the only place that uses the Supabase service role key.
+The browser never holds a secret key. All privileged work happens in the Express API, which is the only place that uses the Supabase service role key and the SMTP key.
 
 ## Setup
 
@@ -103,6 +108,7 @@ The browser never holds a secret key. All privileged work happens in the Express
 * A Supabase project
 * A Google Gemini API key
 * A Mapbox public token
+* A Brevo account (or another SMTP provider) for confirmation emails
 
 ### 1. Install dependencies
 
@@ -134,9 +140,16 @@ VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 GEMINI_API_KEY=your_gemini_api_key
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_PORT=587
+SMTP_USER=your_smtp_login
+SMTP_PASS=your_smtp_key
+MAIL_FROM="West Rand Judo Association" <your_sender_address>
+MAIL_REPLY_TO=your_reply_address
+PUBLIC_SITE_URL=https://your-site.vercel.app
 ```
 
-Replace the placeholders with your own credentials. Never add a `VITE_` prefix to secret keys such as `SUPABASE_SERVICE_ROLE_KEY` or `GEMINI_API_KEY`.
+Replace the placeholders with your own credentials. Never add a `VITE_` prefix to secret keys such as `SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY` or `SMTP_PASS`.
 
 **Do not copy API keys from someone else's environment file or commit `server/.env` to GitHub. Do not send it inside zip files either.**
 
@@ -151,10 +164,19 @@ Replace the placeholders with your own credentials. Never add a `VITE_` prefix t
 | `GEMINI_API_KEYS` | No | Extra Gemini keys the chatbot can fall back to |
 | `GEMINI_MODELS` | No | Comma separated list of Gemini models to try in order |
 | `VITE_MAPBOX_TOKEN` | Yes | Map display |
+| `SMTP_HOST` | For email | SMTP server, for example `smtp-relay.brevo.com` |
+| `SMTP_PORT` | For email | `587` for Brevo, or `465` for Gmail |
+| `SMTP_USER` | For email | SMTP login from the provider |
+| `SMTP_PASS` | For email | SMTP key from the provider. Server only, never use a `VITE_` prefix |
+| `MAIL_FROM` | For email | Sender shown to the visitor, for example `"West Rand Judo Association" <info@example.com>` |
+| `MAIL_REPLY_TO` | For email | Address that receives replies to the confirmation email |
+| `PUBLIC_SITE_URL` | No | Website address shown in the email footer |
 | `ALLOWED_ORIGINS` | Production | Comma separated site URLs allowed to call the API |
 | `TRUST_PROXY` | Production | Set to `true` behind Vercel so cookies and IP rate limits work |
 | `WRJA_DATA_DIR` | No | Temporary folder for default images. On Vercel it defaults to the system temp folder |
 | `PORT` | No | Local API port. Default is 5000 |
+
+If the SMTP variables are missing, the site still works and messages are still saved. The confirmation email is skipped and a warning is logged.
 
 ### Required Environment Files
 
@@ -192,6 +214,8 @@ Express/Gemini API  http://localhost:5000
 ```
 
 Vite proxies `/api` and `/uploads` to the Express server, so the frontend and API behave like one site.
+
+Restart `npm run dev` after changing `server/.env`. The server only reads it on startup.
 
 ## Build
 
@@ -291,7 +315,7 @@ The frontend builds to static files and the Express app runs as one serverless f
 
 1. Push the repository to GitHub and import it into Vercel.
 2. Set the framework to **Vite**, the build command to `npm run build` and the output directory to `dist`.
-3. Add the environment variables from the table above for Production. Include `TRUST_PROXY=true` and `ALLOWED_ORIGINS=https://your-site.vercel.app`.
+3. Add the environment variables from the table above for Production. Include `TRUST_PROXY=true`, `ALLOWED_ORIGINS=https://your-site.vercel.app` and the `SMTP_*` and `MAIL_*` variables.
 4. Under Settings > Functions, choose a function region close to your Supabase region.
 5. Deploy.
 6. Open `/api/health`. It should return `{"success":true,"message":"WRJA AI server is running"}`.
@@ -304,6 +328,7 @@ Variables only apply to new deployments, so always redeploy after changing one.
 * The disk is read-only except for the temp folder. All user uploads go to Supabase Storage.
 * Rate limit counters are held in memory, so they reset between function instances.
 * The first request after a quiet period can be slower because of a cold start.
+* The confirmation email is sent before the response is returned, because Vercel can stop a function as soon as it responds.
 
 ## Project Structure
 
@@ -379,6 +404,7 @@ server/
 ├── security.js             Headers, CORS allow list, CSRF guard, rate limiter
 ├── validate.js             Input validation for every field
 ├── uploads.js              File type, size and signature checks
+├── mailer.js               Builds and sends the confirmation email
 ├── supabase.js             Supabase clients (public, user and admin)
 ├── eventsRepo.js           Events and competitions queries
 ├── newsRepo.js             News queries
@@ -388,6 +414,8 @@ server/
 ├── systemRepo.js           Counts and health checks
 ├── mediaRepo.js            Public image storage
 ├── Knowledge/              JSON files the chatbot uses
+├── scripts/
+│   └── test-mail.js        Sends a test confirmation email from the command line
 └── tests/                  API and security tests
 ```
 
@@ -402,7 +430,7 @@ server/
 | GET | `/api/health` | Health check |
 | GET | `/api/competitions` | List competitions |
 | GET | `/api/news` | List news posts |
-| POST | `/api/messages` | Send a contact message (rate limited) |
+| POST | `/api/messages` | Send a contact message (rate limited). Also emails a confirmation to the sender |
 | POST | `/api/auth/signup` | Create an account |
 | POST | `/api/auth/login` | Log in |
 | POST | `/api/auth/logout` | Log out |
@@ -450,7 +478,7 @@ Add a title, body and image. Published posts appear on the Home and News pages s
 
 ### Messages
 
-New contact messages show an unread count in the sidebar. Open a message to read it, or mark everything as read.
+New contact messages show an unread count in the sidebar. Open a message to read it, or mark everything as read. The visitor has already received an automatic confirmation email, so replies from the committee should come from the association's address.
 
 ### Payments
 
@@ -485,6 +513,48 @@ src/data/faq.js          FAQ page content
 
 If one Gemini key or model is unavailable, the server can fall back to the next one set in `GEMINI_API_KEYS` and `GEMINI_MODELS`. The chat endpoint is rate limited.
 
+## Email Confirmations
+
+When a visitor submits the contact form, the message is saved and a professional confirmation email is sent to the address they entered. The email thanks them, shows a copy of their message and tells them the team will respond. Replies go to the association's address.
+
+The code is in:
+
+```text
+server/mailer.js         email layout and sending
+server/routes/api.js     POST /api/messages calls the mailer after saving
+```
+
+The email is sent through SMTP using Nodemailer. The project is set up for Brevo, but any SMTP provider works by changing the environment variables.
+
+### How it behaves
+
+* The message is saved first. If the email fails, the visitor still sees a success message and the message still reaches the admin console.
+* Failures are logged as `Confirmation email failed` in the server logs. A missing configuration is logged as `SMTP settings are missing`.
+* Bots that fill in the hidden honeypot field never receive an email.
+* The visitor's name and message are escaped before they go into the email, so they cannot inject HTML.
+* Contact submissions are limited to 8 per hour per visitor, which also limits email sending.
+
+### Setting up Brevo
+
+1. Create a free account at brevo.com.
+2. Under **Senders**, add the association's sender address and click the verification link sent to it.
+3. Under **SMTP & API > SMTP**, copy the SMTP login and generate an SMTP key. The key is shown only once.
+4. Add the `SMTP_*` and `MAIL_*` variables to `server/.env` locally, and to the Vercel environment variables for production.
+5. Redeploy on Vercel. Variables only apply to new deployments.
+
+### Testing
+
+```powershell
+node server/scripts/test-mail.js your-own-email@gmail.com
+```
+
+The script prints `Email sent to ...` on success, or the exact error if sending fails. After that, send the real contact form and check the inbox and spam folder.
+
+### Notes
+
+* Emails sent from a free address such as Gmail can land in spam at first. Sending from a verified domain, for example `info@yourdomain.co.za`, fixes this. Only the environment variables need to change.
+* Treat the SMTP key like a password. If it is ever shared, delete it in Brevo and create a new one.
+
 ## Security
 
 * Sessions are `HttpOnly`, `SameSite=Lax` cookies. Editing the browser's local storage or the React code cannot turn a member into an administrator, because the role is checked on the server for every protected route.
@@ -494,6 +564,8 @@ If one Gemini key or model is unavailable, the server can fall back to the next 
 * The contact form has a honeypot field to catch bots.
 * Payment proofs are kept in a private bucket and served only to the owner or an administrator.
 * Input is validated on the server for every field, whatever the form allows.
+* Confirmation emails escape all visitor input, and the SMTP key lives only in server environment variables.
+* Email sending is limited by the same rate limit as the contact form.
 * Secrets live only in environment variables. Rotate any key that has been shared by mistake.
 
 ## Environment Security
@@ -514,9 +586,16 @@ VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 GEMINI_API_KEY=your_gemini_api_key_here
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_PORT=587
+SMTP_USER=your_smtp_login
+SMTP_PASS=your_smtp_key
+MAIL_FROM="West Rand Judo Association" <your_sender_address>
+MAIL_REPLY_TO=your_reply_address
+PUBLIC_SITE_URL=https://your-site.vercel.app
 ```
 
-If a key is ever exposed, rotate it in the Supabase or Google dashboard and update the value in Vercel.
+If a key is ever exposed, rotate it in the Supabase, Google or Brevo dashboard and update the value in Vercel.
 
 ## Content Management
 
@@ -602,13 +681,20 @@ npm --prefix server test
 
 The tests cover login and role checks, access to payment files, input validation and upload checks.
 
+To test email sending without using the website:
+
+```powershell
+node server/scripts/test-mail.js your-own-email@gmail.com
+```
+
 Before handing in a change, also check these by hand on the live site:
 
 1. Register, log in and log out.
 2. Open an event and a competition as a member.
 3. Upload a small proof of payment and view it as an administrator.
 4. Add, edit and delete a test competition, event and news post.
-5. View the site at phone width using the browser's device mode.
+5. Send the contact form with your own email address and check that the confirmation email arrives.
+6. View the site at phone width using the browser's device mode.
 
 ## Troubleshooting
 
@@ -622,21 +708,27 @@ Before handing in a change, also check these by hand on the live site:
 | Upload fails with a 413 error | The file is too large for Vercel. Compress it to under about 3 MB |
 | Cannot delete a user | Run the migrations that set the foreign key delete rules |
 | Admin tables or sidebar look broken | Check that `mobile.css` does not set `overflow-x: hidden` on `body` or a global `table` rule |
-| Changes to variables have no effect | Redeploy. Variables only apply to new deployments |
+| Changes to variables have no effect | Redeploy. Variables only apply to new deployments. Locally, restart `npm run dev` |
+| No confirmation email arrives | Check the logs for `Confirmation email failed` or `SMTP settings are missing`. Confirm the variables are set in Vercel, then redeploy |
+| `Invalid login` or `535` in the logs | Wrong `SMTP_USER` or `SMTP_PASS`. Create a new SMTP key and paste it once |
+| Sender not valid or not verified | Verify the `MAIL_FROM` address under Brevo > Senders |
+| Email goes to spam | Mark it as "Not spam", or send from a verified domain |
+| Email works locally but not live | The SMTP variables are only in `server/.env`. Add them in Vercel and redeploy |
 
 ## Known Limitations
 
 * Uploaded files must stay under about 3 MB on Vercel.
 * Rate limiting is per function instance, so it is a safeguard rather than a hard limit.
 * The AI chatbot depends on the Gemini free quota and can be slow or unavailable when that is used up.
-* The contact form stores messages but does not send email notifications.
+* The contact form emails a confirmation to the visitor, but the association is not yet emailed when a new message arrives. New messages show in the admin console.
+* Confirmation emails depend on the SMTP provider's free daily sending limit.
 * Online card payments are not built in. Members pay the club directly and upload proof of payment.
 
 ## Next Steps
 
 ### Notifications
 
-Send an email when a contact message arrives, and when a payment proof is approved or rejected.
+Email the association when a new contact message arrives, and email members when a payment proof is approved or rejected.
 
 ### Registrations
 
@@ -662,24 +754,23 @@ Replace remaining placeholder media with:
 
 ## Project Status
 
-| Feature                           | Status                         |
-| --------------------------------- | ------------------------------ |
-| Frontend                          | Complete                       |
-| Responsive interface              | Complete                       |
-| WRJA content                      | Implemented                    |
-| Mapbox integration                | Implemented                    |
-| Login and sign-up                 | Complete, connected to Supabase |
-| Production authentication         | Complete                       |
-| Database                          | Complete, Supabase Postgres    |
-| Express backend                   | Complete                       |
-| AI chatbot                        | Implemented                    |
-| Events and competitions           | Complete                       |
-| Proof of payment uploads          | Complete                       |
-| Admin content management          | Complete                       |
-| User management                   | Complete                       |
-| Deployment                        | Live on Vercel                 |
-| Email Service                     | Complete                       |
-
+| Feature                             | Status                          |
+| ----------------------------------- | ------------------------------- |
+| Frontend                            | Complete                        |
+| Responsive interface                | Complete                        |
+| WRJA content                        | Implemented                     |
+| Mapbox integration                  | Implemented                     |
+| Login and sign-up                   | Complete, connected to Supabase |
+| Production authentication           | Complete                        |
+| Database                            | Complete, Supabase Postgres     |
+| Express backend                     | Complete                        |
+| AI chatbot                          | Implemented                     |
+| Events and competitions             | Complete                        |
+| Proof of payment uploads            | Complete                        |
+| Admin content management            | Complete                        |
+| User management                     | Complete                        |
+| Deployment                          | Live on Vercel                  |
+| Contact confirmation email          | Complete                        |
 
 
 ## Academic Context
@@ -688,4 +779,4 @@ This project was developed as the practical deliverable for the:
 
 **INSY7315 Work-Integrated Learning module**
 
-The website demonstrates the practical application of web application development principles, including component-based development, responsive web design, reusable data structures, client-side routing, third-party service integration, backend development, database design, secure authentication, cloud deployment and AI integration.
+The website demonstrates the practical application of web application development principles, including component-based development, responsive web design, reusable data structures, client-side routing, third-party service integration, backend development, database design, secure authentication, email delivery, cloud deployment and AI integration.
