@@ -25,6 +25,10 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.UUID
+import java.util.TimeZone
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 
 private val BookGold = Color(0xFFF1BD16)
 private val BookFieldBackground = Color(0xFF242424)
@@ -32,8 +36,9 @@ private val BookFieldBackground = Color(0xFF242424)
 @Composable
 fun BookScreen() {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
-    var program by rememberSaveable { mutableStateOf("") }
+    var programId by rememberSaveable { mutableStateOf("") }
     var fullName by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
     var phone by rememberSaveable { mutableStateOf("") }
@@ -44,7 +49,32 @@ fun BookScreen() {
     var notes by rememberSaveable { mutableStateOf("") }
 
     var error by remember { mutableStateOf<String?>(null) }
-    var previewComplete by remember { mutableStateOf(false) }
+    var submitting by remember { mutableStateOf(false) }
+    var bookingSent by rememberSaveable { mutableStateOf(false) }
+    var requestId by rememberSaveable(
+        programId, fullName, email, phone, paymentMethod,
+        dateMillis, hour, minute, notes
+    ) { mutableStateOf(UUID.randomUUID().toString()) }
+    val formEnabled = !submitting && !bookingSent
+    var programs by remember { mutableStateOf<List<BookingProgram>>(emptyList()) }
+    var programsLoading by remember { mutableStateOf(true) }
+    var programsError by remember { mutableStateOf<String?>(null) }
+    var programsReload by remember { mutableStateOf(0) }
+
+    LaunchedEffect(SupabaseAuth.isLoggedIn, programsReload) {
+        programsLoading = true
+        programsError = null
+        try {
+            programs = SupabaseBookings.loadPrograms()
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (failure: Exception) {
+            programs = emptyList()
+            programsError = failure.message ?: "Unable to load programs."
+        } finally {
+            programsLoading = false
+        }
+    }
 
     val dateText = dateMillis?.let {
         SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(Date(it))
@@ -75,24 +105,36 @@ fun BookScreen() {
             )
 
             Text(
-                text = "Choose a program and enter your preferred session details.",
+                text = "Choose a program and enter your preferred session details. Times are South African time.",
                 color = Color.LightGray,
                 fontSize = 13.sp
             )
 
+            if (programsLoading) {
+                Text("Loading programs…", color = Color.LightGray)
+            }
+            programsError?.let { Text(it, color = Color(0xFFFFD1D1)) }
+            if (!programsLoading && programs.isEmpty() && programsError == null) {
+                Text("No active programs are available for booking.", color = Color.LightGray)
+            }
+            if (!programsLoading && programs.isEmpty() && !bookingSent) {
+                TextButton(onClick = { programsReload++ }, enabled = !submitting) {
+                    Text("Retry loading programs", color = BookGold)
+                }
+            }
+
             BookDropdown(
+                enabled = formEnabled && !programsLoading && programs.isNotEmpty(),
                 label = "Program",
-                value = program,
+                value = programs.firstOrNull { it.id == programId }?.name.orEmpty(),
                 placeholder = "Select a program",
-                options = listOf(
-                    "Kids Judo",
-                    "Adult Judo",
-                    "Woman's Judo"
-                ),
-                onSelected = { program = it }
+                options = programs.map { it.name },
+                optionValues = programs.map { it.id },
+                onSelected = { programId = it }
             )
 
             BookInput(
+                enabled = formEnabled,
                 label = "Full name",
                 value = fullName,
                 placeholder = "Your full name",
@@ -100,6 +142,7 @@ fun BookScreen() {
             )
 
             BookInput(
+                enabled = formEnabled,
                 label = "Email address",
                 value = email,
                 placeholder = "you@example.com",
@@ -108,6 +151,7 @@ fun BookScreen() {
             )
 
             BookInput(
+                enabled = formEnabled,
                 label = "Phone number",
                 value = phone,
                 placeholder = "Your phone number",
@@ -116,6 +160,7 @@ fun BookScreen() {
             )
 
             BookDropdown(
+                enabled = formEnabled,
                 label = "Payment method",
                 value = paymentMethod,
                 placeholder = "Select a payment method",
@@ -127,6 +172,7 @@ fun BookScreen() {
                 BookLabel("Preferred date")
 
                 BookChoiceButton(
+                    enabled = formEnabled,
                     text = dateText.ifBlank { "Select a date" },
                     icon = Icons.Default.DateRange,
                     onClick = {
@@ -159,6 +205,7 @@ fun BookScreen() {
                 BookLabel("Preferred time")
 
                 BookChoiceButton(
+                    enabled = formEnabled,
                     text = timeText.ifBlank { "Select a time" },
                     icon = Icons.Default.Schedule,
                     onClick = {
@@ -177,6 +224,7 @@ fun BookScreen() {
             }
 
             BookInput(
+                enabled = formEnabled,
                 label = "Notes (optional)",
                 value = notes,
                 placeholder = "Anything we should know before your session",
@@ -192,7 +240,12 @@ fun BookScreen() {
                 )
             }
 
+            if (!SupabaseAuth.isLoggedIn) {
+                Text("Log in using the app menu before submitting.", color = Color.LightGray)
+            }
+
             Button(
+                enabled = formEnabled && !programsLoading && programs.isNotEmpty(),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
@@ -202,14 +255,23 @@ fun BookScreen() {
                     contentColor = Color.Black
                 ),
                 onClick = {
-                    previewComplete = false
+                    if (submitting || bookingSent) return@Button
 
                     error = when {
-                        program.isBlank() ->
+                        !SupabaseAuth.isLoggedIn ->
+                            "Please log in before requesting a booking."
+
+                        programs.none { it.id == programId } ->
                             "Please select a program."
 
                         fullName.isBlank() ->
                             "Please enter your full name."
+
+                        fullName.trim().length > 150 ->
+                            "Please keep your name under 151 characters."
+
+                        email.trim().length > 254 ->
+                            "Please enter a shorter email address."
 
                         !Patterns.EMAIL_ADDRESS
                             .matcher(email.trim())
@@ -218,6 +280,12 @@ fun BookScreen() {
 
                         phone.isBlank() ->
                             "Please enter your phone number."
+
+                        phone.trim().length > 30 ->
+                            "Please keep your phone number under 31 characters."
+
+                        notes.trim().length > 2000 ->
+                            "Please keep your notes under 2,001 characters."
 
                         paymentMethod.isBlank() ->
                             "Please select a payment method."
@@ -228,30 +296,82 @@ fun BookScreen() {
                         hour < 0 ->
                             "Please select a preferred time."
 
+                        !isFutureBooking(dateText, timeText) ->
+                            "Please choose a future date and time (South African time)."
+
                         else -> null
                     }
 
                     if (error == null) {
-                        previewComplete = true
+                        val request = BookingRequest(
+                            id = requestId,
+                            programId = programId,
+                            fullName = fullName.trim(),
+                            email = email.trim(),
+                            phone = phone.trim(),
+                            paymentMethod = paymentMethod,
+                            preferredDate = dateText,
+                            preferredTime = timeText,
+                            notes = notes.trim()
+                        )
+                        submitting = true
+                        scope.launch {
+                            try {
+                                SupabaseBookings.submit(request)
+                                bookingSent = true
+                            } catch (cancelled: CancellationException) {
+                                throw cancelled
+                            } catch (failure: Exception) {
+                                error = failure.message ?: "Unable to submit your booking."
+                            } finally {
+                                submitting = false
+                            }
+                        }
                     }
                 }
             ) {
                 Text(
-                    "REQUEST BOOKING",
+                    if (submitting) "SENDING…" else if (bookingSent) "REQUEST SENT" else "REQUEST BOOKING",
                     fontWeight = FontWeight.Bold
                 )
             }
 
-            if (previewComplete) {
+            if (bookingSent) {
                 Text(
-                    text = "Form completed. This is a preview; " +
-                            "no booking has been sent.",
+                    text = "Your booking request has been sent. " +
+                            "The club still needs to confirm your session. No payment has been taken.",
                     color = Color.White,
                     fontSize = 13.sp
                 )
+                TextButton(onClick = {
+                    programId = ""
+                    fullName = ""
+                    email = ""
+                    phone = ""
+                    paymentMethod = ""
+                    dateMillis = null
+                    hour = -1
+                    minute = 0
+                    notes = ""
+                    requestId = UUID.randomUUID().toString()
+                    bookingSent = false
+                    error = null
+                }) {
+                    Text("Make another request", color = BookGold)
+                }
             }
         }
     }
+}
+
+private fun isFutureBooking(date: String, time: String): Boolean {
+    val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.ROOT).apply {
+        isLenient = false
+        timeZone = TimeZone.getTimeZone("Africa/Johannesburg")
+    }
+    return runCatching {
+        (formatter.parse("$date $time")?.time ?: 0L) > System.currentTimeMillis()
+    }.getOrDefault(false)
 }
 
 @Composable
@@ -273,12 +393,14 @@ private fun BookInput(
     placeholder: String,
     onValueChange: (String) -> Unit,
     keyboardType: KeyboardType = KeyboardType.Text,
-    multiline: Boolean = false
+    multiline: Boolean = false,
+    enabled: Boolean = true
 ) {
     Column {
         BookLabel(label)
 
         OutlinedTextField(
+            enabled = enabled,
             value = value,
             onValueChange = onValueChange,
             placeholder = { Text(placeholder) },
@@ -310,7 +432,9 @@ private fun BookDropdown(
     value: String,
     placeholder: String,
     options: List<String>,
-    onSelected: (String) -> Unit
+    onSelected: (String) -> Unit,
+    optionValues: List<String> = options,
+    enabled: Boolean = true
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -319,6 +443,7 @@ private fun BookDropdown(
 
         Box(Modifier.fillMaxWidth()) {
             BookChoiceButton(
+                enabled = enabled,
                 text = value.ifBlank { placeholder },
                 icon = Icons.Default.ArrowDropDown,
                 onClick = { expanded = true }
@@ -328,11 +453,11 @@ private fun BookDropdown(
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
             ) {
-                options.forEach { option ->
+                options.forEachIndexed { index, option ->
                     DropdownMenuItem(
                         text = { Text(option) },
                         onClick = {
-                            onSelected(option)
+                            onSelected(optionValues[index])
                             expanded = false
                         }
                     )
@@ -346,9 +471,11 @@ private fun BookDropdown(
 private fun BookChoiceButton(
     text: String,
     icon: ImageVector,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    enabled: Boolean = true
 ) {
     Button(
+        enabled = enabled,
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
