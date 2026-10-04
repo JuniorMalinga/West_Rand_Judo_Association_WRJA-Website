@@ -1,5 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import "./styles/base.css";
 import "./styles/home.css";
 import "./styles/programs.css";
@@ -18,6 +19,7 @@ import "./styles/instructors.css";
 import "./styles/eventdetail.css";
 import "./styles/mobile.css";
 
+
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
 async function bootstrap() {
@@ -27,6 +29,7 @@ async function bootstrap() {
     root.render(
       <React.StrictMode>
         <App />
+        <SpeedInsights />
       </React.StrictMode>
     );
   } catch (error) {

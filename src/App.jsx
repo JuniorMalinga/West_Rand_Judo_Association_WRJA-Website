@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import ScrollToTop from "./components/ScrollToTop";
 import BackToTopButton from "./components/BackToTopButton";
 
+
 const CompetitionDetailPage = lazy(() => import("./pages/CompetitionDetailPage"));
 const NewsDetailPage = lazy(() => import("./pages/NewsDetailPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
