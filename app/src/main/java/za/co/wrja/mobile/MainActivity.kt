@@ -39,6 +39,8 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 private val Charcoal = Color(0xFF090909)
 private val Charcoal2 = Color(0xFF171717)
 private val Gold = Color(0xFFF1BD16)
@@ -596,7 +598,12 @@ internal fun LoginScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable private fun MainSite(initial: String, logout: () -> Unit, update: (String) -> Unit) {
     var page by rememberSaveable { mutableStateOf(initial) }; val drawer = rememberDrawerState(DrawerValue.Closed); val scope = rememberCoroutineScope(); val pages = listOf("home" to tr("home"), "my profile" to tr("my_profile"), "about" to tr("about"), "events" to tr("events"), "programs" to tr("programs"), "book" to tr("book"), "news" to tr("news"), "gallery" to tr("gallery"), "contact" to tr("contact"), "chat assistant" to tr("chat_assistant"))
-    ModalNavigationDrawer(drawerState = drawer, drawerContent = { ModalDrawerSheet { Column(Modifier.fillMaxHeight().background(Charcoal)) { Row(Modifier.padding(22.dp), verticalAlignment = Alignment.CenterVertically) { Logo(); Spacer(Modifier.width(12.dp)); Text("WEST RAND\nJUDO ASSOCIATION", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp) }; pages.forEach { (route, label) -> Text(label, Modifier.fillMaxWidth().clickable { page = route; update(page); scope.launch { drawer.close() } }.padding(18.dp), color = if (route == page) Gold else Color.White, fontWeight = FontWeight.SemiBold) }; Spacer(Modifier.weight(1f)); Text(tr("log_out").uppercase(), Modifier.clickable { logout() }.padding(22.dp), color = Gold, fontWeight = FontWeight.Bold) } } }) {
+    ModalNavigationDrawer(drawerState = drawer, drawerContent = { ModalDrawerSheet { Column(
+        Modifier
+            .fillMaxHeight()
+            .background(Charcoal)
+            .verticalScroll(rememberScrollState())
+    ) { Row(Modifier.padding(22.dp), verticalAlignment = Alignment.CenterVertically) { Logo(); Spacer(Modifier.width(12.dp)); Text("WEST RAND\nJUDO ASSOCIATION", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp) }; pages.forEach { (route, label) -> Text(label, Modifier.fillMaxWidth().clickable { page = route; update(page); scope.launch { drawer.close() } }.padding(18.dp), color = if (route == page) Gold else Color.White, fontWeight = FontWeight.SemiBold) }; Spacer(Modifier.height(24.dp)); Text(tr("log_out").uppercase(), Modifier.clickable { logout() }.padding(22.dp), color = Gold, fontWeight = FontWeight.Bold) } } }) {
         Scaffold(topBar = { TopAppBar(title = { Text("WEST RAND JUDO", fontWeight = FontWeight.Black, fontSize = 16.sp) }, navigationIcon = { IconButton({ scope.launch { drawer.open() } }) { Icon(Icons.Default.Menu, "Menu") } }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Charcoal, titleContentColor = Color.White, navigationIconContentColor = Color.White)) }) { padding -> AnimatedContent(targetState = page, transitionSpec = { (slideInHorizontally { it / 9 } + fadeIn()) togetherWith (slideOutHorizontally { -it / 9 } + fadeOut()) }, label = "site page transition") { targetPage -> SitePage(targetPage, Modifier.padding(padding)) } }
     }
 }
