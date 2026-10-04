@@ -136,8 +136,22 @@
 
 /* ---------- Form feedback (all "contact the club" forms) ---------- */
 .form-status { margin: 0; padding: 12px 14px; border-radius: var(--radius); font-size: 14px; line-height: 1.5; }
-.form-status-success { background: #dcf5e0; color: #1e7a34; }
 .form-status-error { background: #fbdede; color: #a12727; }
+.form-status-dialog { position: fixed; width: min(500px, calc(100vw - 32px)); max-width: none; margin: auto; padding: 38px 32px 32px; overflow: visible; border: 1px solid #d9e8d9; border-radius: 12px; background: #fff; color: var(--text-dark); box-shadow: 0 24px 80px rgba(20, 24, 20, .28); text-align: center; }
+.form-status-dialog::backdrop { background: rgba(20, 24, 20, .48); backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); }
+.form-status-dialog[open] { animation: form-status-appear 220ms ease-out both; }
+.form-status-mark { display: grid; width: 48px; height: 48px; margin: 0 auto 14px; place-items: center; border-radius: 50%; background: #e4f4e5; color: #25733a; font-size: 25px; font-weight: 700; }
+.form-status-dialog h2 { margin: 0 0 10px; font-size: 22px; }
+.form-status-dialog p { margin: 0; color: #55584f; font-size: 15px; line-height: 1.6; overflow-wrap: anywhere; }
+.form-status-dismiss { position: absolute; top: 10px; right: 12px; display: grid; width: 36px; height: 36px; place-items: center; border: 0; border-radius: 50%; background: transparent; color: #66645d; font: inherit; font-size: 26px; line-height: 1; cursor: pointer; }
+.form-status-dismiss:hover { background: #f0f1ed; color: #1a1a1a; }
+@keyframes form-status-appear {
+  from { opacity: 0; transform: translateY(10px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .form-status-dialog[open] { animation: none; }
+}
 .contact-form button:disabled, .event-enquiry-form button:disabled, .instructor-message-form button:disabled { opacity: .6; cursor: not-allowed; }
 .contact-location-detail a, .contact-location-address a { transition: color .2s var(--ease); }
 .contact-location-detail a:hover, .contact-location-address a:hover { color: var(--accent-dark); text-decoration: underline; }

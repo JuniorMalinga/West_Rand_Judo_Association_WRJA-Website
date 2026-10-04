@@ -2,6 +2,7 @@ import { Router } from "express";
 import * as eventsRepo from "../eventsRepo.js";
 import * as newsRepo from "../newsRepo.js";
 import * as contactMessagesRepo from "../contactMessagesRepo.js";
+import * as mailer from "../mailer.js";
 import * as paymentsRepo from "../paymentsRepo.js";
 import * as systemRepo from "../systemRepo.js";
 import * as mediaRepo from "../mediaRepo.js";
@@ -146,6 +147,15 @@ router.post(
       source: v.text(body.source, { field: "Source", max: 120 }) || "Contact page",
     };
     await contactMessagesRepo.addMessage(message, req.accessToken, req.user?.id || null);
+
+    // The message is saved. A failed confirmation email must never fail the request.
+    try {
+      const sent = await mailer.sendContactConfirmation(message);
+      if (!sent) console.warn("Confirmation email skipped: SMTP settings are missing.");
+    } catch (error) {
+      console.warn("Confirmation email failed:", error.message);
+    }
+
     return res.status(201).json({ success: true });
   }
 );

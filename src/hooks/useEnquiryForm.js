@@ -27,7 +27,7 @@ export default function useEnquiryForm({ source, initialMessage = "" }) {
     try {
       await submitMessage({ ...values, source });
       setValues((current) => ({ ...current, message: "" }));
-      setStatus({ type: "success", text: `Thank you, your message has been sent. WRJA will reply to ${values.email.trim()}.` });
+      setStatus({ type: "success", text: `Thank you, your message has been sent. A confirmation email is on its way to ${values.email.trim()}, and WRJA will reply there.` });
     } catch (error) {
       setStatus({ type: "error", text: error.message });
     } finally {
