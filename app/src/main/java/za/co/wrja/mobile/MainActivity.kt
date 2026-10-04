@@ -321,6 +321,7 @@ private fun MainActivity.requestFingerprintUnlock(onError: (String) -> Unit) {
             .setTitle("Unlock WRJA")
             .setSubtitle("Use your fingerprint to continue")
             .setAllowedAuthenticators(authenticators)
+            .setNegativeButtonText("Use password")
             .build()
     )
 }
