@@ -133,6 +133,15 @@ router.get("/competitions", async (req, res) => {
   const items = await eventsRepo.listCompetitions(req.accessToken);
   res.json({ items: items.map((c) => serializeCompetition(c, Boolean(req.user))) });
 });
+router.get("/schools", async (req, res) => {
+  const items = await eventsRepo.listSchools(req.accessToken);
+  res.json({ items: items.map((school) => serializeCompetition(school, Boolean(req.user))) });
+});
+
+router.get("/schools", async (req, res) => {
+  const items = await eventsRepo.listSchools(req.accessToken);
+  res.json({ items: items.map((school) => serializeCompetition(school, Boolean(req.user))) });
+});
 
 router.get("/events", requireAuth, async (req, res) => {
   res.json({ items: await eventsRepo.listEvents(req.accessToken) });
@@ -305,13 +314,16 @@ async function cleanupImages(paths, accessToken) {
 admin.post("/competitions", async (req, res) => {
   const data = cleanCompetition(req.body || {});
   const existing = await eventsRepo.competitionSlugs(req.accessToken);
-  let slug = slugify(data.name);
-  for (let n = 2; existing.includes(slug); n += 1) slug = `${slugify(data.name)}-${n}`;
+  const baseSlug = slugify(data.name);
+  const reservedSafeSlug = eventsRepo.isSchoolSlug(baseSlug) ? `competition-${baseSlug}` : baseSlug;
+  let slug = reservedSafeSlug;
+  for (let n = 2; existing.includes(slug); n += 1) slug = `${reservedSafeSlug}-${n}`;
   const item = await eventsRepo.saveCompetition({ ...data, id: slug, slug }, { create: true, accessToken: req.accessToken });
   res.status(201).json({ item });
 });
 
 admin.put("/competitions/:id", async (req, res) => {
+  if (eventsRepo.isSchoolSlug(req.params.id)) throw new HttpError(404, "Competition not found.");
   const current = await eventsRepo.getCompetition(req.params.id, req.accessToken);
   if (!current) throw new HttpError(404, "Competition not found.");
   const item = await eventsRepo.saveCompetition({ ...cleanCompetition(req.body || {}), id: current.id, slug: current.slug }, { create: false, accessToken: req.accessToken });
@@ -320,9 +332,46 @@ admin.put("/competitions/:id", async (req, res) => {
 });
 
 admin.delete("/competitions/:id", async (req, res) => {
+  if (eventsRepo.isSchoolSlug(req.params.id)) throw new HttpError(404, "Competition not found.");
   const current = await eventsRepo.getCompetition(req.params.id, req.accessToken);
   if (!current) throw new HttpError(404, "Competition not found.");
   await eventsRepo.deleteCompetition(current.slug, req.accessToken);
+  await cleanupImages([current.image], req.accessToken);
+  res.json({ success: true });
+});
+export function cleanSchool(body = {}) {
+  return {
+    ...cleanCompetition({
+      ...body,
+      type: "Schools competition",
+      image: body.image || "/uploads/public/default-school.jpeg",
+    }),
+    type: "Schools competition",
+  };
+}
+admin.post("/schools", async (req, res) => {
+  const data = cleanSchool(req.body || {});
+  const existing = await eventsRepo.competitionSlugs(req.accessToken);
+  const nameSlug = slugify(data.name).replace(/^sa-schools(?:-|$)/, "") || "event";
+  let slug = `sa-schools-${nameSlug}`;
+  for (let suffix = 2; existing.includes(slug); suffix += 1) slug = `sa-schools-${nameSlug}-${suffix}`;
+  const item = await eventsRepo.saveSchool({ ...data, id: slug, slug }, { create: true, accessToken: req.accessToken });
+  res.status(201).json({ item });
+});
+admin.put("/schools/:id", async (req, res) => {
+  const current = await eventsRepo.getSchool(req.params.id, req.accessToken);
+  if (!current) throw new HttpError(404, "School event not found.");
+  const item = await eventsRepo.saveSchool({ ...cleanSchool(req.body || {}), id: current.id, slug: current.slug }, {
+    create: false,
+    accessToken: req.accessToken,
+  });
+  await cleanupImages([current.image], req.accessToken);
+  res.json({ item });
+});
+admin.delete("/schools/:id", async (req, res) => {
+  const current = await eventsRepo.getSchool(req.params.id, req.accessToken);
+  if (!current) throw new HttpError(404, "School event not found.");
+  await eventsRepo.deleteSchool(current.slug, req.accessToken);
   await cleanupImages([current.image], req.accessToken);
   res.json({ success: true });
 });

@@ -6,11 +6,13 @@ import AdminNewsPanel from "../components/AdminNewsPanel";
 import AdminContactsPanel from "../components/AdminContactsPanel";
 import AdminUsersPanel from "../components/AdminUsersPanel";
 import AdminCompetitionsPanel from "../components/AdminCompetitionsPanel";
+import AdminSchoolsPanel from "../components/AdminSchoolsPanel";
 import AdminPaymentsPanel from "../components/AdminPaymentsPanel";
 import AdminGalleryPanel from "../components/AdminGalleryPanel";
 import { useAuth } from "../context/AuthContext";
 import useAdminCounts from "../hooks/useAdminCounts";
 import { competitionsStore } from "../data/competitions";
+import { schoolsStore } from "../data/schools";
 import { eventsStore } from "../data/events";
 import { newsStore } from "../data/newsPosts";
 import { messagesStore } from "../data/messages";
@@ -21,6 +23,7 @@ import { adminGalleryStore } from "../data/gallery";
 const tabs = [
   { slug: "overview", label: "Overview", icon: "⌂" },
   { slug: "competitions", label: "Competitions", icon: "◆" },
+  { slug: "schools", label: "Schools", icon: "▣" },
   { slug: "events", label: "Standard events", icon: "◷" },
   { slug: "news", label: "News", icon: "▤" },
   { slug: "gallery", label: "Gallery", icon: "▧" },
@@ -31,6 +34,7 @@ const tabs = [
 
 const panels = {
   competitions: AdminCompetitionsPanel,
+  schools: AdminSchoolsPanel,
   events: AdminEventsPanel,
   news: AdminNewsPanel,
   gallery: AdminGalleryPanel,
@@ -66,7 +70,7 @@ export default function AdminPage() {
 
   // Reload every list from the server, then remount the panel.
   const refresh = () => {
-    [competitionsStore, eventsStore, newsStore, adminGalleryStore, messagesStore, paymentsStore, usersStore].forEach((store) => store.refresh());
+    [competitionsStore, schoolsStore, eventsStore, newsStore, adminGalleryStore, messagesStore, paymentsStore, usersStore].forEach((store) => store.refresh());
     setRefreshKey((key) => key + 1);
     refreshCounts();
     setNotice("Data refreshed");

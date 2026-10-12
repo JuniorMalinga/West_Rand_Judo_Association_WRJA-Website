@@ -11,6 +11,12 @@ const eventSelect = `
   payment_required, payment_instructions, payment_url, additional_info,
   display_order, qr_code_image_path
 `;
+const SCHOOL_SLUG_PREFIX = "sa-schools-";
+const DEFAULT_SCHOOL_IMAGE = "/uploads/public/default-school.jpeg";
+
+export function isSchoolSlug(slug) {
+  return String(slug || "").startsWith(SCHOOL_SLUG_PREFIX);
+}
 
 const check = (error) => {
   if (error) throw new Error(`Supabase events query failed: ${error.message}`);
@@ -35,6 +41,16 @@ const toCompetition = (row, client) => row && ({
   additionalInfo: row.additional_info || "",
   displayOrder: row.display_order ?? 99,
 });
+
+const toSchool = (row, client) => {
+  const school = toCompetition(row, client);
+  if (!school) return null;
+  return {
+    ...school,
+    type: "Schools competition",
+    image: row.image_path ? school.image : DEFAULT_SCHOOL_IMAGE,
+  };
+};
 
 const displayType = (value) => ({
   competition: "Competition",
@@ -65,7 +81,25 @@ export async function listCompetitions(accessToken = null) {
   const { data, error } = await client.from("events").select(eventSelect)
     .eq("event_type", "competition").order("display_order").order("title");
   check(error);
-  return (data || []).map((row) => toCompetition(row, client));
+  return (data || []).filter((row) => !isSchoolSlug(row.slug)).map((row) => toCompetition(row, client));
+}
+
+export async function listSchools(accessToken = null) {
+  const client = accessToken ? createUserClient(accessToken) : createPublicClient();
+  const { data, error } = await client.from("events").select(eventSelect)
+    .eq("event_type", "competition").like("slug", `${SCHOOL_SLUG_PREFIX}%`)
+    .order("display_order").order("title");
+  check(error);
+  return (data || []).map((row) => toSchool(row, client));
+}
+
+export async function getSchool(slug, accessToken = null) {
+  if (!isSchoolSlug(slug)) return null;
+  const client = accessToken ? createUserClient(accessToken) : createPublicClient();
+  const { data, error } = await client.from("events").select(eventSelect)
+    .eq("event_type", "competition").eq("slug", slug).maybeSingle();
+  check(error);
+  return toSchool(data, client);
 }
 
 export async function getCompetition(slug, accessToken = null) {
@@ -113,7 +147,26 @@ export async function saveCompetition(c, { create, accessToken }) {
   return toCompetition(data, client);
 }
 
+export async function saveSchool(school, options) {
+  if (!isSchoolSlug(school.slug)) throw new Error("School slug must use the SA Schools prefix.");
+  const saved = await saveCompetition(school, options);
+  return saved ? {
+    ...saved,
+    type: "Schools competition",
+    image: saved.image || DEFAULT_SCHOOL_IMAGE,
+  } : null;
+}
+
 export async function deleteCompetition(slug, accessToken) {
+  if (isSchoolSlug(slug)) return false;
+  const { error, count } = await createUserClient(accessToken).from("events")
+    .delete({ count: "exact" }).eq("slug", slug).eq("event_type", "competition");
+  check(error);
+  return (count || 0) > 0;
+}
+
+export async function deleteSchool(slug, accessToken) {
+  if (!isSchoolSlug(slug)) return false;
   const { error, count } = await createUserClient(accessToken).from("events")
     .delete({ count: "exact" }).eq("slug", slug).eq("event_type", "competition");
   check(error);

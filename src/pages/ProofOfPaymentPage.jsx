@@ -4,12 +4,13 @@ import PageHeader from "../components/PageHeader";
 import Reveal from "../components/Reveal";
 import { useAuth } from "../context/AuthContext";
 import { competitionsStore } from "../data/competitions";
+import { schoolsStore } from "../data/schools";
 import useCollection from "../hooks/useCollection";
 import { submitPayment } from "../data/payments";
 
 export default function ProofOfPaymentPage() {
   const { user } = useAuth();
-  const competitions = useCollection(competitionsStore);
+  const competitions = [...useCollection(competitionsStore), ...useCollection(schoolsStore)];
   const [file, setFile] = useState(null);
   const [competitionSlug, setCompetitionSlug] = useState("");
   const [status, setStatus] = useState(null);

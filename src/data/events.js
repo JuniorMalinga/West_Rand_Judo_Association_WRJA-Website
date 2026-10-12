@@ -13,7 +13,7 @@ export function getUpcomingEvents(events) {
 		.sort((a, b) => a.date.localeCompare(b.date));
 }
 
-export function getUpcomingCalendarEvents(events, competitions) {
+export function getUpcomingCalendarEvents(events, competitions, schools = []) {
 	const today = new Date();
 	today.setHours(0, 0, 0, 0);
 	const calendarEvents = [
@@ -28,6 +28,12 @@ export function getUpcomingCalendarEvents(events, competitions) {
 			calendarType: "competition",
 			calendarLabel: "Competition",
 			calendarPath: `/events/competitions/${competition.slug}`,
+		})),
+		...schools.map((school) => ({
+			...school,
+			calendarType: "school",
+			calendarLabel: "School competition",
+			calendarPath: `/events/competitions/${school.slug}`,
 		})),
 	];
 

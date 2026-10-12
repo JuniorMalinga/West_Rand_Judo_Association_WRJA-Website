@@ -5,14 +5,17 @@ import Reveal from "../components/Reveal";
 import { useAuth } from "../context/AuthContext";
 import useCollection, { useCollectionState } from "../hooks/useCollection";
 import { competitionsStore } from "../data/competitions";
+import { schoolsStore } from "../data/schools";
 import { myPaymentsStore, paymentFileUrl, submitPayment } from "../data/payments";
 import { formatDateTime } from "../lib/format";
 
 export default function CompetitionPaymentPage() {
   const { slug } = useParams();
   const { user } = useAuth();
-  const { items: competitions, loaded } = useCollectionState(competitionsStore);
-  const competition = competitions.find((item) => item.slug === slug);
+  const { items: competitions, loaded: competitionsLoaded } = useCollectionState(competitionsStore);
+  const { items: schools, loaded: schoolsLoaded } = useCollectionState(schoolsStore);
+  const loaded = competitionsLoaded && schoolsLoaded;
+  const competition = [...competitions, ...schools].find((item) => item.slug === slug);
   const payments = useCollection(myPaymentsStore);
   const [file, setFile] = useState(null);
   const [status, setStatus] = useState(null);

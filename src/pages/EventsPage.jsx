@@ -7,6 +7,7 @@ import Reveal from "../components/Reveal";
 import CompetitionCard from "../components/CompetitionCard";
 import { competitionsStore } from "../data/competitions";
 import { eventsStore, getUpcomingEvents } from "../data/events";
+import { schoolsStore } from "../data/schools";
 import useCollection from "../hooks/useCollection";
 import wrjaLogo from "../assets/images/Logo/wrja-logo.png";
 
@@ -91,7 +92,7 @@ function StandardEventsView() {
 
 function CompetitionsView() {
   const competitions = [...useCollection(competitionsStore)]
-    .filter((item) => !["Schools competition", "Club ordering"].includes(item.type))
+    .filter((item) => !item.slug.startsWith("sa-schools-") && item.type !== "Club ordering")
     .sort((a, b) => a.displayOrder - b.displayOrder);
 
   return (
@@ -109,7 +110,7 @@ function CompetitionsView() {
 }
 
 function SchoolsView() {
-  const competitions = useCollection(competitionsStore).filter((item) => ["sa-schools-novice", "sa-schools-advanced"].includes(item.slug));
+  const competitions = [...useCollection(schoolsStore)].sort((a, b) => a.displayOrder - b.displayOrder);
 
   return (
     <>

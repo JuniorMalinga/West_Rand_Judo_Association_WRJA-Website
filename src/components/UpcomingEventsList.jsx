@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import Reveal from "./Reveal";
 import { competitionsStore } from "../data/competitions";
 import { eventsStore, getUpcomingCalendarEvents } from "../data/events";
+import { schoolsStore } from "../data/schools";
 import useCollection from "../hooks/useCollection";
 
 const monthNames = [
@@ -15,7 +16,11 @@ function formatDateBadge(dateString) {
 }
 
 export default function UpcomingEventsList() {
-  const upcoming = getUpcomingCalendarEvents(useCollection(eventsStore), useCollection(competitionsStore)).slice(0, 5);
+  const upcoming = getUpcomingCalendarEvents(
+    useCollection(eventsStore),
+    useCollection(competitionsStore),
+    useCollection(schoolsStore),
+  ).slice(0, 5);
 
   return (
     <aside className="upcoming-events">

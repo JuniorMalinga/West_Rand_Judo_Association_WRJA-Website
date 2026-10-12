@@ -3,6 +3,7 @@ import ImageUploadField from "./ImageUploadField";
 import { useCollectionState } from "../hooks/useCollection";
 import useNotice from "../hooks/useNotice";
 import { competitionsAdmin, competitionsStore, DEFAULT_COMPETITION_IMAGE, getCompetitionStatus } from "../data/competitions";
+import { DEFAULT_SCHOOL_IMAGE, schoolsAdmin, schoolsStore } from "../data/schools";
 import { formatDate, isHttpUrl } from "../lib/format";
 
 const REGISTRATION_STATUSES = [
@@ -32,8 +33,12 @@ const emptyCompetition = {
   displayOrder: 99,
 };
 
-export default function AdminCompetitionsPanel() {
-  const { items: stored, loaded, error: loadError } = useCollectionState(competitionsStore);
+export default function AdminCompetitionsPanel({ schoolsOnly = false }) {
+  const store = schoolsOnly ? schoolsStore : competitionsStore;
+  const adminApi = schoolsOnly ? schoolsAdmin : competitionsAdmin;
+  const defaultImage = schoolsOnly ? DEFAULT_SCHOOL_IMAGE : DEFAULT_COMPETITION_IMAGE;
+  const itemLabel = schoolsOnly ? "school entry" : "competition";
+  const { items: stored, loaded, error: loadError } = useCollectionState(store);
   const [saving, setSaving] = useState(false);
   const competitions = useMemo(() => [...stored].sort((a, b) => a.displayOrder - b.displayOrder), [stored]);
   const [formState, setFormState] = useState(null);
@@ -61,7 +66,12 @@ export default function AdminCompetitionsPanel() {
   const openAdd = () => {
     clear();
     setIsNew(true);
-    setFormState({ ...emptyCompetition, displayOrder: competitions.length + 1 });
+    setFormState({
+      ...emptyCompetition,
+      type: schoolsOnly ? "Schools competition" : emptyCompetition.type,
+      image: defaultImage,
+      displayOrder: competitions.length + 1,
+    });
   };
   const openEdit = (competition) => {
     clear();
@@ -88,10 +98,10 @@ export default function AdminCompetitionsPanel() {
 
     setSaving(true);
     try {
-      if (isNew) await competitionsAdmin.create(formState);
-      else await competitionsAdmin.update(formState.id, formState);
+      if (isNew) await adminApi.create(formState);
+      else await adminApi.update(formState.id, formState);
       closeForm();
-      show("success", isNew ? "Competition added. It is now live on the site." : "Competition updated.");
+      show("success", isNew ? `${schoolsOnly ? "School entry" : "Competition"} added. It is now live on the site.` : `${schoolsOnly ? "School entry" : "Competition"} updated.`);
     } catch (error) {
       show("error", error.message);
     } finally {
@@ -109,8 +119,8 @@ export default function AdminCompetitionsPanel() {
       if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
         await new Promise((resolve) => window.setTimeout(resolve, 420));
       }
-      await competitionsAdmin.remove(competitionToDelete.id);
-      show("success", "Competition deleted.");
+      await adminApi.remove(competitionToDelete.id);
+      show("success", `${schoolsOnly ? "School entry" : "Competition"} deleted.`);
     } catch (error) {
       show("error", error.message);
     } finally {
@@ -122,10 +132,10 @@ export default function AdminCompetitionsPanel() {
     <div className="admin-panel competition-admin-panel">
       <div className="admin-panel-header">
         <div>
-          <h2>Competitions &amp; registration links</h2>
-          <p className="admin-table-subtext">Everything here appears on the Home, Events and Competition pages as soon as you save.</p>
+          <h2>{schoolsOnly ? "Schools" : "Competitions &amp; registration links"}</h2>
+          <p className="admin-table-subtext">{schoolsOnly ? "Manage school competitions, registration, payment and card images." : "Everything here appears on the Home, Events and Competition pages as soon as you save."}</p>
         </div>
-        <button className="btn btn-accent" onClick={openAdd}>+ Add competition</button>
+        <button className="btn btn-accent" onClick={openAdd}>+ Add {schoolsOnly ? "school entry" : "competition"}</button>
       </div>
 
       {loadError && <p className="admin-notice admin-notice-error">{loadError}</p>}
@@ -133,12 +143,14 @@ export default function AdminCompetitionsPanel() {
 
       {formState && (
         <form className="admin-form" onSubmit={handleSave}>
-          <h3 className="admin-form-title">{isNew ? "New competition" : `Editing ${formState.name}`}</h3>
+          <h3 className="admin-form-title">{isNew ? `New ${itemLabel}` : `Editing ${formState.name}`}</h3>
           <div className="admin-form-row-2">
-            <label>Competition name<input value={formState.name} onChange={(e) => update("name", e.target.value)} required /></label>
+            <label>{schoolsOnly ? "School competition name" : "Competition name"}<input value={formState.name} onChange={(e) => update("name", e.target.value)} required /></label>
             <label>Type
-              <input list="competition-types" value={formState.type} onChange={(e) => update("type", e.target.value)} required />
-              <datalist id="competition-types">{types.map((type) => <option key={type} value={type} />)}</datalist>
+              {schoolsOnly
+                ? <input value="Schools competition" readOnly />
+                : <><input list="competition-types" value={formState.type} onChange={(e) => update("type", e.target.value)} required />
+                  <datalist id="competition-types">{types.map((type) => <option key={type} value={type} />)}</datalist></>}
             </label>
           </div>
           <div className="admin-form-row-2">
@@ -154,7 +166,7 @@ export default function AdminCompetitionsPanel() {
           <ImageUploadField
             label="Card image"
             value={formState.image}
-            onChange={(value) => update("image", value || DEFAULT_COMPETITION_IMAGE)}
+            onChange={(value) => update("image", value || defaultImage)}
             removeLabel="Use default image"
             onError={(text) => show("error", text)}
           />
@@ -183,25 +195,25 @@ export default function AdminCompetitionsPanel() {
           )}
           <label>Additional information<textarea rows="2" value={formState.additionalInfo} onChange={(e) => update("additionalInfo", e.target.value)} /></label>
           <div className="admin-form-actions">
-            <button type="submit" className="btn btn-accent" disabled={saving}>{saving ? "Saving…" : isNew ? "Add competition" : "Save changes"}</button>
+            <button type="submit" className="btn btn-accent" disabled={saving}>{saving ? "Saving…" : isNew ? `Add ${itemLabel}` : "Save changes"}</button>
             <button type="button" className="btn btn-outline-dark" onClick={closeForm}>Cancel</button>
           </div>
         </form>
       )}
 
       <div className="admin-toolbar">
-        <input type="search" className="admin-search" placeholder="Search competitions…" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <input type="search" className="admin-search" placeholder={`Search ${schoolsOnly ? "schools" : "competitions"}…`} value={query} onChange={(e) => setQuery(e.target.value)} />
         <span className="admin-count">{visible.length} of {competitions.length}</span>
       </div>
 
       <div className="admin-table-scroll">
         <table className="admin-table">
-          <thead><tr><th>Image</th><th>Competition</th><th>Date</th><th>Status</th><th>Registration</th><th>Payment</th><th /></tr></thead>
+          <thead><tr><th>Image</th><th>{schoolsOnly ? "School competition" : "Competition"}</th><th>Date</th><th>Status</th><th>Registration</th><th>Payment</th><th /></tr></thead>
           <tbody>
             {visible.map((competition) => (
               <tr key={competition.id} className={deletingCompetitionId === competition.id ? "admin-row-deleting" : undefined}>
                 <td><img className="admin-thumb" src={competition.image} alt="" /></td>
-                <td><strong>{competition.name}</strong><div className="admin-table-subtext">{competition.type}</div></td>
+                <td><strong>{competition.name}</strong><div className="admin-table-subtext">{schoolsOnly ? "Schools competition" : competition.type}</div></td>
                 <td>{formatDate(competition.date)}</td>
                 <td><span className="admin-badge">{getCompetitionStatus(competition)}</span></td>
                 <td>{competition.registrationUrl ? <a href={competition.registrationUrl} target="_blank" rel="noreferrer">Open link</a> : <span className="admin-muted">Not set</span>}</td>
@@ -210,7 +222,7 @@ export default function AdminCompetitionsPanel() {
               </tr>
             ))}
             {!loaded && <tr><td colSpan="7" className="admin-empty-cell">Loading…</td></tr>}
-            {loaded && visible.length === 0 && <tr><td colSpan="7" className="admin-empty-cell">No competitions match.</td></tr>}
+            {loaded && visible.length === 0 && <tr><td colSpan="7" className="admin-empty-cell">No {schoolsOnly ? "school entries" : "competitions"} match.</td></tr>}
           </tbody>
         </table>
       </div>
@@ -222,15 +234,15 @@ export default function AdminCompetitionsPanel() {
       >
         {confirmCompetition && (
           <div className="admin-confirm-content">
-            <p className="admin-confirm-kicker">DELETE COMPETITION</p>
-            <h2>Delete this competition?</h2>
+            <p className="admin-confirm-kicker">DELETE {schoolsOnly ? "SCHOOL ENTRY" : "COMPETITION"}</p>
+            <h2>Delete this {itemLabel}?</h2>
             <p>
               “{confirmCompetition.name}” will be removed from the site.
               {confirmCompetition.slug === "tracksuit-ordering" && " The Store page uses this entry for tracksuit ordering."}
             </p>
             <div className="admin-confirm-actions">
               <button type="button" className="btn btn-outline-dark" onClick={() => setConfirmCompetition(null)}>Cancel</button>
-              <button type="button" className="btn admin-confirm-delete" onClick={handleDelete}>Delete competition</button>
+              <button type="button" className="btn admin-confirm-delete" onClick={handleDelete}>Delete {itemLabel}</button>
             </div>
           </div>
         )}

@@ -2,6 +2,7 @@ import { Link, useParams } from "react-router-dom";
 import PageHeader from "../components/PageHeader";
 import Reveal from "../components/Reveal";
 import { competitionsStore, getCompetitionStatus } from "../data/competitions";
+import { schoolsStore } from "../data/schools";
 import { useCollectionState } from "../hooks/useCollection";
 
 function formatDate(date) {
@@ -47,8 +48,10 @@ function TracksuitOrderingPage({ competition }) {
 
 export default function CompetitionDetailPage() {
   const { slug } = useParams();
-  const { items, loaded } = useCollectionState(competitionsStore);
-  const competition = items.find((item) => item.slug === slug);
+  const { items: competitions, loaded: competitionsLoaded } = useCollectionState(competitionsStore);
+  const { items: schools, loaded: schoolsLoaded } = useCollectionState(schoolsStore);
+  const loaded = competitionsLoaded && schoolsLoaded;
+  const competition = [...competitions, ...schools].find((item) => item.slug === slug);
 
   if (!competition && !loaded) return <div className="simple-page"><p>Loading…</p></div>;
   if (!competition) return <div className="simple-page"><h1>Competition not found</h1><Link to="/events/competitions">Back to Events competitions</Link></div>;
