@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { clearSession, hasRememberCookie, setSession } from "../auth.js";
+import { clearSession, setSession } from "../auth.js";
 
 const session = {
   access_token: "access-token",
@@ -13,29 +13,25 @@ function response() {
 }
 
 describe("session cookie persistence", () => {
-  it("recognizes only an explicit Remember me cookie", () => {
-    assert.equal(hasRememberCookie("wrja_remember=1"), true);
-    assert.equal(hasRememberCookie("wrja_remember=0"), false);
-    assert.equal(hasRememberCookie("wrja_remember=10"), false);
-    assert.equal(hasRememberCookie("other=1"), false);
-  });
-
-  it("uses session cookies unless Remember me was selected", () => {
+  it("uses session cookies and removes any legacy remember cookie", () => {
     const res = response();
     setSession({ secure: false }, res, session);
     assert.equal(res["Set-Cookie"].length, 3);
     assert.match(res["Set-Cookie"][0], /^wrja_access=.*SameSite=Lax$/);
     assert.match(res["Set-Cookie"][1], /^wrja_refresh=.*SameSite=Lax$/);
+    assert.ok(res["Set-Cookie"][0].includes("Max-Age=") === false);
+    assert.ok(res["Set-Cookie"][1].includes("Max-Age=") === false);
     assert.match(res["Set-Cookie"][2], /^wrja_remember=;.*Max-Age=0$/);
   });
 
-  it("persists the refresh cookie for 30 days when Remember me is selected", () => {
+  it("does not persist access or refresh cookies", () => {
     const res = response();
-    setSession({ secure: true }, res, session, { remember: true });
-    assert.match(res["Set-Cookie"][0], /Max-Age=3600/);
-    assert.match(res["Set-Cookie"][1], /Max-Age=2592000/);
-    assert.match(res["Set-Cookie"][1], /; Secure/);
-    assert.match(res["Set-Cookie"][2], /^wrja_remember=1;.*Max-Age=2592000/);
+    setSession({ secure: true }, res, session);
+    assert.equal(res["Set-Cookie"].length, 3);
+    assert.ok(res["Set-Cookie"][0].includes("; Secure"));
+    assert.ok(res["Set-Cookie"][1].includes("; Secure"));
+    assert.ok(res["Set-Cookie"][0].includes("Max-Age=") === false);
+    assert.ok(res["Set-Cookie"][1].includes("Max-Age=") === false);
   });
 
   it("clears access, refresh, and persistence cookies on logout", () => {

@@ -36,12 +36,12 @@ export function AuthProvider({ children }) {
       authLoadRef.current = (async () => {
         if (!window.sessionStorage.getItem(TAB_SESSION_KEY)) {
           const previousSession = await api("/api/auth/me");
-          if (previousSession.user && !previousSession.rememberMe) {
+          if (previousSession.user) {
             window.localStorage.setItem(SESSION_ENDED_KEY, `${Date.now()}-${Math.random()}`);
             await api("/api/auth/logout", { method: "POST", body: {} });
           }
           window.sessionStorage.setItem(TAB_SESSION_KEY, "active");
-          return previousSession.rememberMe ? previousSession.user : null;
+          return null;
         }
         const data = await api("/api/auth/me");
         return data.user;
@@ -88,8 +88,8 @@ export function AuthProvider({ children }) {
       loading: state.loading,
       isAdmin: profile?.role === "admin",
       loginTransitionId,
-      signIn: async (email, password, rememberMe = false) => {
-        const data = await api("/api/auth/login", { method: "POST", body: { email, password, rememberMe } });
+      signIn: async (email, password) => {
+        const data = await api("/api/auth/login", { method: "POST", body: { email, password } });
         window.sessionStorage.setItem(TAB_SESSION_KEY, "active");
         setProfile(data.user);
         setLoginTransitionId((current) => current + 1);

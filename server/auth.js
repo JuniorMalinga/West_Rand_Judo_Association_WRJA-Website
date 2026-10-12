@@ -4,8 +4,7 @@ import { HttpError } from "./security.js";
 
 const ACCESS = "wrja_access";
 const REFRESH = "wrja_refresh";
-const REMEMBER = "wrja_remember";
-const REMEMBER_MAX_AGE = 30 * 24 * 60 * 60;
+const LEGACY_REMEMBER = "wrja_remember";
 const cookieOptions = (req) => `Path=/; HttpOnly; SameSite=Lax${req.secure || process.env.NODE_ENV === "production" ? "; Secure" : ""}`;
 
 function cookies(header = "") {
@@ -17,10 +16,6 @@ function cookies(header = "") {
   }));
 }
 
-export function hasRememberCookie(header = "") {
-  return cookies(header)[REMEMBER] === "1";
-}
-
 export function authClient() {
   if (!(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL) || !(process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY))
     throw new Error("Configure SUPABASE_URL and SUPABASE_ANON_KEY in server/.env.");
@@ -29,15 +24,12 @@ export function authClient() {
   });
 }
 
-export function setSession(req, res, session, { remember = false } = {}) {
+export function setSession(req, res, session) {
   const options = cookieOptions(req);
-  const accessAge = remember ? `; Max-Age=${Math.max(0, session.expires_in || 3600)}` : "";
-  const refreshAge = remember ? `; Max-Age=${REMEMBER_MAX_AGE}` : "";
-  const rememberCookieAge = remember ? `; Max-Age=${REMEMBER_MAX_AGE}` : "; Max-Age=0";
   res.setHeader("Set-Cookie", [
-    `${ACCESS}=${encodeURIComponent(session.access_token)}; ${options}${accessAge}`,
-    `${REFRESH}=${encodeURIComponent(session.refresh_token)}; ${options}${refreshAge}`,
-    `${REMEMBER}=${remember ? "1" : ""}; ${options}${rememberCookieAge}`,
+    `${ACCESS}=${encodeURIComponent(session.access_token)}; ${options}`,
+    `${REFRESH}=${encodeURIComponent(session.refresh_token)}; ${options}`,
+    `${LEGACY_REMEMBER}=; ${options}; Max-Age=0`,
   ]);
 }
 
@@ -46,7 +38,7 @@ export function clearSession(req, res) {
   res.setHeader("Set-Cookie", [
     `${ACCESS}=; ${options}; Max-Age=0`,
     `${REFRESH}=; ${options}; Max-Age=0`,
-    `${REMEMBER}=; ${options}; Max-Age=0`,
+    `${LEGACY_REMEMBER}=; ${options}; Max-Age=0`,
   ]);
 }
 
@@ -74,34 +66,25 @@ export async function loadProfile(client, user) {
 
 export async function attachUser(req, res, next) {
   req.user = null;
-  req.rememberMe = hasRememberCookie(req.headers.cookie);
   try {
     const stored = cookies(req.headers.cookie);
     let accessToken = stored[ACCESS];
-    if (!accessToken && !stored[REFRESH]) {
-      req.rememberMe = false;
-      return next();
-    }
+    if (!accessToken && !stored[REFRESH]) return next();
     const client = authClient();
     let { data: { user }, error } = accessToken
       ? await client.auth.getUser(accessToken) : { data: { user: null }, error: true };
     if ((error || !user) && stored[REFRESH]) {
       const refreshed = await client.auth.refreshSession({ refresh_token: stored[REFRESH] });
       if (refreshed.error || !refreshed.data.session) {
-        req.rememberMe = false;
         clearSession(req, res);
         return next();
       }
-      setSession(req, res, refreshed.data.session, { remember: stored[REMEMBER] === "1" });
+      setSession(req, res, refreshed.data.session);
       accessToken = refreshed.data.session.access_token;
       user = refreshed.data.user;
       stored[REFRESH] = refreshed.data.session.refresh_token;
     }
-    if (!user) {
-      req.rememberMe = false;
-      clearSession(req, res);
-      return next();
-    }
+    if (!user) { clearSession(req, res); return next(); }
     // User-scoped reads enforce the existing profiles RLS policy.
     const scoped = createClient(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL, process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY, {
       auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },

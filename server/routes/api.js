@@ -39,7 +39,6 @@ const loginFailuresByEmail = createLimiter({ windowMs: 15 * MINUTE, max: 5 });
 router.post("/auth/login", async (req, res) => {
   const email = String(req.body?.email || "").trim().toLowerCase().slice(0, 254);
   const password = String(req.body?.password || "").slice(0, 256);
-  const remember = req.body?.rememberMe === true;
   if (!email || !password) throw new HttpError(400, "Please enter your email and password.");
 
   const wait = Math.max(loginFailuresByIp.blocked(req.ip), loginFailuresByEmail.blocked(email));
@@ -59,7 +58,7 @@ router.post("/auth/login", async (req, res) => {
   const profile = await loadProfile(createUserClient(data.session.access_token), data.user);
   loginFailuresByIp.reset(req.ip);
   loginFailuresByEmail.reset(email);
-  setSession(req, res, data.session, { remember });
+  setSession(req, res, data.session);
   res.json({ success: true, user: publicUser(profile) });
 });
 
@@ -106,7 +105,7 @@ router.post("/auth/logout", async (req, res) => {
 
 // 200 with user:null (rather than 401) so a logged-out visit doesn't log console errors.
 router.get("/auth/me", (req, res) => {
-  res.json({ user: req.user ? publicUser(req.user) : null, rememberMe: Boolean(req.user && req.rememberMe) });
+  res.json({ user: req.user ? publicUser(req.user) : null });
 });
 
 // =============================================================================
