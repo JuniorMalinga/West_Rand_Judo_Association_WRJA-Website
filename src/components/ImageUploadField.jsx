@@ -10,6 +10,7 @@ export default function ImageUploadField({
   onChange,
   hint = "JPG, PNG or WebP. Large photos are resized before uploading.",
   removeLabel = "Remove image",
+  allowRemove = true,
   format = "photo", // "photo" -> compressed JPEG, "qr" -> lossless PNG
   onError,
 }) {
@@ -52,7 +53,7 @@ export default function ImageUploadField({
             <button type="button" className="btn btn-outline-dark" onClick={() => inputRef.current?.click()} disabled={busy}>
               {busy ? "Uploading…" : value ? "Replace image" : "Upload image"}
             </button>
-            {value && (
+            {value && allowRemove && (
               <button type="button" className="admin-link-button" onClick={() => { setError(""); onChange(""); }}>
                 {removeLabel}
               </button>

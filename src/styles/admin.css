@@ -107,6 +107,10 @@
 .admin-confirm-kicker { margin: 0 0 8px; color: #8f6f16; font-size: 11px; font-weight: 800; letter-spacing: .08em; }
 .admin-confirm-content h2 { margin: 0 0 8px; font-size: 20px; }
 .admin-confirm-content > p:not(.admin-confirm-kicker) { margin: 0; color: #66645d; font-size: 14px; line-height: 1.55; }
+.admin-confirm-image { display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: center; gap: 12px; margin: 15px 0; padding: 10px; border: 1px solid #e8e4da; border-radius: 8px; background: #faf8f3; }
+.admin-confirm-image img { width: 76px; height: 60px; border-radius: 6px; object-fit: cover; background: #efece3; }
+.admin-confirm-image strong { color: var(--text-dark); font-size: 13px; line-height: 1.4; overflow-wrap: anywhere; }
+.admin-confirm-error { margin: 14px 0 0; }
 .admin-confirm-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
 .admin-confirm-actions .btn { padding: 9px 15px; font-size: 13px; }
 .admin-confirm-delete { border: 1px solid #a12727; background: #a12727; color: #fff; }

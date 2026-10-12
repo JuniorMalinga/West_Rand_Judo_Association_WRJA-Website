@@ -2,11 +2,13 @@ import { Link } from "react-router-dom";
 import wrjaLogo from "../assets/images/Logo/wrja-logo.png";
 import { clubLocations } from "../data/clubContacts";
 import { toTelHref } from "../lib/format";
-
-// Import the real gallery data instead of using placeholder images.
-import galleryItems from "../data/galleryItems";
+import { useCollectionState } from "../hooks/useCollection";
+import { combineGalleryItems, galleryStore, galleryDeletedPathsStore } from "../data/gallery";
 
 export default function SiteFooter() {
+  const { items: managedItems } = useCollectionState(galleryStore);
+  const { items: deletedPaths } = useCollectionState(galleryDeletedPathsStore);
+  const footerGallery = combineGalleryItems(managedItems, deletedPaths);
   return (
     <footer className="site-footer">
       <div className="footer-grid">
@@ -72,8 +74,7 @@ export default function SiteFooter() {
           <h3>Gallery</h3>
 
           <div className="footer-gallery-grid">
-            {/* Use the real gallery images from galleryItems */}
-            {galleryItems.slice(0, 8).map((item) => (
+            {footerGallery.slice(0, 8).map((item) => (
               <img
                 key={item.id}
                 src={item.photoUrl}

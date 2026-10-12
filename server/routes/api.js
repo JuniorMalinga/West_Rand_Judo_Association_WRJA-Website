@@ -6,10 +6,13 @@ import * as mailer from "../mailer.js";
 import * as paymentsRepo from "../paymentsRepo.js";
 import * as systemRepo from "../systemRepo.js";
 import * as mediaRepo from "../mediaRepo.js";
+import * as galleryRepo from "../galleryRepo.js";
 import * as adminUsersRepo from "../adminUsersRepo.js";
 import * as v from "../validate.js";
-import { authClient, clearSession, loadProfile, setSession, requireAdmin, requireAuth } from "../auth.js";
+import { cleanGalleryItem } from "../galleryValidation.js";
+import { authClient, clearSession, loadProfile, setSession, revokeSession, requireAdmin, requireAuth } from "../auth.js";
 import { createUserClient } from "../supabase.js";
+import { canReadPaymentFile } from "../access.js";
 import { createLimiter, HttpError, rateLimit } from "../security.js";
 import {
   preparePrivateProof,
@@ -36,6 +39,7 @@ const loginFailuresByEmail = createLimiter({ windowMs: 15 * MINUTE, max: 5 });
 router.post("/auth/login", async (req, res) => {
   const email = String(req.body?.email || "").trim().toLowerCase().slice(0, 254);
   const password = String(req.body?.password || "").slice(0, 256);
+  const remember = req.body?.rememberMe === true;
   if (!email || !password) throw new HttpError(400, "Please enter your email and password.");
 
   const wait = Math.max(loginFailuresByIp.blocked(req.ip), loginFailuresByEmail.blocked(email));
@@ -53,8 +57,9 @@ router.post("/auth/login", async (req, res) => {
   }
   // Never trust a role supplied by the browser or user metadata.
   const profile = await loadProfile(createUserClient(data.session.access_token), data.user);
+  loginFailuresByIp.reset(req.ip);
   loginFailuresByEmail.reset(email);
-  setSession(req, res, data.session);
+  setSession(req, res, data.session, { remember });
   res.json({ success: true, user: publicUser(profile) });
 });
 
@@ -88,7 +93,13 @@ router.post("/auth/signup", rateLimit({ windowMs: HOUR, max: 10, message: "Too m
 });
 
 router.post("/auth/logout", async (req, res) => {
-  // Clearing both HttpOnly cookies signs out this browser.
+  if (req.accessToken && req.refreshToken) {
+    try {
+      await revokeSession(req.accessToken, req.refreshToken);
+    } catch (error) {
+      console.warn("Supabase session revocation failed.", error.code || error.status || "unknown");
+    }
+  }
   clearSession(req, res);
   res.json({ success: true });
 });
@@ -131,6 +142,14 @@ router.get("/news", async (req, res) => {
   res.json({ items: await newsRepo.listNews(req.accessToken) });
 });
 
+router.get("/gallery", async (req, res) => {
+  res.json({ items: await galleryRepo.listGallery(req.accessToken) });
+});
+
+router.get("/gallery/deleted-paths", async (_req, res) => {
+  res.json({ items: await galleryRepo.listDeletedGalleryPaths() });
+});
+
 router.post(
   "/messages",
   rateLimit({ windowMs: HOUR, max: 8, message: "You've sent several messages recently. Please try again later." }),
@@ -149,14 +168,16 @@ router.post(
     await contactMessagesRepo.addMessage(message, req.accessToken, req.user?.id || null);
 
     // The message is saved. A failed confirmation email must never fail the request.
+    let confirmationEmailSent = false;
     try {
       const sent = await mailer.sendContactConfirmation(message);
+      confirmationEmailSent = Boolean(sent);
       if (!sent) console.warn("Confirmation email skipped: SMTP settings are missing.");
     } catch (error) {
-      console.warn("Confirmation email failed:", error.message);
+      console.warn("Confirmation email failed.", error.code || error.responseCode || "unknown");
     }
 
-    return res.status(201).json({ success: true });
+    return res.status(201).json({ success: true, confirmationEmailSent });
   }
 );
 
@@ -201,10 +222,17 @@ router.get("/payments/mine", requireAuth, async (req, res) => {
 router.get("/payments/:id/file", requireAuth, async (req, res) => {
   const payment = await paymentsRepo.getPaymentWithFile(req.params.id, req.accessToken);
   if (!payment) throw new HttpError(404, "File not found.");
+  if (!canReadPaymentFile(payment, req.user)) throw new HttpError(404, "File not found.");
+  if (!["application/pdf", "image/jpeg", "image/png"].includes(payment.fileType)) {
+    throw new HttpError(404, "File not found.");
+  }
 
   const file = await paymentsRepo.downloadPaymentFile(payment.storagePath, req.accessToken);
   res.setHeader("Content-Type", payment.fileType);
-  res.setHeader("Content-Disposition", `inline; filename="${payment.fileName.replace(/"/g, "")}"`);
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Content-Security-Policy", "default-src 'none'; sandbox");
+  const safeFileName = String(payment.fileName || "proof").slice(0, 120).replace(/[^\x20-\x7e]/g, "_").replace(/["\\]/g, "_");
+  res.setHeader("Content-Disposition", `inline; filename="${safeFileName}"`);
   res.setHeader("Cache-Control", "private, no-store");
   res.send(file);
 });
@@ -265,7 +293,8 @@ async function cleanupImages(paths, accessToken) {
     try {
       const stillUsed =
         (await eventsRepo.isEventImageReferenced(p, accessToken)) ||
-        (await newsRepo.isNewsImageReferenced(p, accessToken));
+        (await newsRepo.isNewsImageReferenced(p, accessToken)) ||
+        (await galleryRepo.isGalleryImageReferenced(p, accessToken));
       if (!stillUsed) await mediaRepo.deletePublicMedia(p, accessToken);
     } catch (error) {
       console.warn("Image cleanup skipped:", error.message);
@@ -380,6 +409,59 @@ admin.delete("/news/:id", async (req, res) => {
   await newsRepo.deleteNews(id, req.accessToken);
   await cleanupImages([current.image], req.accessToken);
   res.json({ success: true });
+});
+
+// ---- Gallery ----------------------------------------------------------------
+admin.get("/gallery", async (req, res) => {
+  res.json({ items: await galleryRepo.listGallery(req.accessToken) });
+});
+
+admin.post("/gallery", async (req, res) => {
+  const item = await galleryRepo.saveGalleryItem(cleanGalleryItem(req.body || {}), {
+    create: true,
+    accessToken: req.accessToken,
+  });
+  res.status(201).json({ item });
+});
+
+admin.put("/gallery/:id", async (req, res) => {
+  const id = idParam(req.params.id);
+  const current = await galleryRepo.getGalleryItem(id, req.accessToken);
+  if (!current) throw new HttpError(404, "Gallery image not found.");
+  const item = await galleryRepo.saveGalleryItem({ ...cleanGalleryItem(req.body || {}), id }, {
+    create: false,
+    accessToken: req.accessToken,
+  });
+  if (galleryRepo.isManagedGalleryUploadPath(current.imagePath) && current.imagePath !== item.imagePath) {
+    await cleanupImages([current.photoUrl], req.accessToken);
+  }
+  res.json({ item });
+});
+
+admin.delete("/gallery/:id", async (req, res) => {
+  const id = String(req.params.id || "").trim();
+  if (!galleryRepo.isGalleryItemId(id)) throw new HttpError(400, "Gallery image ID is invalid.");
+  try {
+    const current = await galleryRepo.getGalleryItem(id, req.accessToken);
+    if (!current) throw new HttpError(404, "Gallery image not found.");
+
+    const [eventReference, newsReference, galleryReference] = await Promise.all([
+      eventsRepo.isEventImageReferenced(current.imagePath, req.accessToken),
+      newsRepo.isNewsImageReferenced(current.imagePath, req.accessToken),
+      galleryRepo.isGalleryImageReferenced(current.imagePath, req.accessToken, id),
+    ]);
+    if (eventReference || newsReference || galleryReference) {
+      throw new HttpError(409, "This image is also used by another record. Update that record before deleting the image.");
+    }
+
+    const result = await galleryRepo.deleteGalleryItem(id, current, { accessToken: req.accessToken });
+    if (!result.deleted) throw new HttpError(404, "Gallery image not found.");
+    res.json({ success: true, orderUpdated: result.orderUpdated });
+  } catch (error) {
+    if (error instanceof HttpError && error.status < 500) throw error;
+    console.error("Gallery permanent deletion failed.", { galleryId: id, code: error.code || error.status });
+    res.status(500).json({ success: false, error: "The image could not be completely deleted. Check the gallery and Storage before retrying." });
+  }
 });
 
 // ---- Messages ---------------------------------------------------------------

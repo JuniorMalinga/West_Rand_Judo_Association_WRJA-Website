@@ -252,6 +252,7 @@ The database contains these tables:
 | `grading_records` | Grade history for athletes |
 | `news_posts` | News articles |
 | `gallery_items` | Gallery images |
+| `gallery_deleted_paths` | Legacy bundled gallery images deleted by administrators |
 | `trial_requests` | Trial session requests |
 | `contact_messages` | Messages from the contact form |
 | `payment_proofs` | Uploaded proof of payment records |

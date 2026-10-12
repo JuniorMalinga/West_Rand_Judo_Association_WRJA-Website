@@ -39,6 +39,17 @@ export function clearSession(req, res) {
   ]);
 }
 
+export async function revokeSession(accessToken, refreshToken) {
+  const client = authClient();
+  const { error: sessionError } = await client.auth.setSession({
+    access_token: accessToken,
+    refresh_token: refreshToken,
+  });
+  if (sessionError) throw sessionError;
+  const { error } = await client.auth.signOut({ scope: "local" });
+  if (error) throw error;
+}
+
 export async function loadProfile(client, user) {
   const { data, error } = await client.from("profiles")
     .select("id, first_name, last_name, email, phone, profile_role, is_active")

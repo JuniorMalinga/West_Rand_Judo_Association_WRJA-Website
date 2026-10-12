@@ -32,7 +32,7 @@ export default function GalleryLightbox({ items, activeIndex, onClose, onNavigat
       </button>
 
       <div className="lightbox-content" onClick={(event) => event.stopPropagation()}>
-        <img key={activeItem.id} src={activeItem.photoUrl} alt={activeItem.caption} />
+        <img key={activeItem.id} src={activeItem.photoUrl} alt={activeItem.altText || activeItem.caption} />
         <p className="lightbox-caption">{activeItem.caption}</p>
       </div>
 

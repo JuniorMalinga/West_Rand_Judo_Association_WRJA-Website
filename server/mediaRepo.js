@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { createUserClient } from "./supabase.js";
+import { createAdminClient, createUserClient } from "./supabase.js";
 
 const BUCKET = "public-media";
 
@@ -65,4 +65,63 @@ export async function deletePublicMedia(value, accessToken) {
   const { error } = await client.storage.from(BUCKET).remove([path]);
   check(error, "Public image cleanup failed.");
   return true;
+}
+
+function contentTypeForPath(path) {
+  const extension = path.split(".").pop()?.toLowerCase();
+  return {
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    webp: "image/webp",
+    gif: "image/gif",
+  }[extension] || "application/octet-stream";
+}
+
+export async function removePublicMediaWithBackup(value, client = createAdminClient()) {
+  const path = storagePathFromPublicUrl(value, client);
+  if (!path || path.startsWith("/") || path.split("/").some((part) => part === "..")) {
+    throw new Error("The image does not have a valid public-media storage path.");
+  }
+
+  const bucket = client.storage.from(BUCKET);
+  const { data, error } = await bucket.download(path);
+  if (error) {
+    if (String(error.statusCode || error.status) === "404" || /not found/i.test(error.message || "")) {
+      const missing = new Error("The gallery image was not found in Storage.");
+      missing.code = "OBJECT_NOT_FOUND";
+      throw missing;
+    }
+    throw new Error(`Storage download failed: ${error.message || "unknown error"}`);
+  }
+
+  const backup = {
+    path,
+    buffer: Buffer.from(await data.arrayBuffer()),
+    contentType: data.type || contentTypeForPath(path),
+  };
+  if (!backup.buffer.length) throw new Error("Image backup was empty; Storage was not changed.");
+
+  const { error: removeError } = await bucket.remove([path]);
+  if (removeError) {
+    try {
+      await restorePublicMediaBackup(backup, client);
+    } catch (restoreError) {
+      console.error("Gallery Storage rollback failed.", restoreError.code || restoreError.message);
+      throw new Error("Storage deletion failed and the image could not be restored.");
+    }
+    throw new Error(`Storage deletion failed: ${removeError.message || "unknown error"}`);
+  }
+
+  return backup;
+}
+
+export async function restorePublicMediaBackup(backup, client = createAdminClient()) {
+  if (!backup) return;
+  const { error } = await client.storage.from(BUCKET).upload(backup.path, backup.buffer, {
+    contentType: backup.contentType,
+    cacheControl: "3600",
+    upsert: true,
+  });
+  check(error, "Storage rollback failed.");
 }

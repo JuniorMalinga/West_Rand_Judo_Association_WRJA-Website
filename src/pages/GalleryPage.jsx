@@ -4,19 +4,24 @@ import GalleryFilterTabs from "../components/GalleryFilterTabs";
 import GalleryItem from "../components/GalleryItem";
 import GalleryLightbox from "../components/GalleryLightbox";
 import Pagination from "../components/Pagination";
-import galleryItems, { galleryCategories } from "../data/galleryItems";
+import { galleryCategories } from "../data/galleryItems";
+import { useCollectionState } from "../hooks/useCollection";
+import { combineGalleryItems, galleryStore, galleryDeletedPathsStore } from "../data/gallery";
 
 const PHOTOS_PER_PAGE = 10;
 
 export default function GalleryPage() {
+  const { items: managedItems } = useCollectionState(galleryStore);
+  const { items: deletedPaths } = useCollectionState(galleryDeletedPathsStore);
+  const allItems = combineGalleryItems(managedItems, deletedPaths);
   const [activeCategory, setActiveCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [activeIndex, setActiveIndex] = useState(null);
 
   const filteredItems =
     activeCategory === "all"
-      ? galleryItems
-      : galleryItems.filter((item) => item.category === activeCategory);
+      ? allItems
+      : allItems.filter((item) => item.category === activeCategory);
 
   const totalPages = Math.ceil(filteredItems.length / PHOTOS_PER_PAGE);
   const startIndex = (currentPage - 1) * PHOTOS_PER_PAGE;
