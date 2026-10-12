@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ImageUploadField from "./ImageUploadField";
 import { useCollectionState } from "../hooks/useCollection";
 import useNotice from "../hooks/useNotice";
@@ -11,7 +11,16 @@ export default function AdminNewsPanel() {
   const { items: posts, loaded, error: loadError } = useCollectionState(newsStore);
   const [saving, setSaving] = useState(false);
   const [formState, setFormState] = useState(null);
+  const [confirmPost, setConfirmPost] = useState(null);
+  const confirmDialogRef = useRef(null);
   const { notice, show, clear } = useNotice();
+
+  useEffect(() => {
+    const dialog = confirmDialogRef.current;
+    if (!dialog) return;
+    if (confirmPost && !dialog.open) dialog.showModal();
+    if (!confirmPost && dialog.open) dialog.close();
+  }, [confirmPost]);
 
   const categories = [...new Set(posts.map((post) => post.category).filter(Boolean))];
 
@@ -41,10 +50,12 @@ export default function AdminNewsPanel() {
     }
   };
 
-  const handleDelete = async (post) => {
-    if (!window.confirm(`Delete "${post.title}"?`)) return;
+  const handleDelete = async () => {
+    if (!confirmPost) return;
+    const postToDelete = confirmPost;
+    setConfirmPost(null);
     try {
-      await newsAdmin.remove(post.id);
+      await newsAdmin.remove(postToDelete.id);
       show("success", "Post deleted.");
     } catch (error) {
       show("error", error.message);
@@ -107,7 +118,7 @@ export default function AdminNewsPanel() {
                 <td><strong>{post.title}</strong>{post.source && <div className="admin-table-subtext">via {post.source}</div>}</td>
                 <td><span className="admin-badge">{post.category}</span></td>
                 <td>{String(post.date).trim()}</td>
-                <td className="admin-table-actions"><button onClick={() => openEdit(post)}>Edit</button><button className="danger" onClick={() => handleDelete(post)}>Delete</button></td>
+                <td className="admin-table-actions"><button onClick={() => openEdit(post)}>Edit</button><button className="danger" onClick={() => setConfirmPost(post)}>Delete</button></td>
               </tr>
             ))}
             {!loaded && <tr><td colSpan="5" className="admin-empty-cell">Loading…</td></tr>}
@@ -115,6 +126,26 @@ export default function AdminNewsPanel() {
           </tbody>
         </table>
       </div>
+
+      <dialog
+        ref={confirmDialogRef}
+        className="admin-confirm-dialog"
+        aria-labelledby="news-delete-title"
+        aria-describedby="news-delete-description"
+        onCancel={(event) => { event.preventDefault(); setConfirmPost(null); }}
+      >
+        {confirmPost && (
+          <div className="admin-confirm-content">
+            <p className="admin-confirm-kicker">DELETE NEWS POST</p>
+            <h2 id="news-delete-title">Delete this post?</h2>
+            <p id="news-delete-description">“{confirmPost.title}” will be removed from the News page and home page.</p>
+            <div className="admin-confirm-actions">
+              <button type="button" className="btn btn-outline-dark" onClick={() => setConfirmPost(null)}>Cancel</button>
+              <button type="button" className="btn admin-confirm-delete" onClick={handleDelete}>Delete post</button>
+            </div>
+          </div>
+        )}
+      </dialog>
     </div>
   );
 }
