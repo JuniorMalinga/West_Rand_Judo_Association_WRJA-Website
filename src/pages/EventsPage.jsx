@@ -165,7 +165,7 @@ function StoreView() {
               <div className="events-store-card-topline"><p className="eyebrow">CLUB MATERIALS</p><span className="events-store-stock">Made to order</span></div>
               <h2>WRJA Posters</h2>
               <p>Bring the WRJA spirit to your dojo, school or event space with official association posters.</p>
-              <div className="events-store-card-footer"><strong>Order by enquiry</strong><Link to="/contact?topic=WRJA%20poster%20order" className="btn btn-outline-dark">Shop posters</Link></div>
+              <div className="events-store-card-footer"><strong>Order by enquiry</strong><Link to="/contact?topic=WRJA%20poster%20order" className="btn btn-accent">Contact WRJA</Link></div>
             </div>
           </article>
         </Reveal>
