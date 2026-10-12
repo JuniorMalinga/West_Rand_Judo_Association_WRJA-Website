@@ -6,6 +6,8 @@ import HomePage from "./pages/HomePage";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import ScrollToTop from "./components/ScrollToTop";
 import BackToTopButton from "./components/BackToTopButton";
+import CookieNotice from "./components/CookieNotice";
+import SessionIdlePrompt from "./components/SessionIdlePrompt";
 
 
 const CompetitionDetailPage = lazy(() => import("./pages/CompetitionDetailPage"));
@@ -85,6 +87,8 @@ function AppContent() {
             <Route path="/admin" element={<RequireAdmin><AdminPage /></RequireAdmin>} />
           </Routes>
       </Suspense>
+        <CookieNotice />
+        <SessionIdlePrompt />
       {pathname !== "/admin" && <SiteFooter />}
       <Suspense fallback={null}>
         {pathname !== "/admin" && pathname !== "/login" && <ChatWidget />}

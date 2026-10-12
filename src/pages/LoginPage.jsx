@@ -41,6 +41,7 @@ export default function LoginPage() {
   const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -52,7 +53,7 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      const session = await signIn(email, password);
+      const session = await signIn(email, password, rememberMe);
       setIsAuthenticating(true);
       window.setTimeout(() => navigate(session.profile.role === "admin" ? "/admin" : (location.state?.from?.pathname || "/")), 1350);
     } catch (error) {
@@ -124,7 +125,7 @@ export default function LoginPage() {
 
           <div className="reference-form-options">
             <label className="reference-remember">
-              <input type="checkbox" />
+              <input type="checkbox" checked={rememberMe} onChange={(event) => setRememberMe(event.target.checked)} />
               <span>Remember me</span>
             </label>
             <Link to="/forgot-password" className="reference-forgot">

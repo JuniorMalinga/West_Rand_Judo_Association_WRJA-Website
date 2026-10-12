@@ -4,6 +4,8 @@ import { HttpError } from "./security.js";
 
 const ACCESS = "wrja_access";
 const REFRESH = "wrja_refresh";
+const REMEMBER = "wrja_remember";
+const REMEMBER_MAX_AGE = 30 * 24 * 60 * 60;
 const cookieOptions = (req) => `Path=/; HttpOnly; SameSite=Lax${req.secure || process.env.NODE_ENV === "production" ? "; Secure" : ""}`;
 
 function cookies(header = "") {
@@ -23,11 +25,15 @@ export function authClient() {
   });
 }
 
-export function setSession(req, res, session) {
+export function setSession(req, res, session, { remember = false } = {}) {
   const options = cookieOptions(req);
+  const accessAge = remember ? `; Max-Age=${Math.max(0, session.expires_in || 3600)}` : "";
+  const refreshAge = remember ? `; Max-Age=${REMEMBER_MAX_AGE}` : "";
+  const rememberCookieAge = remember ? `; Max-Age=${REMEMBER_MAX_AGE}` : "; Max-Age=0";
   res.setHeader("Set-Cookie", [
-    `${ACCESS}=${encodeURIComponent(session.access_token)}; ${options}; Max-Age=${Math.max(0, session.expires_in || 3600)}`,
-    `${REFRESH}=${encodeURIComponent(session.refresh_token)}; ${options}; Max-Age=604800`,
+    `${ACCESS}=${encodeURIComponent(session.access_token)}; ${options}${accessAge}`,
+    `${REFRESH}=${encodeURIComponent(session.refresh_token)}; ${options}${refreshAge}`,
+    `${REMEMBER}=${remember ? "1" : ""}; ${options}${rememberCookieAge}`,
   ]);
 }
 
@@ -36,6 +42,7 @@ export function clearSession(req, res) {
   res.setHeader("Set-Cookie", [
     `${ACCESS}=; ${options}; Max-Age=0`,
     `${REFRESH}=; ${options}; Max-Age=0`,
+    `${REMEMBER}=; ${options}; Max-Age=0`,
   ]);
 }
 
@@ -73,9 +80,10 @@ export async function attachUser(req, res, next) {
     if ((error || !user) && stored[REFRESH]) {
       const refreshed = await client.auth.refreshSession({ refresh_token: stored[REFRESH] });
       if (refreshed.error || !refreshed.data.session) { clearSession(req, res); return next(); }
-      setSession(req, res, refreshed.data.session);
+      setSession(req, res, refreshed.data.session, { remember: stored[REMEMBER] === "1" });
       accessToken = refreshed.data.session.access_token;
       user = refreshed.data.user;
+      stored[REFRESH] = refreshed.data.session.refresh_token;
     }
     if (!user) { clearSession(req, res); return next(); }
     // User-scoped reads enforce the existing profiles RLS policy.
@@ -85,6 +93,7 @@ export async function attachUser(req, res, next) {
     });
     req.user = await loadProfile(scoped, user);
     req.accessToken = accessToken;
+    req.refreshToken = stored[REFRESH];
     next();
   } catch (error) { next(error); }
 }

@@ -756,3 +756,68 @@ html:has(.signup-page), body:has(.signup-page) { background: #080808; }
   .login-auth-signal { animation-duration: 1ms !important; animation-delay: 0ms !important; }
   .login-page.login-is-authenticating .login-field .reference-input-icon { left: calc(100% - 58px); }
 }
+
+/* ---------- Essential cookies and idle session security ---------- */
+.cookie-notice {
+  position: fixed;
+  z-index: 2100;
+  bottom: 20px;
+  left: 50%;
+  display: grid;
+  width: min(920px, calc(100vw - 32px));
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 22px;
+  padding: 20px 22px;
+  border: 1px solid rgba(201, 162, 39, 0.45);
+  border-left: 4px solid var(--accent);
+  border-radius: 10px;
+  background: #191919;
+  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.3);
+  color: var(--text-light);
+  transform: translateX(-50%);
+}
+
+.cookie-notice .eyebrow {
+  margin-bottom: 5px;
+  color: var(--accent);
+}
+
+.cookie-notice h2 {
+  margin: 0 0 4px;
+  color: var(--text-light);
+  font-size: 18px;
+}
+
+.cookie-notice p:not(.eyebrow) {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.74);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.cookie-notice .btn { white-space: nowrap; }
+
+.session-idle-dialog {
+  width: min(460px, calc(100vw - 32px));
+  max-width: none;
+  padding: 0;
+  border: 1px solid rgba(201, 162, 39, 0.55);
+  border-radius: 10px;
+  background: #191919;
+  color: var(--text-light);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.38);
+}
+
+.session-idle-dialog::backdrop { background: rgba(0, 0, 0, 0.58); }
+.session-idle-content { padding: 30px; }
+.session-idle-content .eyebrow { color: var(--accent); }
+.session-idle-content h2 { margin: 8px 0; color: var(--text-light); font-size: 26px; }
+.session-idle-content > p:not(.eyebrow) { color: rgba(255, 255, 255, 0.74); line-height: 1.6; }
+.session-idle-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+
+@media (max-width: 600px) {
+  .cookie-notice { bottom: 12px; grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 16px; }
+  .cookie-notice .btn { width: 100%; }
+  .session-idle-content { padding: 24px; }
+}

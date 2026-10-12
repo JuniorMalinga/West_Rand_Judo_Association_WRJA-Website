@@ -59,8 +59,8 @@ export function AuthProvider({ children }) {
       loading: state.loading,
       isAdmin: profile?.role === "admin",
       loginTransitionId,
-      signIn: async (email, password) => {
-        const data = await api("/api/auth/login", { method: "POST", body: { email, password } });
+      signIn: async (email, password, rememberMe = false) => {
+        const data = await api("/api/auth/login", { method: "POST", body: { email, password, rememberMe } });
         setProfile(data.user);
         setLoginTransitionId((current) => current + 1);
         return toSession(data.user);
