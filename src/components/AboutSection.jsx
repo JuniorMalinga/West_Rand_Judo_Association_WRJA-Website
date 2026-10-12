@@ -29,7 +29,9 @@ export default function AboutSection() {
             <p className="about-name">Committee chairperson</p>
             <p className="about-role">WRJA Committee</p>
           </div>
-          <span className="about-signature-mark">Signature</span> 
+          <span className="about-signature-mark" aria-label="Illustrative WRJA Committee signature">
+            WRJA Committee
+          </span>
         </div>
       </Reveal>
     </section>

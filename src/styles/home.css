@@ -192,8 +192,26 @@
 }
 
 .about-signature-mark {
-  font-style: italic;
-  color: var(--text-dark-muted);
+  position: relative;
+  display: inline-block;
+  color: #4c3926;
+  font-family: "Segoe Script", "Brush Script MT", cursive;
+  font-size: 27px;
+  line-height: 1.25;
+  white-space: nowrap;
+  transform: rotate(-4deg);
+}
+
+.about-signature-mark::after {
+  position: absolute;
+  right: -6px;
+  bottom: -5px;
+  left: 4px;
+  height: 7px;
+  border-bottom: 2px solid var(--accent);
+  border-radius: 50%;
+  content: "";
+  transform: rotate(-2deg);
 }
 /* ---------- Features ---------- */
 
