@@ -17,6 +17,10 @@ function cookies(header = "") {
   }));
 }
 
+export function hasRememberCookie(header = "") {
+  return cookies(header)[REMEMBER] === "1";
+}
+
 export function authClient() {
   if (!(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL) || !(process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY))
     throw new Error("Configure SUPABASE_URL and SUPABASE_ANON_KEY in server/.env.");
@@ -70,22 +74,34 @@ export async function loadProfile(client, user) {
 
 export async function attachUser(req, res, next) {
   req.user = null;
+  req.rememberMe = hasRememberCookie(req.headers.cookie);
   try {
     const stored = cookies(req.headers.cookie);
     let accessToken = stored[ACCESS];
-    if (!accessToken && !stored[REFRESH]) return next();
+    if (!accessToken && !stored[REFRESH]) {
+      req.rememberMe = false;
+      return next();
+    }
     const client = authClient();
     let { data: { user }, error } = accessToken
       ? await client.auth.getUser(accessToken) : { data: { user: null }, error: true };
     if ((error || !user) && stored[REFRESH]) {
       const refreshed = await client.auth.refreshSession({ refresh_token: stored[REFRESH] });
-      if (refreshed.error || !refreshed.data.session) { clearSession(req, res); return next(); }
+      if (refreshed.error || !refreshed.data.session) {
+        req.rememberMe = false;
+        clearSession(req, res);
+        return next();
+      }
       setSession(req, res, refreshed.data.session, { remember: stored[REMEMBER] === "1" });
       accessToken = refreshed.data.session.access_token;
       user = refreshed.data.user;
       stored[REFRESH] = refreshed.data.session.refresh_token;
     }
-    if (!user) { clearSession(req, res); return next(); }
+    if (!user) {
+      req.rememberMe = false;
+      clearSession(req, res);
+      return next();
+    }
     // User-scoped reads enforce the existing profiles RLS policy.
     const scoped = createClient(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL, process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY, {
       auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },

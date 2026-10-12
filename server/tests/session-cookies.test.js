@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { clearSession, setSession } from "../auth.js";
+import { clearSession, hasRememberCookie, setSession } from "../auth.js";
 
 const session = {
   access_token: "access-token",
@@ -13,6 +13,13 @@ function response() {
 }
 
 describe("session cookie persistence", () => {
+  it("recognizes only an explicit Remember me cookie", () => {
+    assert.equal(hasRememberCookie("wrja_remember=1"), true);
+    assert.equal(hasRememberCookie("wrja_remember=0"), false);
+    assert.equal(hasRememberCookie("wrja_remember=10"), false);
+    assert.equal(hasRememberCookie("other=1"), false);
+  });
+
   it("uses session cookies unless Remember me was selected", () => {
     const res = response();
     setSession({ secure: false }, res, session);

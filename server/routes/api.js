@@ -106,7 +106,7 @@ router.post("/auth/logout", async (req, res) => {
 
 // 200 with user:null (rather than 401) so a logged-out visit doesn't log console errors.
 router.get("/auth/me", (req, res) => {
-  res.json({ user: req.user ? publicUser(req.user) : null });
+  res.json({ user: req.user ? publicUser(req.user) : null, rememberMe: Boolean(req.user && req.rememberMe) });
 });
 
 // =============================================================================

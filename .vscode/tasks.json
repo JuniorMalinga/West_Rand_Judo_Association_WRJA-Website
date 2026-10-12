@@ -11,6 +11,29 @@
 			],
 			"isBackground": false,
 			"problemMatcher": []
+		},
+		{
+			"label": "Test server auth behavior",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"--prefix",
+				"server",
+				"test"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Test session cookie behavior",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"--test",
+				"server/tests/session-cookies.test.js"
+			],
+			"isBackground": false,
+			"problemMatcher": []
 		}
 	]
 }

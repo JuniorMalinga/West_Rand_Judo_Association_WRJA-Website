@@ -1,7 +1,9 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../lib/api";
 
 const AuthContext = createContext(null);
+const TAB_SESSION_KEY = "wrja.auth.tab-session";
+const SESSION_ENDED_KEY = "wrja.auth.session-ended";
 
 // What the rest of the app reads from a logged-in person.
 function toSession(profile) {
@@ -19,20 +21,47 @@ function toSession(profile) {
 export function AuthProvider({ children }) {
   const [state, setState] = useState({ loading: true, profile: null });
   const [loginTransitionId, setLoginTransitionId] = useState(0);
+  const authLoadRef = useRef(null);
 
   const setProfile = useCallback((profile) => {
     setState({ loading: false, profile });
     window.dispatchEvent(new Event("wrja:auth-changed")); // data stores reload with the new permissions
   }, []);
 
-  // Who am I? Asked of the server on every page load – nothing about login
-  // lives in the browser's storage.
+  // The server is the source of truth; a per-tab marker prevents a new tab
+  // from restoring a session cookie shared with other tabs.
   useEffect(() => {
     let cancelled = false;
-    api("/api/auth/me")
-      .then((data) => { if (!cancelled) setState({ loading: false, profile: data.user }); })
-      .catch(() => { if (!cancelled) setState({ loading: false, profile: null }); });
+    if (!authLoadRef.current) {
+      authLoadRef.current = (async () => {
+        if (!window.sessionStorage.getItem(TAB_SESSION_KEY)) {
+          const previousSession = await api("/api/auth/me");
+          if (previousSession.user && !previousSession.rememberMe) {
+            window.localStorage.setItem(SESSION_ENDED_KEY, `${Date.now()}-${Math.random()}`);
+            await api("/api/auth/logout", { method: "POST", body: {} });
+          }
+          window.sessionStorage.setItem(TAB_SESSION_KEY, "active");
+          return previousSession.rememberMe ? previousSession.user : null;
+        }
+        const data = await api("/api/auth/me");
+        return data.user;
+      })().catch(() => null);
+    }
+    authLoadRef.current.then((profile) => {
+      if (!cancelled) setState({ loading: false, profile });
+    });
     return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    const handleSessionEnded = (event) => {
+      if (event.key !== SESSION_ENDED_KEY || !event.newValue) return;
+      window.sessionStorage.removeItem(TAB_SESSION_KEY);
+      setState({ loading: false, profile: null });
+      window.dispatchEvent(new Event("wrja:auth-changed"));
+    };
+    window.addEventListener("storage", handleSessionEnded);
+    return () => window.removeEventListener("storage", handleSessionEnded);
   }, []);
 
   // The server said our session is gone (expired, or revoked by an admin).
@@ -61,6 +90,7 @@ export function AuthProvider({ children }) {
       loginTransitionId,
       signIn: async (email, password, rememberMe = false) => {
         const data = await api("/api/auth/login", { method: "POST", body: { email, password, rememberMe } });
+        window.sessionStorage.setItem(TAB_SESSION_KEY, "active");
         setProfile(data.user);
         setLoginTransitionId((current) => current + 1);
         return toSession(data.user);
@@ -68,8 +98,10 @@ export function AuthProvider({ children }) {
       signUp: (details) => api("/api/auth/signup", { method: "POST", body: details }).then((data) => data.user),
       signOut: async () => {
         try {
+          window.localStorage.setItem(SESSION_ENDED_KEY, `${Date.now()}-${Math.random()}`);
           await api("/api/auth/logout", { method: "POST", body: {} });
         } finally {
+          window.sessionStorage.removeItem(TAB_SESSION_KEY);
           setProfile(null);
         }
       },
