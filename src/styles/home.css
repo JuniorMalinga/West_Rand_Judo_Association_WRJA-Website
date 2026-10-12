@@ -662,10 +662,14 @@
 }
 
 .testimonial-avatar {
+  display: block;
   width: 56px;
   height: 56px;
+  flex: 0 0 56px;
   border-radius: 50%;
-  background: var(--accent);
+  border: 2px solid rgba(201, 162, 39, .65);
+  object-fit: cover;
+  background: var(--bg-light-2);
 }
 
 .testimonial-role {
