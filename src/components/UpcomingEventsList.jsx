@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import Reveal from "./Reveal";
-import { eventsStore } from "../data/events";
+import { competitionsStore } from "../data/competitions";
+import { eventsStore, getUpcomingCalendarEvents } from "../data/events";
 import useCollection from "../hooks/useCollection";
 
 const monthNames = [
@@ -14,13 +15,7 @@ function formatDateBadge(dateString) {
 }
 
 export default function UpcomingEventsList() {
-  const events = useCollection(eventsStore);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const upcoming = events
-    .filter((event) => new Date(`${event.date}T00:00:00`) >= today)
-    .sort((a, b) => new Date(`${a.date}T00:00:00`) - new Date(`${b.date}T00:00:00`))
-    .slice(0, 5);
+  const upcoming = getUpcomingCalendarEvents(useCollection(eventsStore), useCollection(competitionsStore)).slice(0, 5);
 
   return (
     <aside className="upcoming-events">
@@ -33,13 +28,13 @@ export default function UpcomingEventsList() {
           const badge = formatDateBadge(event.date);
           return (
             <Reveal key={event.id} delay={index * 80}>
-              <Link to={`/events/${event.id}`} className="upcoming-event-card">
+              <Link to={event.calendarPath} className="upcoming-event-card">
                 <div className="upcoming-event-date-badge">
                   <span className="upcoming-event-day">{badge.day}</span>
                   <span className="upcoming-event-month">{badge.month}</span>
                 </div>
                 <div className="upcoming-event-info">
-                  <p className="upcoming-event-type">{event.type}</p>
+                  <p className="upcoming-event-type">{event.calendarLabel}</p>
                   <p className="upcoming-event-name">{event.name}</p>
                   <p className="upcoming-event-location">{event.location}</p>
                 </div>

@@ -5,6 +5,11 @@
 .competitions-grid, .competitions-home-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; max-width: 1200px; margin: 0 auto; }
 .competitions-grid { padding-top: 0; padding-bottom: 70px; }
 .competition-card { min-width: 0; overflow: hidden; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 16px 36px rgba(0,0,0,.07); transition: transform .3s var(--ease), box-shadow .3s var(--ease); }
+.competitions-grid > * { height: 100%; }
+.event-preview-card { display: flex; height: 100%; flex-direction: column; }
+.event-preview-card .competition-card-image { height: 210px; min-height: 210px; }
+.event-preview-card .competition-card-body { flex: 1; }
+.event-preview-card .competition-description { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 .competition-card:hover { transform: translateY(-5px); box-shadow: 0 24px 46px rgba(0,0,0,.13); }
 .competition-card-image { position: relative; min-height: 210px; background-position: center; background-size: cover; }
 .competition-card-image::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 35%, rgba(0,0,0,.72)); }

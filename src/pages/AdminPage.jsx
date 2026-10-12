@@ -21,7 +21,7 @@ import { adminGalleryStore } from "../data/gallery";
 const tabs = [
   { slug: "overview", label: "Overview", icon: "⌂" },
   { slug: "competitions", label: "Competitions", icon: "◆" },
-  { slug: "events", label: "Events", icon: "◷" },
+  { slug: "events", label: "Standard events", icon: "◷" },
   { slug: "news", label: "News", icon: "▤" },
   { slug: "gallery", label: "Gallery", icon: "▧" },
   { slug: "messages", label: "Messages", icon: "✉" },

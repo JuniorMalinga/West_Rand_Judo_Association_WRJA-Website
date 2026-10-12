@@ -44,8 +44,8 @@ const displayType = (value) => ({
 
 const databaseType = (value) => {
   const normalized = String(value || "").trim().toLowerCase().replace(/[ -]+/g, "_");
-  if (["competition", "grading", "training_camp"].includes(normalized)) return normalized;
-  throw new Error("Event type must be Competition, Grading or Training camp.");
+  if (["grading", "training_camp"].includes(normalized)) return normalized;
+  throw new Error("Standard event type must be Grading or Training camp.");
 };
 
 const toEvent = (row, client) => row && ({
@@ -123,7 +123,7 @@ export async function deleteCompetition(slug, accessToken) {
 export async function listEvents(accessToken) {
   const client = createUserClient(accessToken);
   const { data, error } = await client.from("events")
-    .select(eventSelect).order("event_date").order("title");
+    .select(eventSelect).neq("event_type", "competition").order("event_date").order("title");
   check(error);
   return (data || []).map((row) => toEvent(row, client));
 }
@@ -131,7 +131,7 @@ export async function listEvents(accessToken) {
 export async function getEvent(id, accessToken) {
   const client = createUserClient(accessToken);
   const { data, error } = await client.from("events")
-    .select(eventSelect).eq("id", id).maybeSingle();
+    .select(eventSelect).eq("id", id).neq("event_type", "competition").maybeSingle();
   check(error);
   return toEvent(data, client);
 }
@@ -157,14 +157,14 @@ export async function saveEvent(event, { create, accessToken }) {
     return toEvent(data, client);
   }
   const { data, error } = await client.from("events").update(values)
-    .eq("id", event.id).select(eventSelect).maybeSingle();
+    .eq("id", event.id).neq("event_type", "competition").select(eventSelect).maybeSingle();
   check(error);
   return toEvent(data, client);
 }
 
 export async function deleteEvent(id, accessToken) {
   const { error, count } = await createUserClient(accessToken).from("events")
-    .delete({ count: "exact" }).eq("id", id);
+    .delete({ count: "exact" }).eq("id", id).neq("event_type", "competition");
   check(error);
   return (count || 0) > 0;
 }

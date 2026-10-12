@@ -5,7 +5,7 @@ import useNotice from "../hooks/useNotice";
 import { DEFAULT_EVENT_IMAGE, eventsAdmin, eventsStore } from "../data/events";
 import { formatDate, isHttpUrl } from "../lib/format";
 
-const EVENT_TYPES = ["Competition", "Grading", "Training camp"];
+const EVENT_TYPES = ["Grading", "Training camp"];
 
 const emptyEvent = {
   name: "",
@@ -44,8 +44,15 @@ export default function AdminEventsPanel() {
 
   const handleSave = async (submitEvent) => {
     submitEvent.preventDefault();
-    if (formState.applicationSheetUrl && !isHttpUrl(formState.applicationSheetUrl)) {
-      return show("error", "The application link must start with http:// or https://");
+    if (!isHttpUrl(formState.applicationSheetUrl)) {
+      return show("error", "Enter a Google Sheets application link.");
+    }
+    const applicationUrl = new URL(formState.applicationSheetUrl);
+    if (applicationUrl.hostname !== "docs.google.com" || !applicationUrl.pathname.startsWith("/spreadsheets/")) {
+      return show("error", "Enter a Google Sheets spreadsheet link.");
+    }
+    if (!String(formState.qrCodeImage || "").trim()) {
+      return show("error", "Upload a QR code image or enter an image link.");
     }
 
     const adding = !formState.id;
@@ -85,7 +92,7 @@ export default function AdminEventsPanel() {
     <div className="admin-panel">
       <div className="admin-panel-header">
         <div>
-          <h2>Events</h2>
+          <h2>Standard events</h2>
           <p className="admin-table-subtext">Events appear on the calendar, the upcoming list and their own detail page.</p>
         </div>
         <button className="btn btn-accent" onClick={openAdd}>+ Add event</button>
@@ -120,8 +127,8 @@ export default function AdminEventsPanel() {
             onError={(text) => show("error", text)}
           />
 
-          <label>Google Sheets application link (optional)
-            <input type="url" value={formState.applicationSheetUrl} onChange={(e) => update("applicationSheetUrl", e.target.value)} placeholder="https://docs.google.com/spreadsheets/..." />
+          <label>Google Sheets application link
+            <input type="url" value={formState.applicationSheetUrl} onChange={(e) => update("applicationSheetUrl", e.target.value)} placeholder="https://docs.google.com/spreadsheets/..." required />
           </label>
 
           <ImageUploadField
@@ -130,9 +137,12 @@ export default function AdminEventsPanel() {
             onChange={(value) => update("qrCodeImage", value)}
             format="qr"
             removeLabel="Remove QR code"
-            hint="Upload the QR code as an image (PNG or JPG). It is shown on the event page for members to scan."
+            hint="Upload a QR code image, or enter a direct image URL below."
             onError={(text) => show("error", text)}
           />
+          <label>QR code image URL
+            <input type="url" value={formState.qrCodeImage.startsWith("http") ? formState.qrCodeImage : ""} onChange={(event) => update("qrCodeImage", event.target.value)} placeholder="https://..." />
+          </label>
 
           <div className="admin-form-actions">
             <button type="submit" className="btn btn-accent" disabled={saving}>{saving ? "Saving…" : formState.id ? "Save changes" : "Add event"}</button>

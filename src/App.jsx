@@ -35,12 +35,6 @@ function PageLoading() {
   );
 }
 
-function AdminExperienceGuard({ children }) {
-  const { isAdmin } = useAuth();
-  const { pathname } = useLocation();
-  return isAdmin && pathname !== "/admin" ? <Navigate to="/admin" replace /> : children;
-}
-
 // Route guards. These are for a smooth experience only. The server is what
 // actually refuses data to people who aren't allowed it.
 function RequireAuth({ children }) {
@@ -63,13 +57,13 @@ function AppContent() {
     <>
       {pathname !== "/admin" && <NavigationBar />}
       <ScrollToTop />
-      <AdminExperienceGuard>
-        <Suspense fallback={<PageLoading />}>
+      <Suspense fallback={<PageLoading />}>
           <Routes>
             <Route path="*" element={<NotFoundPage />} />
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/events" element={<RequireAuth><EventsPage /></RequireAuth>} />
+            <Route path="/events/standard" element={<RequireAuth><EventsPage section="standard" /></RequireAuth>} />
             <Route path="/events/calendar" element={<RequireAuth><EventsPage section="calendar" /></RequireAuth>} />
             <Route path="/events/competitions" element={<RequireAuth><EventsPage section="competitions" /></RequireAuth>} />
             <Route path="/events/competitions/:slug/payment" element={<RequireAuth><CompetitionPaymentPage /></RequireAuth>} />
@@ -90,8 +84,7 @@ function AppContent() {
             <Route path="/instructors/:slug" element={<InstructorDetailPage />} />
             <Route path="/admin" element={<RequireAdmin><AdminPage /></RequireAdmin>} />
           </Routes>
-        </Suspense>
-      </AdminExperienceGuard>
+      </Suspense>
       {pathname !== "/admin" && <SiteFooter />}
       <Suspense fallback={null}>
         {pathname !== "/admin" && pathname !== "/login" && <ChatWidget />}

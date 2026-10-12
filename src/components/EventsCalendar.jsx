@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { eventsStore } from "../data/events";
+import { competitionsStore } from "../data/competitions";
+import { eventsStore, getUpcomingCalendarEvents } from "../data/events";
 import useCollection from "../hooks/useCollection";
 
 const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -41,11 +42,13 @@ function buildMonthGrid(year, month) {
 }
 
 export default function EventsCalendar() {
-  const events = useCollection(eventsStore);
+  const events = getUpcomingCalendarEvents(useCollection(eventsStore), useCollection(competitionsStore));
   const today = new Date();
   const [viewDate, setViewDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [selectedDay, setSelectedDay] = useState(null);
   const navigate = useNavigate();
+  const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const canGoToPreviousMonth = viewDate > currentMonth;
 
   const weeks = buildMonthGrid(viewDate.getFullYear(), viewDate.getMonth());
   const eventsByDay = events.reduce((byDay, event) => {
@@ -66,8 +69,11 @@ export default function EventsCalendar() {
     viewDate.getMonth() === today.getMonth() &&
     viewDate.getFullYear() === today.getFullYear();
 
-  const goToPreviousMonth = () =>
-    setViewDate((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1));
+  const goToPreviousMonth = () => {
+    if (canGoToPreviousMonth) {
+      setViewDate((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1));
+    }
+  };
 
   const goToNextMonth = () =>
     setViewDate((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1));
@@ -75,7 +81,7 @@ export default function EventsCalendar() {
   return (
     <section className="events-calendar">
       <div className="calendar-nav">
-        <button onClick={goToPreviousMonth} aria-label="Previous month">&lsaquo;</button>
+        <button onClick={goToPreviousMonth} aria-label="Previous month" disabled={!canGoToPreviousMonth}>&lsaquo;</button>
         <h2>{monthNames[viewDate.getMonth()]} {viewDate.getFullYear()}</h2>
         <button onClick={goToNextMonth} aria-label="Next month">&rsaquo;</button>
       </div>
@@ -98,7 +104,7 @@ export default function EventsCalendar() {
                   const hasEvents = dayEvents.length > 0;
                   const handleDayClick = () => {
                     if (dayEvents.length === 1) {
-                      navigate(`/events/${dayEvents[0].id}`);
+                      navigate(dayEvents[0].calendarPath);
                     } else if (dayEvents.length > 1) {
                       setSelectedDay((current) => (current === dayKey ? null : dayKey));
                     }
@@ -131,9 +137,9 @@ export default function EventsCalendar() {
                   {selectedDay === dayKey && dayEvents.length > 1 && (
                     <div className="calendar-event-list">
                       {dayEvents.map((event) => (
-                        <Link key={event.id} to={`/events/${event.id}`} className="calendar-event-link">
+                        <Link key={`${event.calendarType}-${event.id}`} to={event.calendarPath} className="calendar-event-link">
                           <strong>{event.name}</strong>
-                          <span>{event.type}</span>
+                          <span>{event.calendarLabel}</span>
                         </Link>
                       ))}
                     </div>

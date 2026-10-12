@@ -2,13 +2,22 @@ import { Link } from "react-router-dom";
 import PageHeader from "../components/PageHeader";
 import UpcomingEventsList from "../components/UpcomingEventsList";
 import EventsCalendar from "../components/EventsCalendar";
+import EventCard from "../components/EventCard";
 import Reveal from "../components/Reveal";
 import CompetitionCard from "../components/CompetitionCard";
 import { competitionsStore } from "../data/competitions";
+import { eventsStore, getUpcomingEvents } from "../data/events";
 import useCollection from "../hooks/useCollection";
 import wrjaLogo from "../assets/images/Logo/wrja-logo.png";
 
 const hubCards = [
+  {
+    slug: "standard",
+    eyebrow: "WRJA ACTIVITIES",
+    title: "Standard events",
+    description: "Browse upcoming gradings, training camps and other WRJA events.",
+    action: "View standard events",
+  },
   {
     slug: "calendar",
     eyebrow: "DATES & FIXTURES",
@@ -57,6 +66,24 @@ function CalendarView() {
       <section className="events-page-layout events-category-layout">
         <UpcomingEventsList />
         <EventsCalendar />
+      </section>
+    </>
+  );
+}
+
+function StandardEventsView() {
+  const events = getUpcomingEvents(useCollection(eventsStore));
+
+  return (
+    <>
+      <CategoryHeader title="Standard events" description="Upcoming WRJA gradings, training camps and association events." />
+      <section className="competitions-grid events-standard-list" aria-label="Upcoming standard events">
+        {events.length === 0 && <p className="upcoming-events-empty">No upcoming standard events right now.</p>}
+        {events.map((event, index) => (
+          <Reveal key={event.id} delay={index * 55}>
+            <EventCard event={event} />
+          </Reveal>
+        ))}
       </section>
     </>
   );
@@ -147,6 +174,7 @@ function StoreView() {
 }
 
 export default function EventsPage({ section }) {
+  if (section === "standard") return <div className="events-page"><PageHeader title="Standard events" crumbs={[{ label: "Events", to: "/events" }]} /><StandardEventsView /></div>;
   if (section === "calendar") return <div className="events-page"><PageHeader title="Calendar" crumbs={[{ label: "Events", to: "/events" }]} /><CalendarView /></div>;
   if (section === "competitions") return <div className="events-page"><PageHeader title="Competitions" crumbs={[{ label: "Events", to: "/events" }]} /><CompetitionsView /></div>;
   if (section === "schools") return <div className="events-page"><PageHeader title="Schools" crumbs={[{ label: "Events", to: "/events" }]} /><SchoolsView /></div>;
@@ -166,7 +194,7 @@ export default function EventsPage({ section }) {
         {hubCards.map((card, index) => (
           <Reveal key={card.slug} delay={index * 70}>
             <Link to={`/events/${card.slug}`} className="events-hub-card">
-              <span className="events-hub-card-icon" aria-hidden="true">{card.slug === "calendar" ? "CAL" : card.slug === "competitions" ? "MAT" : card.slug === "schools" ? "DOJO" : "KIT"}</span>
+              <span className="events-hub-card-icon" aria-hidden="true">{card.slug === "standard" ? "WRJA" : card.slug === "calendar" ? "CAL" : card.slug === "competitions" ? "MAT" : card.slug === "schools" ? "DOJO" : "KIT"}</span>
               <span className="events-hub-card-number">0{index + 1}</span>
               <p className="eyebrow">{card.eyebrow}</p>
               <h2>{card.title}</h2>

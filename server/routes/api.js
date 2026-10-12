@@ -328,16 +328,31 @@ admin.delete("/competitions/:id", async (req, res) => {
 });
 
 // ---- Events -----------------------------------------------------------------
-function cleanEvent(body) {
+export function cleanEvent(body) {
+  const applicationSheetUrl = v.httpUrl(body.applicationSheetUrl, "Google Sheets link");
+  if (!applicationSheetUrl) throw new HttpError(400, "A Google Sheets application link is required.");
+  const sheetUrl = new URL(applicationSheetUrl);
+  if (sheetUrl.hostname !== "docs.google.com" || !sheetUrl.pathname.startsWith("/spreadsheets/")) {
+    throw new HttpError(400, "Application link must be a Google Sheets spreadsheet URL.");
+  }
+
+  const imageReference = (value, field) => {
+    const clean = v.text(value, { field, max: 2048 });
+    if (!clean) return "";
+    return /^https?:\/\//i.test(clean) ? v.httpUrl(clean, field) : v.uploadedImage(clean, field);
+  };
+  const qrCodeImage = imageReference(body.qrCodeImage, "QR code image");
+  if (!qrCodeImage) throw new HttpError(400, "A QR code image or image link is required.");
+
   return {
     name: v.text(body.name, { field: "Event name", max: 140, required: true }),
-    type: v.oneOf(v.text(body.type, { field: "Type", max: 60, required: true }), ["Competition", "Grading", "Training camp"], "Type"),
+    type: v.oneOf(v.text(body.type, { field: "Type", max: 60, required: true }), ["Grading", "Training camp"], "Type"),
     date: v.isoDate(body.date, { required: true }),
     location: v.text(body.location, { field: "Location", max: 160, required: true }),
     description: v.text(body.description, { field: "Description", max: 3000 }),
-    image: v.uploadedImage(body.image) || "/uploads/public/default-event.jpeg",
-    applicationSheetUrl: v.httpUrl(body.applicationSheetUrl, "Application link"),
-    qrCodeImage: v.uploadedImage(body.qrCodeImage, "QR code"),
+    image: imageReference(body.image, "Event image") || "/uploads/public/default-event.jpeg",
+    applicationSheetUrl,
+    qrCodeImage,
   };
 }
 

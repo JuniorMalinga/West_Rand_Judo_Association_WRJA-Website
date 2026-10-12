@@ -238,7 +238,8 @@
 
 .events-hub-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
   gap: 18px;
   max-width: 1280px;
   margin: 0 auto;
@@ -249,7 +250,7 @@
   display: flex;
   min-height: 290px;
   flex-direction: column;
-  padding: 30px 26px 26px;
+  padding: 30px 18px 26px;
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -310,6 +311,13 @@
 
 .events-category-layout { margin-bottom: 10px; }
 
+.events-standard-list {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 60px 50px;
+}
+
 .events-category-actions {
   display: flex;
   justify-content: center;
@@ -366,11 +374,13 @@
 
 @media (max-width: 1000px) {
   .events-hub-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .events-standard-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 640px) {
   .events-hub-grid,
   .events-store-grid { grid-template-columns: 1fr; }
+  .events-standard-list { grid-template-columns: 1fr; padding: 24px; }
   .events-category-actions { padding-right: 24px; padding-left: 24px; }
   .events-store-card { padding: 26px; }
 }
@@ -427,7 +437,7 @@
 .events-hub-card::before { position: absolute; right: -34px; bottom: -45px; width: 130px; height: 130px; border: 1px solid rgba(201, 162, 39, 0.2); border-radius: 50%; content: ""; }
 .events-hub-card-number { color: rgba(255, 255, 255, 0.42); }
 .events-hub-card .eyebrow { color: var(--accent); }
-.events-hub-card h2 { color: var(--text-light); font-size: 28px; }
+.events-hub-card h2 { color: var(--text-light); font-size: 20px; }
 .events-hub-card p:not(.eyebrow) { color: rgba(255, 255, 255, 0.68); }
 .events-hub-card-action { color: var(--accent); }
 
@@ -458,6 +468,30 @@
 /* ---------- Events hub spacing cleanup ---------- */
 .events-hub-grid {
   padding: 30px 60px 34px;
+}
+
+.events-hub-grid > .reveal {
+  display: flex;
+  min-width: 0;
+}
+
+.events-hub-card {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+}
+
+.events-hub-card h2,
+.events-hub-card p:not(.eyebrow),
+.events-hub-card-action {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.events-hub-card-action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
 }
 
 .events-hub-card-icon {
