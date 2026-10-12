@@ -212,7 +212,7 @@ export default function AdminCompetitionsPanel({ schoolsOnly = false }) {
           <tbody>
             {visible.map((competition) => (
               <tr key={competition.id} className={deletingCompetitionId === competition.id ? "admin-row-deleting" : undefined}>
-                <td><img className="admin-thumb" src={competition.image} alt="" /></td>
+                <td><img className="admin-thumb" src={competition.image} alt="" loading="lazy" decoding="async" /></td>
                 <td><strong>{competition.name}</strong><div className="admin-table-subtext">{schoolsOnly ? "Schools competition" : competition.type}</div></td>
                 <td>{formatDate(competition.date)}</td>
                 <td><span className="admin-badge">{getCompetitionStatus(competition)}</span></td>

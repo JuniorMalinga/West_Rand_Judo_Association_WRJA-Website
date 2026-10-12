@@ -18,6 +18,8 @@ export default function SiteFooter() {
                 src={wrjaLogo}
                 alt="West Rand Judo Association"
                 className="footer-logo-image"
+                loading="lazy"
+                decoding="async"
               />
             </span>
           </div>
@@ -78,6 +80,8 @@ export default function SiteFooter() {
                 key={item.id}
                 src={item.photoUrl}
                 alt={item.caption}
+                loading="lazy"
+                decoding="async"
               />
             ))}
           </div>

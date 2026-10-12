@@ -13,7 +13,8 @@ function formatDate(date) {
 export default function EventCard({ event }) {
   return (
     <article className="competition-card event-preview-card">
-      <div className="competition-card-image" style={{ backgroundImage: `url("${event.image}")` }}>
+      <div className="competition-card-image">
+        <img className="competition-card-image-media" src={event.image} alt="" loading="lazy" decoding="async" />
         <span className="competition-status">Upcoming event</span>
       </div>
       <div className="competition-card-body">

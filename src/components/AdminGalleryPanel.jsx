@@ -161,7 +161,7 @@ export default function AdminGalleryPanel() {
           <tbody>
             {filteredItems.map((item) => (
               <tr key={item.id}>
-                <td><img className="admin-thumb" src={item.photoUrl} alt="" /></td>
+                <td><img className="admin-thumb" src={item.photoUrl} alt="" loading="lazy" decoding="async" /></td>
                 <td><strong>{item.caption}</strong><div className="admin-table-subtext">{item.altText}</div></td>
                 <td><span className="admin-badge">{categories.find((category) => category.slug === item.category)?.label || item.category}</span></td>
                 <td>{item.displayOrder}</td>

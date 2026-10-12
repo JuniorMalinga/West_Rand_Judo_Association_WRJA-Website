@@ -157,7 +157,7 @@ export default function AdminEventsPanel() {
           <tbody>
             {events.map((event) => (
               <tr key={event.id} className={deletingEventId === event.id ? "admin-row-deleting" : undefined}>
-                <td><img className="admin-thumb" src={event.image} alt="" /></td>
+                <td><img className="admin-thumb" src={event.image} alt="" loading="lazy" decoding="async" /></td>
                 <td><strong>{event.name}</strong><div className="admin-table-subtext">{event.type}</div></td>
                 <td>{formatDate(event.date)}{event.date && event.date < todayIso && <span className="admin-badge admin-badge-muted">Past</span>}</td>
                 <td>{event.location}</td>

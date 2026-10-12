@@ -251,6 +251,16 @@ svg {
     padding: 48px 16px;
   }
 
+  .about-signature {
+    flex-wrap: wrap;
+    column-gap: 16px;
+    row-gap: 10px;
+  }
+
+  .about-signature-mark {
+    font-size: 22px;
+  }
+
   /* Sections that add their own large side padding */
   .features,
   .simple-page,

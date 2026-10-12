@@ -7,7 +7,7 @@ export default function ProgramRow({ program, reverse }) {
   return (
     <Reveal className={`program-row ${reverse ? "program-row-reverse" : ""}`}>
       <Link to={`/programs/${program.slug}`} className="program-row-image-link">
-        <img src={program.image} alt={`${program.highlightWord} ${program.restWord}`} />
+        <img src={program.image} alt={`${program.highlightWord} ${program.restWord}`} loading="lazy" decoding="async" />
       </Link>
 
       <div className="program-row-content">

@@ -16,11 +16,11 @@
 .image-slide {
   position: absolute;
   inset: 0;
-  background-size: cover;
-  background-position: center;
   opacity: 0;
   transition: opacity 1.4s var(--ease);
 }
+
+.image-slide img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
 
 .image-slide-active {
   opacity: 1;
@@ -96,21 +96,13 @@
   height: 340px;
   border-radius: var(--radius);
 
-  /* CHANGE: Cover fills the entire card while maintaining
-     the image's original aspect ratio. */
-  background-size: cover;
-
-  /* CHANGE: Keeps the important part of the image centered. */
-  background-position: center;
-
-  /* CHANGE: Prevents the background image from repeating. */
-  background-repeat: no-repeat;
-
   overflow: hidden;
   transition: transform 0.4s var(--ease);
   display: block;
   text-decoration: none;
 }
+
+.program-card-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 
 .program-card:hover {
   transform: translateY(-6px);
@@ -119,6 +111,7 @@
 .program-card-overlay {
   position: absolute;
   inset: 0;
+  z-index: 1;
 
   background: linear-gradient(
     180deg,

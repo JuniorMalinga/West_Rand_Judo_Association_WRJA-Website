@@ -14,23 +14,37 @@ const slides = [
 export default function ImageSlider() { 
   const [activeIndex, setActiveIndex] = useState(0);
   const [loaded, setLoaded] = useState(() => new Set([0]));
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia("(max-width: 900px)").matches);
 
   useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 900px)");
+    const updateMobileState = (event) => setIsMobile(event.matches);
+    mediaQuery.addEventListener("change", updateMobileState);
+    return () => mediaQuery.removeEventListener("change", updateMobileState);
+  }, []);
+
+  useEffect(() => {
+    if (isMobile || window.matchMedia("(prefers-reduced-motion: reduce)").matches || navigator.connection?.saveData) {
+      return undefined;
+    }
     const timer = setInterval(() => {
       setActiveIndex((current) => (current + 1) % slides.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [isMobile]);
 
-  // Fetch a slide only when it is showing or about to show.
+  // Keep only the active slide loaded on mobile; preload the next desktop slide.
   useEffect(() => {
     setLoaded((previous) => {
       const next = new Set(previous);
       next.add(activeIndex);
-      next.add((activeIndex + 1) % slides.length);
+      const canPrefetch = !isMobile
+        && !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        && !navigator.connection?.saveData;
+      if (canPrefetch) next.add((activeIndex + 1) % slides.length);
       return next;
     });
-  }, [activeIndex]);
+  }, [activeIndex, isMobile]);
 
   return (
     <section className="image-slider">
@@ -39,8 +53,17 @@ export default function ImageSlider() {
           <div
             key={slide.number}
             className={`image-slide ${index === activeIndex ? "image-slide-active" : ""}`}
-            style={loaded.has(index) ? { backgroundImage: `url(${slide.image})` } : undefined}
-          />
+          >
+            {loaded.has(index) && (
+              <img
+                src={slide.image}
+                alt=""
+                loading={index === activeIndex ? "eager" : "lazy"}
+                fetchpriority={index === 0 ? "high" : "auto"}
+                decoding="async"
+              />
+            )}
+          </div>
         ))}
       </div>
       <div className="image-overlay" />

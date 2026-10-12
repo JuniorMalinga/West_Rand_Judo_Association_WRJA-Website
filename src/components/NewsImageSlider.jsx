@@ -51,6 +51,19 @@ const slides = [
 
 export default function NewsImageSlider() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [loadedSlides, setLoadedSlides] = useState(() => new Set([0]));
+  const shouldPlayVideo = !window.matchMedia("(max-width: 900px)").matches
+    && !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    && !navigator.connection?.saveData;
+
+  useEffect(() => {
+    setLoadedSlides((previous) => {
+      const next = new Set(previous);
+      next.add(activeIndex);
+      if (shouldPlayVideo) next.add((activeIndex + 1) % slides.length);
+      return next;
+    });
+  }, [activeIndex, shouldPlayVideo]);
 
   useEffect(() => {
     
@@ -78,18 +91,24 @@ export default function NewsImageSlider() {
             <video
               className="news-image-media"
               poster={slide.poster}
-              autoPlay
+              autoPlay={shouldPlayVideo}
+              preload={shouldPlayVideo ? "auto" : "none"}
               muted
               loop
               playsInline
             >
-              <source src={slide.videoSrc} type="video/mp4" />
+              {shouldPlayVideo && <source src={slide.videoSrc} type="video/mp4" />}
             </video>
           ) : (
-            <div
-              className="news-image-media"
-              style={{ backgroundImage: `url(${slide.image})` }}
-            />
+            loadedSlides.has(index) && (
+              <img
+                className="news-image-media"
+                src={slide.image}
+                alt=""
+                loading={index === activeIndex ? "eager" : "lazy"}
+                decoding="async"
+              />
+            )
           )}
         </div>
       ))}

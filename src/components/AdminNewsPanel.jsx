@@ -114,7 +114,7 @@ export default function AdminNewsPanel() {
           <tbody>
             {posts.map((post) => (
               <tr key={post.id}>
-                <td><img className="admin-thumb" src={post.image} alt="" /></td>
+                <td><img className="admin-thumb" src={post.image} alt="" loading="lazy" decoding="async" /></td>
                 <td><strong>{post.title}</strong>{post.source && <div className="admin-table-subtext">via {post.source}</div>}</td>
                 <td><span className="admin-badge">{post.category}</span></td>
                 <td>{String(post.date).trim()}</td>

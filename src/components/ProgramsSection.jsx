@@ -11,8 +11,8 @@ export default function ProgramsSection() {
             <Link
               to={`/programs/${program.slug}`}
               className="program-card"
-              style={{ backgroundImage: `url(${program.image})` }}
             >
+              <img className="program-card-image" src={program.image} alt="" loading="lazy" decoding="async" />
               <div className="program-card-overlay">
                 <h3>{program.highlightWord} {program.restWord}</h3>
                 <p>{program.description}</p>

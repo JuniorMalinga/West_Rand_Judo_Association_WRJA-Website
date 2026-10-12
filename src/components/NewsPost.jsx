@@ -8,7 +8,7 @@ export default function NewsPost({ post }) {
   return (
     <Reveal className="news-post-card">
       <div className="news-post-image-wrap">
-        <img src={post.image} alt={post.title} className="news-post-image" />
+        <img src={post.image} alt={post.title} className="news-post-image" loading="lazy" decoding="async" />
         {post.hasVideo && (
           <button className="news-post-play-button" aria-label="Play video">&#9658;</button>
         )}

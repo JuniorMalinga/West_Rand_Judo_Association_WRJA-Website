@@ -16,7 +16,7 @@ export default function NewsSidebar() {
           {recentPosts.map((post) => (
             <li key={post.id}>
               <Link to={`/news/${post.id}`} className="recent-post-link">
-                <img src={post.image} alt="" />
+                <img src={post.image} alt="" loading="lazy" decoding="async" />
                 <div>
                   <p className="recent-post-title">{post.title}</p>
                   <p className="recent-post-date">{post.date}</p>
