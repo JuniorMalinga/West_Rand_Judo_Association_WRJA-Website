@@ -11,7 +11,8 @@ export default function CompetitionCard({ competition, locked = false }) {
   const hasRegistration = Boolean(competition.registrationUrl);
   return (
     <article className="competition-card">
-      <div className="competition-card-image" style={{ backgroundImage: `url("${competition.image}")` }}>
+      <div className="competition-card-image">
+        <img className="competition-card-image-media" src={competition.image} alt="" loading="lazy" decoding="async" />
         <span className={`competition-status competition-status-${status.toLowerCase().replaceAll(" ", "-")}`}>{status}</span>
       </div>
       <div className="competition-card-body">

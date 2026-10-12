@@ -9,6 +9,8 @@ export default function AboutSection() {
           src={WRJACommittee}
           alt="Placeholder of a judo athlete"
           className="about-image"
+          loading="lazy"
+          decoding="async"
         />
       </Reveal>
 

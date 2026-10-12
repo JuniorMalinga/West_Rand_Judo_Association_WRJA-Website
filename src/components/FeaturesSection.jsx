@@ -67,7 +67,7 @@ export default function FeaturesSection() {
             >
               <div className="feature-heading">
                 <div className="feature-icon" aria-hidden="true">
-                  <img src={feature.icon} alt="" />
+                  <img src={feature.icon} alt="" loading="lazy" decoding="async" />
                 </div>
 
                 <h3>{feature.title}</h3>

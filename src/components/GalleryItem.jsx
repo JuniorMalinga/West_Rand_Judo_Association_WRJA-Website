@@ -13,7 +13,7 @@ export default function GalleryItem({ item, index, absoluteIndex, onOpen }) {
         onClick={() => onOpen(absoluteIndex)}
         aria-label={`Open ${item.caption}`}
       >
-        <img src={item.photoUrl} alt={item.altText || item.caption} />
+        <img src={item.photoUrl} alt={item.altText || item.caption} loading="lazy" decoding="async" />
         <span className="gallery-item-overlay">
           <span className="gallery-item-caption">{item.caption}</span>
         </span>

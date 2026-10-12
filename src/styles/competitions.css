@@ -11,7 +11,8 @@
 .event-preview-card .competition-card-body { flex: 1; }
 .event-preview-card .competition-description { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 .competition-card:hover { transform: translateY(-5px); box-shadow: 0 24px 46px rgba(0,0,0,.13); }
-.competition-card-image { position: relative; min-height: 210px; background-position: center; background-size: cover; }
+.competition-card-image { position: relative; min-height: 210px; overflow: hidden; }
+.competition-card-image-media { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .competition-card-image::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 35%, rgba(0,0,0,.72)); }
 .competition-status { display: inline-flex; width: fit-content; padding: 6px 10px; border-radius: 999px; background: var(--accent); color: var(--text-dark); font-size: 11px; font-weight: 800; letter-spacing: .03em; position: absolute; z-index: 1; top: 14px; left: 14px; }
 .competition-status-inline { position: static; margin-left: 10px; vertical-align: middle; }

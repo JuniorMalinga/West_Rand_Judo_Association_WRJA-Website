@@ -22,6 +22,8 @@ export default function NewsSection() {
                 src={item.image}
                 alt={item.title}
                 className="news-card-image"
+                loading="lazy"
+                decoding="async"
               />
 
               <p className="news-date">{item.date}</p>

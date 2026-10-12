@@ -12,10 +12,8 @@ export default function TrainersSection() {
       <div className="trainers-grid">
         {instructors.map((instructor, index) => (
           <Reveal key={instructor.slug} delay={index * 120}>
-            <div
-              className="trainer-card"
-              style={{ backgroundImage: `url(${instructor.image})`, backgroundPosition: instructor.imagePosition || "center" }}
-            >
+            <div className="trainer-card">
+              <img className="trainer-card-image" src={instructor.image} alt="" loading="lazy" decoding="async" style={{ objectPosition: instructor.imagePosition || "center" }} />
               <div className="trainer-info">
                 <h3>{instructor.name}</h3>
                 <p className="trainer-role">{instructor.role}</p>
