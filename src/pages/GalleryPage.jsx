@@ -6,14 +6,13 @@ import GalleryLightbox from "../components/GalleryLightbox";
 import Pagination from "../components/Pagination";
 import { galleryCategories } from "../data/galleryItems";
 import { useCollectionState } from "../hooks/useCollection";
-import { combineGalleryItems, galleryStore, galleryDeletedPathsStore } from "../data/gallery";
+import { galleryStore } from "../data/gallery";
 
 const PHOTOS_PER_PAGE = 10;
 
 export default function GalleryPage() {
-  const { items: managedItems } = useCollectionState(galleryStore);
-  const { items: deletedPaths } = useCollectionState(galleryDeletedPathsStore);
-  const allItems = combineGalleryItems(managedItems, deletedPaths);
+  const { items, loaded, error } = useCollectionState(galleryStore);
+  const allItems = items.filter((item) => item.photoUrl);
   const [activeCategory, setActiveCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [activeIndex, setActiveIndex] = useState(null);
@@ -59,6 +58,12 @@ export default function GalleryPage() {
             />
           ))}
         </div>
+
+        {!loaded && <p className="gallery-empty-state" role="status">Loading gallery…</p>}
+        {loaded && error && <p className="gallery-empty-state gallery-empty-state-error" role="alert">{error}</p>}
+        {loaded && !error && filteredItems.length === 0 && (
+          <p className="gallery-empty-state">No gallery photos have been added yet.</p>
+        )}
 
         {totalPages > 1 && (
           <Pagination

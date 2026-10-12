@@ -3,12 +3,11 @@ import wrjaLogo from "../assets/images/Logo/wrja-logo.png";
 import { clubLocations } from "../data/clubContacts";
 import { toTelHref } from "../lib/format";
 import { useCollectionState } from "../hooks/useCollection";
-import { combineGalleryItems, galleryStore, galleryDeletedPathsStore } from "../data/gallery";
+import { galleryStore } from "../data/gallery";
 
 export default function SiteFooter() {
-  const { items: managedItems } = useCollectionState(galleryStore);
-  const { items: deletedPaths } = useCollectionState(galleryDeletedPathsStore);
-  const footerGallery = combineGalleryItems(managedItems, deletedPaths);
+  const { items } = useCollectionState(galleryStore);
+  const footerGallery = items.filter((item) => item.photoUrl);
   return (
     <footer className="site-footer">
       <div className="footer-grid">
