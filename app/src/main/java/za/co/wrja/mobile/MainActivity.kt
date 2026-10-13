@@ -701,6 +701,7 @@ private fun EventsCalendarPreview() {
 
 @Composable private fun ChatAssistantScreen() {
     val language = LocalAppLanguage.current
+    val context = LocalContext.current.applicationContext
     val welcome = tr("chat_welcome")
     val help = tr("chat_help")
     val messages = remember(language, welcome, help) {
@@ -710,12 +711,34 @@ private fun EventsCalendarPreview() {
         )
     }
     var draft by rememberSaveable { mutableStateOf("") }
-    val sendMessage = {
-        val question = draft.trim()
-        if (question.isNotEmpty()) {
-            messages += ChatMessageUi(question, false)
-            messages += ChatMessageUi(localChatReply(question, language), true)
-            draft = ""
+    var sessionId by rememberSaveable { mutableStateOf(WebsiteChatSessionStore.read(context)) }
+    var isSending by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+
+    fun sendQuestion(rawQuestion: String) {
+        val question = rawQuestion.trim()
+        if (question.isBlank() || isSending) return
+
+        messages += ChatMessageUi(question, false)
+        draft = ""
+        isSending = true
+        coroutineScope.launch {
+            try {
+                val result = WebsiteChatApi.send(question, sessionId)
+                result.sessionId?.let { returnedSessionId ->
+                    sessionId = returnedSessionId
+                    WebsiteChatSessionStore.save(context, returnedSessionId)
+                }
+                messages += ChatMessageUi(
+                    result.answer ?: result.error ?: localChatReply(question, language),
+                    true
+                )
+            } catch (_: Exception) {
+                // Retain the useful offline assistant when the server or connection is unavailable.
+                messages += ChatMessageUi(localChatReply(question, language), true)
+            } finally {
+                isSending = false
+            }
         }
     }
 
@@ -731,21 +754,25 @@ private fun EventsCalendarPreview() {
     }
     Spacer(Modifier.height(16.dp))
     messages.forEach { message -> ChatBubble(message) }
+    if (isSending) {
+        Row(Modifier.padding(bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Gold, strokeWidth = 2.dp)
+            Spacer(Modifier.width(8.dp))
+            Text("WRJA Assistant is typing…", color = Muted, fontSize = 12.sp)
+        }
+    }
     Spacer(Modifier.height(12.dp))
     Text(tr("suggested_questions"), color = GoldDark, fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 0.7.sp)
     Spacer(Modifier.height(8.dp))
     listOf(tr("question_programme"), tr("question_trial"), tr("question_events")).forEach { suggestion ->
-        AssistChip(onClick = {
-            messages += ChatMessageUi(suggestion, false)
-            messages += ChatMessageUi(localChatReply(suggestion, language), true)
-        }, label = { Text(suggestion, fontSize = 12.sp) }, colors = AssistChipDefaults.assistChipColors(containerColor = OffWhite, labelColor = Ink), modifier = Modifier.padding(end = 6.dp, bottom = 6.dp))
+        AssistChip(onClick = { sendQuestion(suggestion) }, enabled = !isSending, label = { Text(suggestion, fontSize = 12.sp) }, colors = AssistChipDefaults.assistChipColors(containerColor = OffWhite, labelColor = Ink), modifier = Modifier.padding(end = 6.dp, bottom = 6.dp))
     }
     Spacer(Modifier.height(14.dp))
     Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = OffWhite)) {
         Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(value = draft, onValueChange = { draft = it }, placeholder = { Text(tr("ask_assistant")) }, modifier = Modifier.weight(1f), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Gold, unfocusedBorderColor = Color.LightGray))
+            OutlinedTextField(value = draft, onValueChange = { draft = it }, placeholder = { Text(tr("ask_assistant")) }, enabled = !isSending, modifier = Modifier.weight(1f), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Gold, unfocusedBorderColor = Color.LightGray))
             Spacer(Modifier.width(8.dp))
-            IconButton(onClick = sendMessage, enabled = draft.isNotBlank(), colors = IconButtonDefaults.iconButtonColors(contentColor = Ink, disabledContentColor = Muted)) { Icon(Icons.Default.Send, "Send message") }
+            IconButton(onClick = { sendQuestion(draft) }, enabled = draft.isNotBlank() && !isSending, colors = IconButtonDefaults.iconButtonColors(contentColor = Ink, disabledContentColor = Muted)) { Icon(Icons.Default.Send, "Send message") }
         }
     }
     Text(tr("chat_preview"), color = Muted, fontSize = 11.sp, lineHeight = 16.sp, modifier = Modifier.padding(top = 10.dp))
