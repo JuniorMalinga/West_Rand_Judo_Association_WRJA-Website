@@ -87,22 +87,26 @@ fun BookScreen() {
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(6.dp),
+        modifier = Modifier.fillMaxWidth().wrjaReveal(),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFF171717)
-        )
+        ),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF393939)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Text(
-                text = "Request a booking",
-                color = Color.White,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
+                text = "BOOK A SESSION",
+                color = BookGold,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.ExtraBold
             )
+
+            Text(text = "Request a booking", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
 
             Text(
                 text = "Choose a program and enter your preferred session details. Times are South African time.",
@@ -407,7 +411,7 @@ private fun BookInput(
             modifier = Modifier.fillMaxWidth(),
             singleLine = !multiline,
             minLines = if (multiline) 3 else 1,
-            shape = RoundedCornerShape(4.dp),
+            shape = RoundedCornerShape(14.dp),
             keyboardOptions = KeyboardOptions(
                 keyboardType = keyboardType
             ),
@@ -480,7 +484,7 @@ private fun BookChoiceButton(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 52.dp),
-        shape = RoundedCornerShape(4.dp),
+        shape = RoundedCornerShape(14.dp),
         contentPadding = PaddingValues(
             horizontal = 12.dp,
             vertical = 12.dp

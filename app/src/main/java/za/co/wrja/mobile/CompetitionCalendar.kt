@@ -3,6 +3,7 @@ package za.co.wrja.mobile
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronLeft
@@ -97,7 +98,13 @@ fun CompetitionCalendar() {
     val ready = !loading && error == null && loadedMonth == visibleMonth
     val byDate = remember(competitions) { competitions.groupBy { it.date } }
 
-    Column(Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth().wrjaReveal(),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF171717)),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF393939)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 7.dp)
+    ) {
+    Column(Modifier.fillMaxWidth().padding(14.dp)) {
         Spacer(Modifier.height(16.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             IconButton(
@@ -135,7 +142,7 @@ fun CompetitionCalendar() {
                 val background = when {
                     !inMonth -> CalendarInk
                     matches.isNotEmpty() -> CalendarGold
-                    else -> Color.White
+                    else -> Color(0xFF252525)
                 }
                 Box(
                     Modifier.aspectRatio(1f).padding(1.dp)
@@ -148,7 +155,7 @@ fun CompetitionCalendar() {
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    if (inMonth) Text(day.date.dayOfMonth.toString(), color = CalendarInk,
+                    if (inMonth) Text(day.date.dayOfMonth.toString(), color = if (matches.isNotEmpty()) CalendarInk else Color.White,
                         fontSize = 13.sp,
                         fontWeight = if (matches.isNotEmpty()) FontWeight.Bold else FontWeight.Normal)
                 }
@@ -185,7 +192,9 @@ fun CompetitionCalendar() {
                     selectedCompetitions.forEach { competition ->
                         Card(
                             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF171717))
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF242424)),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF393939)),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
                         ) {
                             Column(Modifier.padding(14.dp)) {
                                 Text(competition.title, color = Color.White, fontWeight = FontWeight.Bold)
@@ -197,6 +206,7 @@ fun CompetitionCalendar() {
                 }
             }
         }
+    }
     }
 }
 

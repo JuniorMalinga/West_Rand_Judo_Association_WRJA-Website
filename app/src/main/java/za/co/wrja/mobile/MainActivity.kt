@@ -40,7 +40,10 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Shapes
+import androidx.compose.ui.graphics.Brush
 private val Charcoal = Color(0xFF090909)
 private val Charcoal2 = Color(0xFF171717)
 private val Gold = Color(0xFFF1BD16)
@@ -51,13 +54,26 @@ private val Muted = Color(0xFFA6A6A6)
 private val WRJAColorScheme = darkColorScheme(
     primary = Gold,
     onPrimary = Charcoal,
+    primaryContainer = Color(0xFF403000),
+    onPrimaryContainer = Color(0xFFFFE08A),
+    secondary = Color(0xFFFFDA69),
+    onSecondary = Charcoal,
+    secondaryContainer = Color(0xFF403000),
+    onSecondaryContainer = Color(0xFFFFE08A),
     background = Charcoal,
     onBackground = Ink,
     surface = Charcoal2,
     onSurface = Ink,
     surfaceVariant = Color(0xFF242424),
     onSurfaceVariant = Muted,
-    outline = Color(0xFF555555)
+    outline = Color(0xFF5C5C5C)
+)
+private val WRJAShapes = Shapes(
+    extraSmall = RoundedCornerShape(10.dp),
+    small = RoundedCornerShape(14.dp),
+    medium = RoundedCornerShape(20.dp),
+    large = RoundedCornerShape(26.dp),
+    extraLarge = RoundedCornerShape(32.dp)
 )
 
 /** Conversation model; a remote chat service can use this same shape later. */
@@ -171,7 +187,7 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         setContentView(
             ComposeView(this).apply {
-                setContent { MaterialTheme(colorScheme = WRJAColorScheme) { WRJAApp() } }
+                setContent { MaterialTheme(colorScheme = WRJAColorScheme, shapes = WRJAShapes) { WRJAApp() } }
             }
         )
     }
@@ -369,25 +385,24 @@ internal fun LoginScreen(
         modifier = Modifier.fillMaxSize().background(OffWhite),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        item {
-            Header(tr("login"))
-            Spacer(Modifier.height(32.dp))
-        }
+        item { Header(tr("login")); Spacer(Modifier.height(16.dp)) }
 
         item {
             Card(
-                modifier = Modifier.padding(24.dp).fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(10.dp)
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Charcoal2),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF3A3A3A)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(28.dp),
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 22.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     LanguageSelector(onLanguageChanged)
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(14.dp))
                     Logo()
 
-                    Spacer(Modifier.height(18.dp))
+                    Spacer(Modifier.height(14.dp))
 
                     Text(
                         tr("welcome_back"),
@@ -402,7 +417,7 @@ internal fun LoginScreen(
                         fontSize = 14.sp
                     )
 
-                    Spacer(Modifier.height(24.dp))
+                    Spacer(Modifier.height(20.dp))
 
                     OutlinedTextField(
                         value = email,
@@ -414,7 +429,7 @@ internal fun LoginScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    Spacer(Modifier.height(14.dp))
+                    Spacer(Modifier.height(12.dp))
 
                     OutlinedTextField(
                         value = password,
@@ -435,16 +450,8 @@ internal fun LoginScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(40.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                    Spacer(Modifier.height(2.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             Box(
                                 modifier = Modifier
                                     .size(20.dp)
@@ -456,24 +463,18 @@ internal fun LoginScreen(
                                 if (rememberMe) Text("✓", color = Ink, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                             }
                             Spacer(Modifier.width(8.dp))
-                            Column {
+                            Column(Modifier.weight(1f)) {
                                 Text(tr("remember_me"), fontSize = 13.sp)
                                 Text(
                                     tr("fingerprint_unlock"),
                                     color = Muted,
                                     fontSize = 10.sp,
-                                    lineHeight = 12.sp
+                                    lineHeight = 13.sp,
+                                    maxLines = 2
                                 )
                             }
-                        }
-
-                        Text(
-                            tr("forgot_password"),
-                            color = GoldDark,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold
-                        )
                     }
+                    Text(tr("forgot_password"), Modifier.fillMaxWidth().padding(top = 4.dp), color = GoldDark, fontSize = 13.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
 
                     notice?.let {
                         Text(
@@ -508,7 +509,7 @@ internal fun LoginScreen(
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = GoldDark)
                         ) { Text("USE FINGERPRINT", fontWeight = FontWeight.Bold) }
-                        Spacer(Modifier.height(8.dp))
+                        Spacer(Modifier.height(10.dp))
                     }
 
                     Button(
@@ -553,13 +554,13 @@ internal fun LoginScreen(
                             .height(52.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Gold,
-                            contentColor = Ink
+                            contentColor = Charcoal
                         )
                     ) {
                         if (busy) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(24.dp),
-                                color = Ink,
+                                color = Charcoal,
                                 strokeWidth = 2.dp
                             )
                         } else {
@@ -570,7 +571,7 @@ internal fun LoginScreen(
                         }
                     }
 
-                    Spacer(Modifier.height(10.dp))
+                    Spacer(Modifier.height(14.dp))
 
                     Text(
                         tr("dont_have_account"),
@@ -598,21 +599,77 @@ internal fun LoginScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable private fun MainSite(initial: String, logout: () -> Unit, update: (String) -> Unit) {
-    var page by rememberSaveable { mutableStateOf(initial) }; val drawer = rememberDrawerState(DrawerValue.Closed); val scope = rememberCoroutineScope(); val pages = listOf("home" to tr("home"), "my profile" to tr("my_profile"), "about" to tr("about"), "events" to tr("events"), "programs" to tr("programs"), "book" to tr("book"), "news" to tr("news"), "gallery" to tr("gallery"), "contact" to tr("contact"), "chat assistant" to tr("chat_assistant"))
-    ModalNavigationDrawer(drawerState = drawer, drawerContent = { ModalDrawerSheet { Column(
-        Modifier
-            .fillMaxHeight()
-            .background(Charcoal)
-            .verticalScroll(rememberScrollState())
-    ) { Row(Modifier.padding(22.dp), verticalAlignment = Alignment.CenterVertically) { Logo(); Spacer(Modifier.width(12.dp)); Text("WEST RAND\nJUDO ASSOCIATION", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp) }; pages.forEach { (route, label) -> Text(label, Modifier.fillMaxWidth().clickable { page = route; update(page); scope.launch { drawer.close() } }.padding(18.dp), color = if (route == page) Gold else Color.White, fontWeight = FontWeight.SemiBold) }; Spacer(Modifier.height(24.dp)); Text(tr("log_out").uppercase(), Modifier.clickable { logout() }.padding(22.dp), color = Gold, fontWeight = FontWeight.Bold) } } }) {
-        Scaffold(topBar = { TopAppBar(title = { Text("WEST RAND JUDO", fontWeight = FontWeight.Black, fontSize = 16.sp) }, navigationIcon = { IconButton({ scope.launch { drawer.open() } }) { Icon(Icons.Default.Menu, "Menu") } }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Charcoal, titleContentColor = Color.White, navigationIconContentColor = Color.White)) }) { padding -> AnimatedContent(targetState = page, transitionSpec = { (slideInHorizontally { it / 9 } + fadeIn()) togetherWith (slideOutHorizontally { -it / 9 } + fadeOut()) }, label = "site page transition") { targetPage -> SitePage(targetPage, Modifier.padding(padding)) } }
+    var page by rememberSaveable { mutableStateOf(initial) }
+    val drawer = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    val pages = listOf("home" to tr("home"), "my profile" to tr("my_profile"), "about" to tr("about"), "events" to tr("events"), "programs" to tr("programs"), "book" to tr("book"), "news" to tr("news"), "gallery" to tr("gallery"), "contact" to tr("contact"), "chat assistant" to tr("chat_assistant"))
+    ModalNavigationDrawer(
+        drawerState = drawer,
+        drawerContent = {
+            ModalDrawerSheet(drawerContainerColor = Charcoal2, drawerContentColor = Ink) {
+                Column(Modifier.fillMaxHeight().verticalScroll(rememberScrollState()).padding(vertical = 12.dp)) {
+                    Row(Modifier.padding(horizontal = 22.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Surface(color = Color(0xFF242424), shape = RoundedCornerShape(16.dp)) { Box(Modifier.padding(8.dp)) { Logo() } }
+                        Spacer(Modifier.width(12.dp))
+                        Column { Text("WEST RAND", color = Color.White, fontWeight = FontWeight.Black, fontSize = 14.sp); Text("JUDO ASSOCIATION", color = Gold, fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 1.sp) }
+                    }
+                    HorizontalDivider(color = Color(0xFF343434), modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                    pages.forEach { (route, label) ->
+                        val selected = route == page
+                        NavigationDrawerItem(
+                            label = { Text(label, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium) },
+                            selected = selected,
+                            onClick = { page = route; update(page); scope.launch { drawer.close() } },
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
+                            colors = NavigationDrawerItemDefaults.colors(
+                                selectedContainerColor = Color(0xFF443400),
+                                selectedTextColor = Gold,
+                                unselectedTextColor = Ink
+                            )
+                        )
+                    }
+                    Spacer(Modifier.weight(1f)); HorizontalDivider(color = Color(0xFF343434), modifier = Modifier.padding(horizontal = 16.dp))
+                    Text(tr("log_out").uppercase(), Modifier.fillMaxWidth().clickable { logout() }.padding(22.dp), color = Gold, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Column { Text("WEST RAND JUDO", fontWeight = FontWeight.Black, fontSize = 16.sp); Text("DISCIPLINE • RESPECT • EXCELLENCE", color = Gold, fontSize = 8.sp, letterSpacing = 0.8.sp) } },
+                    navigationIcon = { IconButton({ scope.launch { drawer.open() } }) { Icon(Icons.Default.Menu, "Menu") } },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Charcoal, scrolledContainerColor = Charcoal2, titleContentColor = Color.White, navigationIconContentColor = Color.White)
+                )
+            }
+        ) { padding ->
+            AnimatedContent(targetState = page, transitionSpec = { (slideInHorizontally { it / 7 } + fadeIn()) togetherWith (slideOutHorizontally { -it / 10 } + fadeOut()) }, label = "site page transition") { targetPage -> SitePage(targetPage, Modifier.padding(padding)) }
+        }
     }
 }
 
 @Composable private fun SitePage(page: String, modifier: Modifier) {
     val descriptions = mapOf("home" to "Building discipline, respect, and excellence through judo for athletes of all ages across the West Rand community.", "about" to "Building character on and off the mat. We develop confident, disciplined and respectful individuals through judo.", "events" to "Club gradings, competitions and training activities.", "programs" to "Judo programmes for children and adults at every level.","book" to "Choose your program and preferred training session.", "news" to "Competition results and achievements from WRJA athletes.", "gallery" to "Training, competition and community moments.", "contact" to "Send us a message or contact our training venues.", "chat assistant" to "Your WRJA guide for training, programmes, events and club information.")
     val title = when (page) { "home" -> tr("home"); "my profile" -> tr("my_profile"); "about" -> tr("about"); "events" -> tr("events"); "programs" -> tr("programs"); "book" -> tr("book"); "news" -> tr("news"); "gallery" -> tr("gallery"); "contact" -> tr("contact"); "chat assistant" -> tr("chat_assistant"); else -> page.replaceFirstChar { it.uppercase() } }
-    LazyColumn(modifier.fillMaxSize().background(Charcoal)) { item { Box(Modifier.fillMaxWidth().height(if (page == "home") 320.dp else 160.dp).background(Charcoal2), contentAlignment = if (page == "home") Alignment.BottomStart else Alignment.Center) { if (page == "home") { Image(painterResource(R.drawable.landing_1), "WRJA members training together", Modifier.fillMaxSize(), contentScale = ContentScale.Crop); Box(Modifier.fillMaxSize().background(Color(0x88000000))) }; Column(Modifier.padding(28.dp), horizontalAlignment = if (page == "home") Alignment.Start else Alignment.CenterHorizontally) { Text(if (page == "home") "WELCOME TO\nWEST RAND JUDO\nASSOCIATION" else title.uppercase(), color = Color.White, fontSize = if (page == "home") 29.sp else 30.sp, fontWeight = FontWeight.Bold); Text(if (page == "home") "DISCIPLINE  •  RESPECT  •  EXCELLENCE" else "HOME  /  $title", color = Gold, fontSize = 11.sp, letterSpacing = 1.sp) } } }; item { Column(Modifier.padding(24.dp)) { Text(if (page == "chat assistant") tr("chat_help") else descriptions[page] ?: "", color = Ink, fontWeight = FontWeight.SemiBold, fontSize = 19.sp, lineHeight = 28.sp); Spacer(Modifier.height(20.dp)); when (page) {"my profile" -> SupabaseMemberProfile();"book" -> BookScreen();"contact" -> { ContactForm(); Spacer(Modifier.height(28.dp)); WebsiteContact() }; "chat assistant" -> ChatAssistantScreen(); else -> ContentCards(page) } } } }
+    LazyColumn(modifier.fillMaxSize().background(Charcoal)) {
+        item {
+            Box(Modifier.fillMaxWidth().height(if (page == "home") 320.dp else 170.dp).background(Charcoal2), contentAlignment = if (page == "home") Alignment.BottomStart else Alignment.Center) {
+                if (page == "home") Image(painterResource(R.drawable.landing_1), "WRJA members training together", Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0x44000000), Charcoal))))
+                Column(Modifier.padding(28.dp), horizontalAlignment = if (page == "home") Alignment.Start else Alignment.CenterHorizontally) {
+                    Text(if (page == "home") "WELCOME TO\nWEST RAND JUDO\nASSOCIATION" else title.uppercase(), color = Color.White, fontSize = if (page == "home") 29.sp else 29.sp, fontWeight = FontWeight.Black, textAlign = if (page == "home") TextAlign.Start else TextAlign.Center)
+                    Spacer(Modifier.height(7.dp)); Text(if (page == "home") "DISCIPLINE  •  RESPECT  •  EXCELLENCE" else "HOME  /  $title", color = Gold, fontSize = 11.sp, letterSpacing = 1.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+        item {
+            Column(Modifier.padding(24.dp)) {
+                Text(if (page == "chat assistant") tr("chat_help") else descriptions[page] ?: "", color = Ink, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, lineHeight = 27.sp, modifier = Modifier.wrjaReveal())
+                Spacer(Modifier.height(22.dp))
+                when (page) { "my profile" -> SupabaseMemberProfile(); "book" -> BookScreen(); "contact" -> { ContactForm(); Spacer(Modifier.height(30.dp)); WebsiteContact() }; "chat assistant" -> ChatAssistantScreen(); else -> ContentCards(page) }
+            }
+        }
+    }
 }
 
 @Composable private fun ContentCards(page: String) {
@@ -667,7 +724,17 @@ internal fun LoginScreen(
     }
 }
 
-@Composable private fun ContactForm() { var name by remember { mutableStateOf("") }; var email by remember { mutableStateOf("") }; var message by remember { mutableStateOf("") }; Text("SEND US A MESSAGE", fontSize = 23.sp, fontWeight = FontWeight.Bold); Spacer(Modifier.height(14.dp)); OutlinedTextField(name, { name = it }, label = { Text("Your name") }, modifier = Modifier.fillMaxWidth()); Spacer(Modifier.height(10.dp)); OutlinedTextField(email, { email = it }, label = { Text("Email address") }, modifier = Modifier.fillMaxWidth()); Spacer(Modifier.height(10.dp)); OutlinedTextField(message, { message = it }, label = { Text("Message") }, minLines = 3, modifier = Modifier.fillMaxWidth()); Spacer(Modifier.height(14.dp)); Button({}, colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Ink)) { Text("SEND MESSAGE") }; Spacer(Modifier.height(28.dp)); Text("CONTACT INFO", fontSize = 23.sp, fontWeight = FontWeight.Bold); Text("Golden Score Judo Dojo\n104 Stegman St, Randgate, Randfontein\n078 870 9131\n\nKJK Judo\nNGK Paardekraal, Krugersdorp\n083 329 5923\n\nWest Rand Judo Association\n3 Octavia, 49 Otto Street, Krugersdorp North", color = Muted, lineHeight = 22.sp) }
+@Composable private fun ContactForm() {
+    var name by remember { mutableStateOf("") }; var email by remember { mutableStateOf("") }; var message by remember { mutableStateOf("") }
+    WrjaContentCard(Modifier.fillMaxWidth().wrjaReveal()) {
+        Text("SEND US A MESSAGE", color = Gold, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.ExtraBold)
+        Spacer(Modifier.height(6.dp)); Text("We’ll make sure your message reaches the right WRJA team.", color = Muted, style = MaterialTheme.typography.bodySmall)
+        Spacer(Modifier.height(18.dp)); OutlinedTextField(name, { name = it }, label = { Text("Your name") }, modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(10.dp)); OutlinedTextField(email, { email = it }, label = { Text("Email address") }, modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(10.dp)); OutlinedTextField(message, { message = it }, label = { Text("Message") }, minLines = 3, modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(16.dp)); Button({}, Modifier.fillMaxWidth().height(50.dp), colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Charcoal)) { Text("SEND MESSAGE", fontWeight = FontWeight.Bold) }
+    }
+}
 
 @Composable private fun AboutDetail() {
     Spacer(Modifier.height(18.dp)); Text("OUR INSTRUCTORS & FACILITATORS", fontSize = 22.sp, fontWeight = FontWeight.Bold)
@@ -742,7 +809,7 @@ private fun EventsCalendarPreview() {
         }
     }
 
-    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Charcoal)) {
+    Card(Modifier.fillMaxWidth().wrjaReveal(), colors = CardDefaults.cardColors(containerColor = Charcoal2), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF3C3C3C)), elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)) {
         Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(44.dp).background(Gold), contentAlignment = Alignment.Center) { Text("WR", color = Ink, fontWeight = FontWeight.Black, fontSize = 14.sp) }
             Spacer(Modifier.width(12.dp))
@@ -753,7 +820,7 @@ private fun EventsCalendarPreview() {
         }
     }
     Spacer(Modifier.height(16.dp))
-    messages.forEach { message -> ChatBubble(message) }
+    messages.forEachIndexed { index, message -> ChatBubble(message, index) }
     if (isSending) {
         Row(Modifier.padding(bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Gold, strokeWidth = 2.dp)
@@ -768,7 +835,7 @@ private fun EventsCalendarPreview() {
         AssistChip(onClick = { sendQuestion(suggestion) }, enabled = !isSending, label = { Text(suggestion, fontSize = 12.sp) }, colors = AssistChipDefaults.assistChipColors(containerColor = OffWhite, labelColor = Ink), modifier = Modifier.padding(end = 6.dp, bottom = 6.dp))
     }
     Spacer(Modifier.height(14.dp))
-    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = OffWhite)) {
+    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Charcoal2), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF3C3C3C)), elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)) {
         Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
             OutlinedTextField(value = draft, onValueChange = { draft = it }, placeholder = { Text(tr("ask_assistant")) }, enabled = !isSending, modifier = Modifier.weight(1f), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Gold, unfocusedBorderColor = Color.LightGray))
             Spacer(Modifier.width(8.dp))
@@ -778,10 +845,10 @@ private fun EventsCalendarPreview() {
     Text(tr("chat_preview"), color = Muted, fontSize = 11.sp, lineHeight = 16.sp, modifier = Modifier.padding(top = 10.dp))
 }
 
-@Composable private fun ChatBubble(message: ChatMessageUi) {
+@Composable private fun ChatBubble(message: ChatMessageUi, index: Int) {
     Row(Modifier.fillMaxWidth().padding(bottom = 10.dp), horizontalArrangement = if (message.fromAssistant) Arrangement.Start else Arrangement.End) {
-        Surface(color = if (message.fromAssistant) OffWhite else Gold, shape = MaterialTheme.shapes.medium, tonalElevation = 1.dp) {
-            Text(message.text, Modifier.padding(horizontal = 15.dp, vertical = 12.dp).widthIn(max = 265.dp), color = Ink, fontSize = 14.sp, lineHeight = 20.sp)
+        Surface(color = if (message.fromAssistant) Charcoal2 else Gold, shape = MaterialTheme.shapes.medium, tonalElevation = 4.dp, shadowElevation = 4.dp, border = if (message.fromAssistant) androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF343434)) else null, modifier = Modifier.wrjaReveal(index)) {
+            Text(message.text, Modifier.padding(horizontal = 15.dp, vertical = 12.dp).widthIn(max = 265.dp), color = if (message.fromAssistant) Ink else Charcoal, fontSize = 14.sp, lineHeight = 20.sp)
         }
     }
 }
