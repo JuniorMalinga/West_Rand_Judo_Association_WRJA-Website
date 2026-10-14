@@ -12,9 +12,9 @@ npm --prefix server run db:reset   # wipe the local database + uploads (asks fir
 
 The database file and uploaded images live in `server/data/` (git-ignored). On
 first start the server seeds it with the default users, competitions, events and
-news. **Default logins are unchanged:** `admin@wrja.co.za / Admin123!` and
-`user@wrja.co.za / User123!` (a warning is printed on start-up while the default
-admin password is still in use).
+news. **Default logins are unchanged:** `admin@wrja.co.za / Admin123!`,
+`user@wrja.co.za / User123!`, and `Demo1@gmail.com / DemoUser@1` (a warning is
+printed on start-up while the default admin password is still in use).
 
 Needs Node 22.13+ (uses the built-in `node:sqlite`). On older Node it falls back
 to `better-sqlite3` if `npm install` managed to install it.

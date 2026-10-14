@@ -15,6 +15,7 @@ const img = (name) => `/uploads/public/${name}`;
 const DEFAULT_USERS = [
   { firstName: "WRJA", lastName: "Admin", email: "admin@wrja.co.za", password: "Admin123!", role: "admin" },
   { firstName: "Test", lastName: "User", email: "user@wrja.co.za", password: "User123!", role: "athlete" },
+  { firstName: "Demo", lastName: "User", email: "Demo1@gmail.com", password: "DemoUser@1", role: "athlete" },
 ];
 
 const COMPETITIONS = [

@@ -25,7 +25,7 @@ function getFallbackReply(userMessage) {
   return "Thanks for reaching out! For a detailed answer right now, our Contact page is the best way to reach WRJA directly.";
 }
 
-export default function ChatWidget() {
+export default function ChatWidget({ onLauncherClick, onGuideRequest }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [messages, setMessages] = useState([
@@ -34,6 +34,7 @@ export default function ChatWidget() {
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
+  const [launcherShakeKey, setLauncherShakeKey] = useState(0);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -48,6 +49,10 @@ export default function ChatWidget() {
     setMessages(updatedHistory);
     setInputValue("");
     setIsTyping(true);
+
+    if (/\bguide\s+me\b/i.test(trimmed)) {
+      onGuideRequest?.();
+    }
 
     try {
       const replyText = await sendChatMessage(updatedHistory);
@@ -142,8 +147,21 @@ export default function ChatWidget() {
       )}
 
       <button
-        className={`chat-toggle ${isOpen ? "chat-toggle-open" : ""}`}
-        onClick={() => { setIsOpen((open) => !open); setIsExpanded(false); }}
+        className={`chat-toggle ${isOpen ? "chat-toggle-open" : ""} ${launcherShakeKey ? "chat-toggle-buddy-shake" : ""}`} key={launcherShakeKey}
+        onClick={() => {
+          const decision = onLauncherClick?.() ?? { allowToggle: true, shouldShake: false };
+          if (decision.shouldShake) {
+            setLauncherShakeKey((value) => value + 1);
+          }
+          if (decision.allowToggle === false) {
+            setIsOpen(false);
+            setIsExpanded(false);
+            return;
+          }
+          const shouldOpen = !isOpen;
+          setIsOpen(shouldOpen);
+          setIsExpanded(false);
+        }}
         aria-label={isOpen ? "Close chat" : "Open chat"}
       >
         {isOpen ? "\u00d7" : "\ud83e\udd4b"}

@@ -56,6 +56,16 @@ export function corsMiddleware(req, res, next) {
 // pre-flight that we refuse) and come from an allowed origin.
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
+function isLocalDevelopmentOrigin(origin) {
+  if (process.env.NODE_ENV === "production") return false;
+  try {
+    const url = new URL(origin);
+    return url.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
 export function csrfGuard(req, res, next) {
   if (SAFE_METHODS.has(req.method)) return next();
 
@@ -71,7 +81,7 @@ export function csrfGuard(req, res, next) {
     } catch {
       sameHost = false;
     }
-    if (!sameHost && !allowedOrigins().has(origin)) {
+    if (!sameHost && !allowedOrigins().has(origin) && !isLocalDevelopmentOrigin(origin)) {
       return next(new HttpError(403, "Request blocked (untrusted origin)."));
     }
   }

@@ -309,3 +309,17 @@
 
 .chat-panel-human { margin: 0; padding: 8px 16px; background: var(--bg-light-2); border-top: 1px solid var(--border); font-size: 12px; text-align: center; color: var(--text-dark-muted); }
 .chat-panel-human a { color: var(--accent-dark); font-weight: 700; text-decoration: underline; }
+
+
+/* Buddy activation: presses 2–4 keep chat closed and briefly shake the launcher. */
+.chat-toggle-buddy-shake { animation: wrja-chat-buddy-shake .42s ease-in-out both; }
+@keyframes wrja-chat-buddy-shake {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  20% { transform: translateX(-4px) rotate(-6deg); }
+  40% { transform: translateX(4px) rotate(6deg); }
+  60% { transform: translateX(-3px) rotate(-4deg); }
+  80% { transform: translateX(3px) rotate(4deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-toggle-buddy-shake { animation: none; outline: 3px solid rgba(201,162,39,.65); }
+}

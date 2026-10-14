@@ -79,3 +79,4 @@ export const HTML_AS_PNG = `data:image/png;base64,${Buffer.from("<html><script>a
 
 export const ADMIN = ["admin@wrja.co.za", "Admin123!"];
 export const MEMBER = ["user@wrja.co.za", "User123!"];
+export const DEMO_MEMBER = ["Demo1@gmail.com", "DemoUser@1"];

@@ -79,7 +79,7 @@ export default function LoginPage() {
         subtitle="Sign in to continue your journey on the mat."
         footer={
           <p>
-            Don&apos;t have an account? <Link to="/signup">Sign Up</Link>
+            Don&apos;t have an account? <Link to="/signup" state={location.state}>Sign Up</Link>
           </p>
         }
       >

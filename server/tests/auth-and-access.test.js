@@ -101,6 +101,11 @@ describe("CSRF protection", () => {
     const r = await b.post("/api/messages", { name: "x" }, { Origin: "https://evil.example" });
     assert.equal(r.status, 403);
   });
+  it("allows localhost preview origins on alternate development ports", async () => {
+    const b = browser(server.base);
+    const r = await b.post("/api/auth/logout", {}, { Origin: "http://localhost:5174" });
+    assert.equal(r.status, 200);
+  });
   it("does not reflect arbitrary origins in CORS", async () => {
     const r = await fetch(`${server.base}/api/news`, { headers: { Origin: "https://evil.example" } });
     assert.equal(r.headers.get("access-control-allow-origin"), null);

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import AuthCard from "../components/AuthCard";
 import { useAuth } from "../context/AuthContext";
 
@@ -24,6 +24,7 @@ function SignupField({ icon, label, type = "text", value, onChange, placeholder,
 
 export default function SignupPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { signUp } = useAuth();
   const [role, setRole] = useState("athlete");
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", phone: "", dateOfBirth: "", password: "", confirmPassword: "" });
@@ -59,8 +60,8 @@ export default function SignupPage() {
     <aside className="login-visual" aria-label="West Rand Judo Association">
       <div className="login-visual-content"><p className="login-kicker">WEST RAND JUDO ASSOCIATION</p><h1>Find your<br /><span>place on the mat.</span></h1><p className="login-visual-copy">Join a club built on discipline, confidence, and community.</p><div className="login-visual-rule" aria-hidden="true" /><p className="login-visual-caption">JUDO • DISCIPLINE • COMMUNITY</p></div>
     </aside>
-    <AuthCard title={showSuccess ? "You're in" : "Join the club"} subtitle={showSuccess ? "Your WRJA account is ready. Welcome to the club." : "Create your WRJA account and start your journey on the mat."} footer={showSuccess ? <p><Link to="/login" state={{ justSignedUp: true }}>Continue to login</Link></p> : <p>Already have an account? <Link to="/login">Log in</Link></p>}>
-      {showSuccess ? <div className="signup-success-content" role="status"><div className="signup-success-mark">✓</div><p>Your account has been created successfully.</p><button type="button" className="reference-login-button" onClick={() => navigate("/login", { state: { justSignedUp: true } })}>Continue</button></div> : <form className="reference-auth-form signup-reference-form" onSubmit={handleSubmit}>
+    <AuthCard title={showSuccess ? "You're in" : "Join the club"} subtitle={showSuccess ? "Your WRJA account is ready. Welcome to the club." : "Create your WRJA account and start your journey on the mat."} footer={showSuccess ? <p><Link to="/login" state={{ ...(location.state || {}), justSignedUp: true }}>Continue to login</Link></p> : <p>Already have an account? <Link to="/login" state={location.state}>Log in</Link></p>}>
+      {showSuccess ? <div className="signup-success-content" role="status"><div className="signup-success-mark">✓</div><p>Your account has been created successfully.</p><button type="button" className="reference-login-button" onClick={() => navigate("/login", { state: { ...(location.state || {}), justSignedUp: true } })}>Continue</button></div> : <form className="reference-auth-form signup-reference-form" onSubmit={handleSubmit}>
         <div className="auth-role-toggle reference-role-toggle" role="radiogroup" aria-label="Account type"><button type="button" className={role === "athlete" ? "auth-role-active" : ""} onClick={() => setRole("athlete")}>Athlete (18+)</button><button type="button" className={role === "guardian" ? "auth-role-active" : ""} onClick={() => setRole("guardian")}>Parent / Guardian</button></div>
         <div className="signup-grid-two"><SignupField animationIndex="0" icon="person" label="First name" value={form.firstName} onChange={update("firstName")} placeholder="First name" /><SignupField animationIndex="1" icon="person" label="Last name" value={form.lastName} onChange={update("lastName")} placeholder="Last name" /></div>
         <div className="signup-grid-two"><SignupField animationIndex="2" icon="person" label="Email address" type="email" value={form.email} onChange={update("email")} placeholder="you@example.com" /><SignupField animationIndex="3" icon="person" label="Phone number" type="tel" value={form.phone} onChange={update("phone")} placeholder="Optional" required={false} /></div>
