@@ -13,13 +13,16 @@ export async function sendChatMessage(conversationHistory) {
     body: JSON.stringify({ message: latestUserMessage.text }),
   });
 
+  const data = await response.json().catch(() => null);
+
   if (!response.ok) {
-    throw new Error(`Chat server error: ${response.status}`);
+    throw new Error(data?.error || `Chat server error: ${response.status}`);
   }
 
-  const data = await response.json();
-
   if (!data.success) {
+    if (typeof data.answer === "string" && data.answer) {
+      return data.answer;
+    }
     throw new Error(data.error || "Unknown chat server error");
   }
 

@@ -111,11 +111,10 @@ const geminiApiKeys = loadGeminiApiKeys();
 // Models can now be configured through GEMINI_MODELS.
 //
 // Example:
-// GEMINI_MODELS=gemini-3.6-flash,gemini-2.5-flash
+// GEMINI_MODELS=gemini-3.8-flash,gemini-3.6-flash
 //
 // If GEMINI_MODELS is not set, these two models are used.
-// The second model gives us a real model-level fallback when the first
-// model is returning 503.
+// The second model is used if the preferred model is unavailable.
 function loadGeminiModels() {
   if (process.env.GEMINI_MODELS) {
     return [
@@ -129,8 +128,8 @@ function loadGeminiModels() {
   }
 
   return [
-    "gemini-3.6-flash",
-    "gemini-2.5-flash"
+    "gemini-3.8-flash",
+    "gemini-3.6-flash"
   ];
 }
 
@@ -631,6 +630,10 @@ function getGeminiErrorType(error) {
     return "TEMPORARY_UNAVAILABLE";
   }
 
+  if (status === 404) {
+    return "MODEL_UNAVAILABLE";
+  }
+
   if (
     error &&
     typeof error.message === "string" &&
@@ -700,7 +703,7 @@ Answer the user's question naturally using only the WRJA knowledge provided abov
   // Model 2 + Key 3
   //
   // This gives us proper key and model fallback behaviour.
-  for (const modelName of geminiModelNames) {
+  modelLoop: for (const modelName of geminiModelNames) {
     const clientsForModel = geminiClients.filter(
       client => client.modelName === modelName
     );
@@ -715,8 +718,6 @@ Answer the user's question naturally using only the WRJA knowledge provided abov
     console.log(
       `\nTrying Gemini model: ${modelName}`
     );
-
-    let modelUnavailable = false;
 
     for (
       let keyIndex = 0;
@@ -791,6 +792,13 @@ Answer the user's question naturally using only the WRJA knowledge provided abov
             `| type: ${errorType}`,
             `| message: ${error.message}`
           );
+
+          if (errorType === "MODEL_UNAVAILABLE") {
+            console.log(
+              `Gemini model ${modelName} is unavailable; trying the next model.`
+            );
+            continue modelLoop;
+          }
 
           // ==================================================
           // 401 / 403
@@ -887,11 +895,9 @@ Answer the user's question naturally using only the WRJA knowledge provided abov
             );
 
             console.log(
-              "Moving to the next Gemini model..."
+              "Model-wide outage; trying the next Gemini model..."
             );
-
-            modelUnavailable = true;
-            break;
+            continue modelLoop;
           }
 
           // ==================================================
@@ -924,21 +930,11 @@ Answer the user's question naturally using only the WRJA knowledge provided abov
           // OTHER ERRORS
           // ==================================================
           //
-          // Do not blindly cycle through every key for an
-          // unknown error. Report it instead.
-          //
           console.error(
-            "Unexpected Gemini error. Not retrying automatically."
+            "Unexpected Gemini error. Trying the next API key if available."
           );
-
-          throw error;
+          break;
         }
-      }
-
-      // A 503 means the model itself is the problem.
-      // Move directly to the next model.
-      if (modelUnavailable) {
-        break;
       }
     }
   }
