@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -109,6 +110,8 @@ fun SupabaseEvents() {
         mutableStateOf<List<JudoEvent>>(emptyList())
     }
 
+    var selectedEvent by remember { mutableStateOf<JudoEvent?>(null) }
+
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var refreshCount by remember { mutableStateOf(0) }
@@ -154,6 +157,7 @@ fun SupabaseEvents() {
             else -> {
                 events.forEach { event ->
                     Card(
+                        onClick = { selectedEvent = event },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 16.dp)
@@ -188,6 +192,14 @@ fun SupabaseEvents() {
                                             event.registrationDeadline
                                 )
                             }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Text(
+                                "VIEW EVENT DETAILS  →",
+                                color = MaterialTheme.colorScheme.primary,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }
@@ -199,5 +211,30 @@ fun SupabaseEvents() {
                 Text(if (error == null) "Refresh" else "Retry")
             }
         }
+    }
+
+    selectedEvent?.let { event ->
+        AlertDialog(
+            onDismissRequest = { selectedEvent = null },
+            title = { Text(event.title, fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text("Date: ${event.date}")
+                    if (event.startTime.isNotBlank()) Text("Time: ${event.startTime}")
+                    if (event.location.isNotBlank()) Text("Location: ${event.location}")
+                    if (event.registrationDeadline.isNotBlank()) {
+                        Spacer(Modifier.height(8.dp))
+                        Text("Registration closes: ${event.registrationDeadline}")
+                    }
+                    if (event.description.isNotBlank()) {
+                        Spacer(Modifier.height(12.dp))
+                        Text(event.description)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { selectedEvent = null }) { Text("Close") }
+            }
+        )
     }
 }

@@ -602,7 +602,7 @@ internal fun LoginScreen(
     var page by rememberSaveable { mutableStateOf(initial) }
     val drawer = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    val pages = listOf("home" to tr("home"), "my profile" to tr("my_profile"), "about" to tr("about"), "events" to tr("events"), "programs" to tr("programs"), "book" to tr("book"), "news" to tr("news"), "gallery" to tr("gallery"), "contact" to tr("contact"), "chat assistant" to tr("chat_assistant"))
+    val pages = listOf("home" to tr("home"), "my profile" to tr("my_profile"), "about" to tr("about"), "events" to tr("events"), "programs" to tr("programs"), "book" to tr("book"), "news" to tr("news"), "gallery" to tr("gallery"), "faq" to tr("faq"), "contact" to tr("contact"), "chat assistant" to tr("chat_assistant"))
     ModalNavigationDrawer(
         drawerState = drawer,
         drawerContent = {
@@ -643,14 +643,23 @@ internal fun LoginScreen(
                 )
             }
         ) { padding ->
-            AnimatedContent(targetState = page, transitionSpec = { (slideInHorizontally { it / 7 } + fadeIn()) togetherWith (slideOutHorizontally { -it / 10 } + fadeOut()) }, label = "site page transition") { targetPage -> SitePage(targetPage, Modifier.padding(padding)) }
+            AnimatedContent(targetState = page, transitionSpec = { (slideInHorizontally { it / 7 } + fadeIn()) togetherWith (slideOutHorizontally { -it / 10 } + fadeOut()) }, label = "site page transition") { targetPage ->
+                SitePage(
+                    page = targetPage,
+                    modifier = Modifier.padding(padding),
+                    onNavigate = { destination ->
+                        page = destination
+                        update(destination)
+                    }
+                )
+            }
         }
     }
 }
 
-@Composable private fun SitePage(page: String, modifier: Modifier) {
-    val descriptions = mapOf("home" to "Building discipline, respect, and excellence through judo for athletes of all ages across the West Rand community.", "about" to "Building character on and off the mat. We develop confident, disciplined and respectful individuals through judo.", "events" to "Club gradings, competitions and training activities.", "programs" to "Judo programmes for children and adults at every level.","book" to "Choose your program and preferred training session.", "news" to "Competition results and achievements from WRJA athletes.", "gallery" to "Training, competition and community moments.", "contact" to "Send us a message or contact our training venues.", "chat assistant" to "Your WRJA guide for training, programmes, events and club information.")
-    val title = when (page) { "home" -> tr("home"); "my profile" -> tr("my_profile"); "about" -> tr("about"); "events" -> tr("events"); "programs" -> tr("programs"); "book" -> tr("book"); "news" -> tr("news"); "gallery" -> tr("gallery"); "contact" -> tr("contact"); "chat assistant" -> tr("chat_assistant"); else -> page.replaceFirstChar { it.uppercase() } }
+@Composable private fun SitePage(page: String, modifier: Modifier, onNavigate: (String) -> Unit) {
+    val descriptions = mapOf("home" to "Building discipline, respect, and excellence through judo for athletes of all ages across the West Rand community.", "about" to "Building character on and off the mat. We develop confident, disciplined and respectful individuals through judo.", "events" to "Club gradings, competitions and training activities.", "programs" to "Judo programmes for children and adults at every level.","book" to "Choose your program and preferred training session.", "news" to "Competition results and achievements from WRJA athletes.", "gallery" to "Training, competition and community moments.", "faq" to "Answers to common questions from new judoka, parents and returning athletes.", "contact" to "Send us a message or contact our training venues.", "chat assistant" to "Your WRJA guide for training, programmes, events and club information.")
+    val title = when (page) { "home" -> tr("home"); "my profile" -> tr("my_profile"); "about" -> tr("about"); "events" -> tr("events"); "programs" -> tr("programs"); "book" -> tr("book"); "news" -> tr("news"); "gallery" -> tr("gallery"); "faq" -> tr("faq"); "contact" -> tr("contact"); "chat assistant" -> tr("chat_assistant"); else -> page.replaceFirstChar { it.uppercase() } }
     LazyColumn(modifier.fillMaxSize().background(Charcoal)) {
         item {
             Box(Modifier.fillMaxWidth().height(if (page == "home") 320.dp else 170.dp).background(Charcoal2), contentAlignment = if (page == "home") Alignment.BottomStart else Alignment.Center) {
@@ -659,6 +668,22 @@ internal fun LoginScreen(
                 Column(Modifier.padding(28.dp), horizontalAlignment = if (page == "home") Alignment.Start else Alignment.CenterHorizontally) {
                     Text(if (page == "home") "WELCOME TO\nWEST RAND JUDO\nASSOCIATION" else title.uppercase(), color = Color.White, fontSize = if (page == "home") 29.sp else 29.sp, fontWeight = FontWeight.Black, textAlign = if (page == "home") TextAlign.Start else TextAlign.Center)
                     Spacer(Modifier.height(7.dp)); Text(if (page == "home") "DISCIPLINE  •  RESPECT  •  EXCELLENCE" else "HOME  /  $title", color = Gold, fontSize = 11.sp, letterSpacing = 1.sp, fontWeight = FontWeight.Bold)
+                    if (page == "home") {
+                        Spacer(Modifier.height(14.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Button(
+                                onClick = { onNavigate("contact") },
+                                modifier = Modifier.height(44.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Charcoal)
+                            ) { Text("CONTACT THE CLUB", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold) }
+                            OutlinedButton(
+                                onClick = { onNavigate("about") },
+                                modifier = Modifier.height(44.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Ink),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Gold)
+                            ) { Text("LEARN MORE", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold) }
+                        }
+                    }
                 }
             }
         }
@@ -666,13 +691,13 @@ internal fun LoginScreen(
             Column(Modifier.padding(24.dp)) {
                 Text(if (page == "chat assistant") tr("chat_help") else descriptions[page] ?: "", color = Ink, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, lineHeight = 27.sp, modifier = Modifier.wrjaReveal())
                 Spacer(Modifier.height(22.dp))
-                when (page) { "my profile" -> SupabaseMemberProfile(); "book" -> BookScreen(); "contact" -> { ContactForm(); Spacer(Modifier.height(30.dp)); WebsiteContact() }; "chat assistant" -> ChatAssistantScreen(); else -> ContentCards(page) }
+                when (page) { "my profile" -> SupabaseMemberProfile(); "book" -> BookScreen(); "contact" -> { ContactForm(); Spacer(Modifier.height(30.dp)); WebsiteContact() }; "chat assistant" -> ChatAssistantScreen(); else -> ContentCards(page, onNavigate) }
             }
         }
     }
 }
 
-@Composable private fun ContentCards(page: String) {
+@Composable private fun ContentCards(page: String, onNavigate: (String) -> Unit) {
 
     if (page == "home") {
         WebsiteHome()
@@ -683,15 +708,27 @@ internal fun LoginScreen(
         return
     }
     if (page == "events") {
-        var showPayments by rememberSaveable { mutableStateOf(false) }
-        if (showPayments) {
-            EftPaymentsScreen(onBack = { showPayments = false })
-        } else {
-            WebsiteEventsHub(onCompetitionsClick = { showPayments = true })
-            Spacer(Modifier.height(24.dp))
-            EventsCalendarPreview()
-            Spacer(Modifier.height(24.dp))
-            SupabaseEvents()
+        var eventSection by rememberSaveable { mutableStateOf("hub") }
+        when (eventSection) {
+            "standard" -> WebsiteStandardEvents(onBack = { eventSection = "hub" })
+            "calendar" -> WebsiteEventsCalendar(onBack = { eventSection = "hub" })
+            "competitions" -> EftPaymentsScreen(onBack = { eventSection = "hub" })
+            "schools" -> WebsiteSchoolsEvents(
+                onBack = { eventSection = "hub" },
+                onRegistrationClick = { eventSection = "competitions" }
+            )
+            "store" -> WebsiteStore(
+                onBack = { eventSection = "hub" },
+                onTracksuitClick = { onNavigate("contact") },
+                onPosterEnquiryClick = { onNavigate("contact") }
+            )
+            else -> WebsiteEventsHub(
+                onStandardEventsClick = { eventSection = "standard" },
+                onCalendarClick = { eventSection = "calendar" },
+                onCompetitionsClick = { eventSection = "competitions" },
+                onSchoolsClick = { eventSection = "schools" },
+                onStoreClick = { eventSection = "store" }
+            )
         }
         return
     }
@@ -705,6 +742,10 @@ internal fun LoginScreen(
     }
     if (page == "gallery") {
         WebsiteGallery()
+        return
+    }
+    if (page == "faq") {
+        WebsiteFaq(onContactClick = { onNavigate("contact") })
         return
     }
     val content = when (page) {

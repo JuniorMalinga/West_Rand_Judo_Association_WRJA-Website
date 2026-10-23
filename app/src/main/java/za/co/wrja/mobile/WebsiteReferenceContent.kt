@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -31,6 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 
 /* Primary mobile render of the supplied website source. Existing Supabase
    services remain in the project for later live content administration. */
@@ -123,7 +125,25 @@ private fun openPublicWebsite(context: Context, address: String) {
         HomeFeature(R.drawable.home_cover_2, "TRAIN WITH PURPOSE", "Coaching, discipline and growth.", Modifier.weight(1f).wrjaReveal(1))
         HomeFeature(R.drawable.home_cover_3, "GROW WITH YOUR CLUB", "From first class to the competition mat.", Modifier.weight(1f).wrjaReveal(2))
     }
-    Spacer(Modifier.height(24.dp)); WrjaSectionHeading("What’s next", "Everything happening around the mat.", "View WRJA events, competition information, training pathways and club news from one place.")
+    Spacer(Modifier.height(28.dp)); WrjaSectionHeading("What you can expect", "Train with confidence.", "A WRJA journey is built around support, structure and progress at every level.")
+    Spacer(Modifier.height(16.dp))
+    val benefits = listOf(
+        "Convenient times" to "Weekday evening and weekend sessions that fit around school and work schedules.",
+        "Grading pathway" to "A clear belt progression system with regular grading opportunities.",
+        "Quality equipment" to "Well-maintained mats and gis available for training sessions.",
+        "Guided nutrition" to "Basic nutrition guidance to support training and weight categories.",
+        "Certified coaches" to "Instructors with national coaching certification and years of experience.",
+        "Club champions" to "A strong record of provincial and national competition results."
+    )
+    benefits.chunked(2).forEachIndexed { rowIndex, row ->
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            row.forEachIndexed { columnIndex, (title, copy) ->
+                HomeBenefit(title, copy, Modifier.weight(1f).wrjaReveal(rowIndex * 2 + columnIndex + 3))
+            }
+        }
+        Spacer(Modifier.height(10.dp))
+    }
+    Spacer(Modifier.height(18.dp)); WrjaSectionHeading("What’s next", "Everything happening around the mat.", "View WRJA events, competition information, training pathways and club news from one place.")
 }
 
 @Composable private fun HomeFeature(image: Int, title: String, copy: String, modifier: Modifier) {
@@ -134,8 +154,19 @@ private fun openPublicWebsite(context: Context, address: String) {
     }
 }
 
+@Composable private fun HomeBenefit(title: String, copy: String, modifier: Modifier) {
+    WrjaContentCard(modifier) {
+        Column(Modifier.padding(14.dp)) {
+            Text("WRJA", color = WrjaGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
+            Spacer(Modifier.height(6.dp)); Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(6.dp)); Text(copy, color = WrjaMuted, style = MaterialTheme.typography.bodySmall)
+        }
+    }
+}
+
 @Composable fun WebsiteGallery() {
     var category by rememberSaveable { mutableStateOf("All") }
+    var selectedPhotoIndex by rememberSaveable { mutableStateOf<Int?>(null) }
     val photos = listOf(
         WebsitePhoto("Adult Judo", R.drawable.gallery_adult_1, "Adult Judo training"), WebsitePhoto("Adult Judo", R.drawable.gallery_adult_2, "Adult Judo training session"),
         WebsitePhoto("Competitions", R.drawable.gallery_competition_1, "Judo competition"), WebsitePhoto("Competitions", R.drawable.gallery_competition_2, "Competition action"), WebsitePhoto("Competitions", R.drawable.gallery_competition_3, "Judo competition action"), WebsitePhoto("Competitions", R.drawable.gallery_competition_4, "WRJA competition"),
@@ -150,17 +181,22 @@ private fun openPublicWebsite(context: Context, address: String) {
         listOf("All", "Kids Judo", "Adult Judo", "Competitions").forEach { item ->
             FilterChip(
                 selected = category == item,
-                onClick = { category = item },
+                onClick = { category = item; selectedPhotoIndex = null },
                 label = { Text(item, maxLines = 1, style = MaterialTheme.typography.labelMedium) },
                 colors = FilterChipDefaults.filterChipColors(containerColor = WrjaCard, labelColor = WrjaMuted, selectedContainerColor = WrjaGold, selectedLabelColor = Color(0xFF090909))
             )
         }
     }
     Spacer(Modifier.height(14.dp))
-    photos.filter { category == "All" || it.category == category }.chunked(2).forEachIndexed { index, row ->
+    val visiblePhotos = photos.filter { category == "All" || it.category == category }
+    visiblePhotos.chunked(2).forEachIndexed { index, row ->
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             row.forEach { photo ->
-                WrjaContentCard(Modifier.weight(1f).wrjaReveal(index)) {
+                WrjaContentCard(
+                    Modifier.weight(1f)
+                        .wrjaReveal(index)
+                        .clickable { selectedPhotoIndex = visiblePhotos.indexOf(photo) }
+                ) {
                     Box(Modifier.fillMaxWidth().height(155.dp).clip(MaterialTheme.shapes.medium).background(Color(0xFF101010))) {
                         Image(
                             painterResource(photo.image),
@@ -176,6 +212,34 @@ private fun openPublicWebsite(context: Context, address: String) {
             if (row.size == 1) Spacer(Modifier.weight(1f))
         }
         Spacer(Modifier.height(8.dp))
+    }
+    selectedPhotoIndex?.let { photoIndex ->
+        val photo = visiblePhotos.getOrNull(photoIndex)
+        if (photo != null) {
+            Dialog(onDismissRequest = { selectedPhotoIndex = null }) {
+                WrjaContentCard(Modifier.fillMaxWidth()) {
+                    Box(Modifier.fillMaxWidth().height(420.dp).background(Color(0xFF101010))) {
+                        Image(
+                            painter = painterResource(photo.image),
+                            contentDescription = photo.caption,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Fit,
+                            alignment = Alignment.Center
+                        )
+                    }
+                    Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                        Text(photo.caption, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(4.dp))
+                        Text(photo.category, color = WrjaMuted, style = MaterialTheme.typography.bodySmall)
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            TextButton(onClick = { selectedPhotoIndex = (photoIndex - 1 + visiblePhotos.size) % visiblePhotos.size }) { Text("‹ Previous", color = WrjaGold) }
+                            TextButton(onClick = { selectedPhotoIndex = null }) { Text("Close", color = WrjaGold) }
+                            TextButton(onClick = { selectedPhotoIndex = (photoIndex + 1) % visiblePhotos.size }) { Text("Next ›", color = WrjaGold) }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -261,22 +325,91 @@ private fun openPublicWebsite(context: Context, address: String) {
     }
 }
 
-@Composable fun WebsiteEventsHub(onCompetitionsClick: () -> Unit) {
-    WrjaSectionHeading("Your WRJA event hub", "Everything happening around the mat.", "Explore the calendar, competitions, school pathways and official WRJA kit from one clear starting point.")
+@Composable
+fun WebsiteEventsHub(
+    onStandardEventsClick: () -> Unit,
+    onCalendarClick: () -> Unit,
+    onCompetitionsClick: () -> Unit,
+    onSchoolsClick: () -> Unit,
+    onStoreClick: () -> Unit
+) {
+    data class EventHubItem(
+        val number: String,
+        val eyebrow: String,
+        val title: String,
+        val description: String,
+        val action: String,
+        val onClick: () -> Unit
+    )
+
+    val items = listOf(
+        EventHubItem("01", "WRJA ACTIVITIES", "Standard events", "Browse upcoming gradings, training camps and other WRJA events.", "VIEW STANDARD EVENTS", onStandardEventsClick),
+        EventHubItem("02", "DATES & FIXTURES", "Calendar", "View upcoming WRJA events, training milestones and important dates.", "OPEN CALENDAR", onCalendarClick),
+        EventHubItem("03", "ON THE MAT", "Competitions", "Find registrations, payment requirements and information for every competition.", "EXPLORE COMPETITIONS", onCompetitionsClick),
+        EventHubItem("04", "SCHOOL JUDO", "Schools", "Explore the SA Schools Novice and SA Schools Advanced pathways.", "VIEW SCHOOLS EVENTS", onSchoolsClick),
+        EventHubItem("05", "WRJA KIT", "Store", "Order WRJA and JSA tracksuits and request official WRJA posters.", "VISIT STORE", onStoreClick)
+    )
+
+    WrjaSectionHeading(
+        "Your WRJA event hub",
+        "Everything happening around the mat.",
+        "Explore the calendar, competitions, school pathways and official WRJA kit from one clear starting point."
+    )
     Spacer(Modifier.height(18.dp))
-    listOf(Triple("01", "Calendar", "View upcoming WRJA events, training milestones and important dates."), Triple("02", "Competitions", "Find registrations, payment requirements and information for every competition."), Triple("03", "Schools", "Explore SA Schools Novice and SA Schools Advanced pathways."), Triple("04", "Store", "Order WRJA and JSA tracksuits and request official WRJA posters.")).forEachIndexed { index, (number, title, description) ->
-        val content: @Composable ColumnScope.() -> Unit = { Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) { Text(number, color = WrjaGold, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold); Spacer(Modifier.width(16.dp)); Column { Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold); Spacer(Modifier.height(4.dp)); Text(description, color = WrjaMuted, style = MaterialTheme.typography.bodySmall) } } }
-        if (title == "Competitions") Card(onClick = onCompetitionsClick, modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp).wrjaReveal(index), colors = CardDefaults.cardColors(containerColor = WrjaCard), elevation = CardDefaults.cardElevation(defaultElevation = 7.dp, pressedElevation = 2.dp), content = content)
-        else WrjaContentCard(Modifier.fillMaxWidth().padding(bottom = 12.dp).wrjaReveal(index), content)
+    items.forEachIndexed { index, item ->
+        Card(
+            onClick = item.onClick,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp).wrjaReveal(index),
+            colors = CardDefaults.cardColors(containerColor = WrjaCard),
+            elevation = CardDefaults.cardElevation(defaultElevation = 7.dp, pressedElevation = 2.dp)
+        ) {
+            Column(Modifier.padding(18.dp)) {
+                Row(verticalAlignment = Alignment.Top) {
+                    Text(item.number, color = WrjaGold, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
+                    Spacer(Modifier.width(16.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(item.eyebrow, color = WrjaGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
+                        Spacer(Modifier.height(3.dp))
+                        Text(item.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(5.dp))
+                        Text(item.description, color = WrjaMuted, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                Spacer(Modifier.height(14.dp))
+                Text("${item.action}  →", color = WrjaGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
+            }
+        }
     }
 }
 
 @Composable fun WebsiteContact() {
+    val context = LocalContext.current.applicationContext
     WrjaSectionHeading("Get in touch", "Contact the WRJA team", "Use the form above to send a message, or find the club details below.")
     Spacer(Modifier.height(20.dp)); Text("CLUB CONTACTS", color = WrjaGold, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.ExtraBold)
+    data class ClubContact(val title: String, val address: String, val details: String)
     listOf(
-        "Golden Score Judo Dojo" to "104 Stegman St, Randgate, Randfontein\nSchool classes and additional outside venues available\nOffice: 078 870 9131 • simone@goldenscore.co.za\nSensei Michelle: 083 312 4312 • judoinfo@goldenscore.co.za",
-        "KJK Judo" to "NGK Paardekraal, Krugersdorp\nAdditional training venues and school classes available\nContact: 083 329 5923 • katjajudo@iburst.co.za",
-        "West Rand Judo Association" to "3 Octavia, 49 Otto Street, Krugersdorp North\nOffice for NPC administration only — not a training venue"
-    ).forEachIndexed { index, (title, details) -> WrjaContentCard(Modifier.fillMaxWidth().padding(top = 12.dp).wrjaReveal(index)) { Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium); Spacer(Modifier.height(8.dp)); Text(details, color = WrjaMuted) } }
+        ClubContact("Golden Score Judo Dojo", "26 Covent Road, Greenhills, Randfontein", "School classes and additional outside venues available\nOffice: 078 870 9131 • simone@goldenscore.co.za\nSensei Michelle: 083 312 4312 • judoinfo@goldenscore.co.za"),
+        ClubContact("KJK Judo", "NGK Paardekraal, Krugersdorp", "Additional training venues and school classes available\nContact: 083 329 5923 • katjajudo@iburst.co.za"),
+        ClubContact("West Rand Judo Association", "3 Octavia, 49 Otto Street, Krugersdorp North", "Office for NPC administration only — not a training venue")
+    ).forEachIndexed { index, club ->
+        WrjaContentCard(Modifier.fillMaxWidth().padding(top = 12.dp).wrjaReveal(index)) {
+            Text(club.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(8.dp))
+            Text(club.address, color = Color(0xFFF5F5F5), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(5.dp))
+            Text(club.details, color = WrjaMuted)
+            Spacer(Modifier.height(8.dp))
+            TextButton(
+                onClick = {
+                    openPublicWebsite(
+                        context,
+                        "https://www.google.com/maps/search/?api=1&query=${Uri.encode(club.address)}"
+                    )
+                },
+                contentPadding = PaddingValues(vertical = 2.dp)
+            ) {
+                Text("OPEN IN MAPS  ↗", color = WrjaGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
+            }
+        }
+    }
 }

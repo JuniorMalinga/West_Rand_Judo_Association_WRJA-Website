@@ -37,6 +37,7 @@ private val translations = mapOf(
     "book" to arrayOf("Book", "Bespreek", "Bhukha"),
     "news" to arrayOf("News", "Nuus", "Izindaba"),
     "gallery" to arrayOf("Gallery", "Galery", "Igalari"),
+    "faq" to arrayOf("FAQ", "Gereelde vrae", "Imibuzo Evame Ukubuzwa"),
     "contact" to arrayOf("Contact", "Kontak", "Xhumana"),
     "chat_assistant" to arrayOf("Chat Assistant", "Kletsassistent", "Umsizi Wengxoxo"),
     "log_out" to arrayOf("Log out", "Meld af", "Phuma"),
