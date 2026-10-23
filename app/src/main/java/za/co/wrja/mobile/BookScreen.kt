@@ -100,38 +100,38 @@ fun BookScreen() {
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Text(
-                text = "BOOK A SESSION",
+                text = localized("BOOK A SESSION", "BESPREEK 'N SESSIE", "BHUKHA ISESHINI"),
                 color = BookGold,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.ExtraBold
             )
 
-            Text(text = "Request a booking", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            Text(text = localized("Request a booking", "Versoek 'n bespreking", "Cela ukubhukha"), color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
 
             Text(
-                text = "Choose a program and enter your preferred session details. Times are South African time.",
+                text = localized("Choose a program and enter your preferred session details. Times are South African time.", "Kies 'n program en voer jou voorkeursessiebesonderhede in. Tye is Suid-Afrikaanse tyd.", "Khetha uhlelo bese ufaka imininingwane yeseshini oyithandayo. Izikhathi ezaseNingizimu Afrika."),
                 color = Color.LightGray,
                 fontSize = 13.sp
             )
 
             if (programsLoading) {
-                Text("Loading programs…", color = Color.LightGray)
+                Text(localized("Loading programs…", "Programme word gelaai…", "Kulayishwa izinhlelo…"), color = Color.LightGray)
             }
             programsError?.let { Text(it, color = Color(0xFFFFD1D1)) }
             if (!programsLoading && programs.isEmpty() && programsError == null) {
-                Text("No active programs are available for booking.", color = Color.LightGray)
+                Text(localized("No active programs are available for booking.", "Geen aktiewe programme is beskikbaar vir bespreking nie.", "Azikho izinhlelo ezisebenzayo ezitholakalayo zokubhukha."), color = Color.LightGray)
             }
             if (!programsLoading && programs.isEmpty() && !bookingSent) {
                 TextButton(onClick = { programsReload++ }, enabled = !submitting) {
-                    Text("Retry loading programs", color = BookGold)
+                    Text(localized("Retry loading programs", "Probeer weer om programme te laai", "Zama futhi ukulayisha izinhlelo"), color = BookGold)
                 }
             }
 
             BookDropdown(
                 enabled = formEnabled && !programsLoading && programs.isNotEmpty(),
-                label = "Program",
+                label = localized("Program", "Program", "Uhlelo"),
                 value = programs.firstOrNull { it.id == programId }?.name.orEmpty(),
-                placeholder = "Select a program",
+                placeholder = localized("Select a program", "Kies 'n program", "Khetha uhlelo"),
                 options = programs.map { it.name },
                 optionValues = programs.map { it.id },
                 onSelected = { programId = it }
@@ -139,15 +139,15 @@ fun BookScreen() {
 
             BookInput(
                 enabled = formEnabled,
-                label = "Full name",
+                label = localized("Full name", "Volle naam", "Igama eligcwele"),
                 value = fullName,
-                placeholder = "Your full name",
+                placeholder = localized("Your full name", "Jou volle naam", "Igama lakho eligcwele"),
                 onValueChange = { fullName = it }
             )
 
             BookInput(
                 enabled = formEnabled,
-                label = "Email address",
+                label = tr("email"),
                 value = email,
                 placeholder = "you@example.com",
                 keyboardType = KeyboardType.Email,
@@ -156,28 +156,28 @@ fun BookScreen() {
 
             BookInput(
                 enabled = formEnabled,
-                label = "Phone number",
+                label = localized("Phone number", "Telefoonnommer", "Inombolo yocingo"),
                 value = phone,
-                placeholder = "Your phone number",
+                placeholder = localized("Your phone number", "Jou telefoonnommer", "Inombolo yakho yocingo"),
                 keyboardType = KeyboardType.Phone,
                 onValueChange = { phone = it }
             )
 
             BookDropdown(
                 enabled = formEnabled,
-                label = "Payment method",
+                label = localized("Payment method", "Betaalmetode", "Indlela yokukhokha"),
                 value = paymentMethod,
-                placeholder = "Select a payment method",
+                placeholder = localized("Select a payment method", "Kies 'n betaalmetode", "Khetha indlela yokukhokha"),
                 options = listOf("EFT", "Cash", "Card"),
                 onSelected = { paymentMethod = it }
             )
 
             Column {
-                BookLabel("Preferred date")
+                BookLabel(localized("Preferred date", "Voorkeurdatum", "Usuku oluthandwayo"))
 
                 BookChoiceButton(
                     enabled = formEnabled,
-                    text = dateText.ifBlank { "Select a date" },
+                    text = dateText.ifBlank { localized("Select a date", "Kies 'n datum", "Khetha usuku") },
                     icon = Icons.Default.DateRange,
                     onClick = {
                         val calendar = Calendar.getInstance().apply {
@@ -206,11 +206,11 @@ fun BookScreen() {
             }
 
             Column {
-                BookLabel("Preferred time")
+                BookLabel(localized("Preferred time", "Voorkeurtyd", "Isikhathi esithandwayo"))
 
                 BookChoiceButton(
                     enabled = formEnabled,
-                    text = timeText.ifBlank { "Select a time" },
+                    text = timeText.ifBlank { localized("Select a time", "Kies 'n tyd", "Khetha isikhathi") },
                     icon = Icons.Default.Schedule,
                     onClick = {
                         TimePickerDialog(
@@ -229,9 +229,9 @@ fun BookScreen() {
 
             BookInput(
                 enabled = formEnabled,
-                label = "Notes (optional)",
+                label = localized("Notes (optional)", "Notas (opsioneel)", "Amanothi (ngokuzithandela)"),
                 value = notes,
-                placeholder = "Anything we should know before your session",
+                placeholder = localized("Anything we should know before your session", "Enigiets wat ons voor jou sessie moet weet", "Noma yini okufanele siyazi ngaphambi kweseshini yakho"),
                 multiline = true,
                 onValueChange = { notes = it }
             )
@@ -245,7 +245,7 @@ fun BookScreen() {
             }
 
             if (!SupabaseAuth.isLoggedIn) {
-                Text("Log in using the app menu before submitting.", color = Color.LightGray)
+                Text(localized("Log in using the app menu before submitting.", "Meld aan met die app-kieslys voordat jy indien.", "Ngena usebenzisa imenyu yohlelo ngaphambi kokuthumela."), color = Color.LightGray)
             }
 
             Button(
@@ -335,15 +335,14 @@ fun BookScreen() {
                 }
             ) {
                 Text(
-                    if (submitting) "SENDING…" else if (bookingSent) "REQUEST SENT" else "REQUEST BOOKING",
+                    if (submitting) localized("SENDING…", "STUUR…", "KUYATHUNYELWA…") else if (bookingSent) localized("REQUEST SENT", "VERSOEK GESTUUR", "ISICELO SITHUNYELWE") else localized("REQUEST BOOKING", "VERSOEK BESPREKING", "CELA UKUBHUKHA"),
                     fontWeight = FontWeight.Bold
                 )
             }
 
             if (bookingSent) {
                 Text(
-                    text = "Your booking request has been sent. " +
-                            "The club still needs to confirm your session. No payment has been taken.",
+                    text = localized("Your booking request has been sent. The club still needs to confirm your session. No payment has been taken.", "Jou besprekingsversoek is gestuur. Die klub moet nog jou sessie bevestig. Geen betaling is geneem nie.", "Isicelo sakho sokubhukha sithunyelwe. Iklabhu kusafanele iqinisekise iseshini yakho. Ayikho inkokhelo ethathiwe."),
                     color = Color.White,
                     fontSize = 13.sp
                 )
@@ -361,7 +360,7 @@ fun BookScreen() {
                     bookingSent = false
                     error = null
                 }) {
-                    Text("Make another request", color = BookGold)
+                    Text(localized("Make another request", "Maak nog 'n versoek", "Yenza esinye isicelo"), color = BookGold)
                 }
             }
         }

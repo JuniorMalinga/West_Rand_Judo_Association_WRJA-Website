@@ -3,6 +3,8 @@ package za.co.wrja.mobile
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
+import java.time.LocalDate
+import java.time.Period
 
 enum class AppLanguage(val code: String, val label: String) {
     ENGLISH("en", "English"),
@@ -72,4 +74,56 @@ fun tr(key: String): String {
         AppLanguage.ISIZULU -> 2
     }
     return translations[key]?.get(index) ?: key
+}
+
+/**
+ * Use this for content that is specific to a screen rather than a shared UI label.
+ * Keeping the language lookup in Compose makes the text update immediately when a
+ * member changes language from the navigation drawer.
+ */
+@Composable
+fun localized(english: String, afrikaans: String, isiZulu: String): String =
+    when (LocalAppLanguage.current) {
+        AppLanguage.ENGLISH -> english
+        AppLanguage.AFRIKAANS -> afrikaans
+        AppLanguage.ISIZULU -> isiZulu
+    }
+
+/** Only letters, spaces, apostrophes and hyphens are valid in a person's name. */
+fun sanitizePersonName(value: String): String =
+    value.filter { character ->
+        character.isLetter() || character == ' ' || character == '-' ||
+            character == '\'' || character == '’'
+    }
+
+fun isValidPersonName(value: String): Boolean {
+    val trimmed = value.trim()
+    return trimmed.length >= 2 && trimmed.any(Char::isLetter) &&
+        trimmed.all { character ->
+            character.isLetter() || character == ' ' || character == '-' ||
+                character == '\'' || character == '’'
+        }
+}
+
+fun isValidEmailAddress(value: String): Boolean =
+    android.util.Patterns.EMAIL_ADDRESS.matcher(value.trim()).matches()
+
+fun isValidRegistrationPassword(value: String): Boolean =
+    value.length >= 8 && value.any(Char::isLetter) && value.any(Char::isDigit)
+
+/** Keep telephone input readable while preventing letters and other invalid symbols. */
+fun sanitizePhoneNumber(value: String): String =
+    value.filter { character -> character.isDigit() || character in setOf('+', ' ', '-', '(', ')') }
+
+fun isValidPhoneNumber(value: String): Boolean {
+    val trimmed = value.trim()
+    return trimmed.count(Char::isDigit) in 7..15 &&
+        trimmed.all { character -> character.isDigit() || character in setOf('+', ' ', '-', '(', ')') }
+}
+
+fun isValidAdultDate(value: String): Boolean = try {
+    val birthDate = LocalDate.parse(value.trim())
+    !birthDate.isAfter(LocalDate.now()) && Period.between(birthDate, LocalDate.now()).years >= 18
+} catch (_: Exception) {
+    false
 }

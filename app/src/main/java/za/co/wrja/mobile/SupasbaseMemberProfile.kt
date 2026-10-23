@@ -82,7 +82,7 @@ fun SupabaseMemberProfile() {
         if (loading) {
             CircularProgressIndicator()
             Spacer(Modifier.height(12.dp))
-            Text("Loading your profile…")
+            Text(localized("Loading your profile…", "Jou profiel word gelaai…", "Kulayishwa iphrofayela yakho…"))
         } else {
             val current = data
 
@@ -92,12 +92,12 @@ fun SupabaseMemberProfile() {
                 val active = profile.optBoolean("is_active", false)
 
                 Text(
-                    "ACCOUNT DETAILS",
+                    localized("ACCOUNT DETAILS", "REKENINGBESONDERHEDE", "IMINININGWANE YE-AKHAWUNTI"),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
 
-                Text("Account type: $role")
+                Text("${localized("Account type", "Rekeningtipe", "Uhlobo lwe-akhawunti")}: $role")
                 Spacer(Modifier.height(12.dp))
 
                 if (!active) {
@@ -129,7 +129,7 @@ fun SupabaseMemberProfile() {
                     when (role) {
                         "athlete" -> {
                             Text(
-                                "ATHLETE DETAILS",
+                                localized("ATHLETE DETAILS", "ATLEETBESONDERHEDE", "IMINININGWANE YOMSUBATHI"),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold
                             )
@@ -193,7 +193,7 @@ fun SupabaseMemberProfile() {
 
                         "guardian" -> {
                             Text(
-                                "MY CHILDREN",
+                                localized("MY CHILDREN", "MY KINDERS", "IZINGANE ZAMI"),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold
                             )
@@ -237,7 +237,7 @@ fun SupabaseMemberProfile() {
                 enabled = !saving,
                 onClick = { refreshCount++ }
             ) {
-                Text("Refresh")
+                Text(localized("Refresh", "Verfris", "Vuselela"))
             }
         }
     }
@@ -276,8 +276,8 @@ private fun MemberEditForm(
     Column {
         OutlinedTextField(
             value = firstName,
-            onValueChange = { firstName = it },
-            label = { Text("First name") },
+            onValueChange = { firstName = sanitizePersonName(it) },
+            label = { Text(localized("First name", "Voornaam", "Igama lokuqala")) },
             singleLine = true,
             enabled = !busy,
             modifier = Modifier.fillMaxWidth()
@@ -287,8 +287,8 @@ private fun MemberEditForm(
 
         OutlinedTextField(
             value = lastName,
-            onValueChange = { lastName = it },
-            label = { Text("Last name") },
+            onValueChange = { lastName = sanitizePersonName(it) },
+            label = { Text(localized("Last name", "Van", "Isibongo")) },
             singleLine = true,
             enabled = !busy,
             modifier = Modifier.fillMaxWidth()
@@ -298,13 +298,13 @@ private fun MemberEditForm(
 
         OutlinedTextField(
             value = thirdField,
-            onValueChange = { thirdField = it },
+            onValueChange = { thirdField = if (athleteForm) it else sanitizePhoneNumber(it) },
             label = {
                 Text(
                     if (athleteForm) {
-                        "Date of birth — YYYY-MM-DD"
+                        localized("Date of birth — YYYY-MM-DD", "Geboortedatum — JJJJ-MM-DD", "Usuku lokuzalwa — YYYY-MM-DD")
                     } else {
-                        "Phone number"
+                        localized("Phone number", "Telefoonnommer", "Inombolo yocingo")
                     }
                 )
             },
@@ -319,7 +319,7 @@ private fun MemberEditForm(
             OutlinedTextField(
                 value = weight,
                 onValueChange = { weight = it },
-                label = { Text("Weight category") },
+                label = { Text(localized("Weight category", "Gewigskategorie", "Isigaba sesisindo")) },
                 singleLine = true,
                 enabled = !busy,
                 modifier = Modifier.fillMaxWidth()
@@ -336,11 +336,11 @@ private fun MemberEditForm(
         ) {
             Text(
                 if (busy) {
-                    "Saving…"
+                    localized("Saving…", "Stoor…", "Kuyalondolozwa…")
                 } else if (athleteForm) {
-                    "Save athlete details"
+                    localized("Save athlete details", "Stoor atleetbesonderhede", "Londoloza imininingwane yomsubathi")
                 } else {
-                    "Save account details"
+                    localized("Save account details", "Stoor rekeningbesonderhede", "Londoloza imininingwane ye-akhawunti")
                 }
             )
         }
@@ -372,22 +372,22 @@ private fun LinkedChildCard(link: JSONObject) {
 
                 Spacer(Modifier.height(8.dp))
 
-                Text("Date of birth: ${athlete.memberText("date_of_birth")}")
+                Text("${localized("Date of birth", "Geboortedatum", "Usuku lokuzalwa")}: ${athlete.memberText("date_of_birth")}")
 
                 Text(
-                    "Member number: " +
+                    "${localized("Member number", "Lidnommer", "Inombolo yelungu")}: " +
                             athlete.memberText("member_number")
                                 .ifBlank { "Not assigned" }
                 )
 
                 Text(
-                    "Weight category: " +
+                    "${localized("Weight category", "Gewigskategorie", "Isigaba sesisindo")}: " +
                             athlete.memberText("weight_category")
                                 .ifBlank { "Not assigned" }
                 )
 
                 Text(
-                    "Group: " +
+                    "${localized("Group", "Groep", "Iqembu")}: " +
                             athlete.memberText("group_category")
                                 .ifBlank { "Not assigned" }
                 )
@@ -395,15 +395,15 @@ private fun LinkedChildCard(link: JSONObject) {
                 val relationship = link.memberText("relationship_type")
 
                 if (relationship.isNotBlank()) {
-                    Text("Relationship: $relationship")
+                    Text("${localized("Relationship", "Verwantskap", "Ubudlelwano")}: $relationship")
                 }
 
                 if (link.optBoolean("is_primary", false)) {
-                    Text("You are the primary guardian.")
+                    Text(localized("You are the primary guardian.", "Jy is die primêre voog.", "Ungumnakekeli oyinhloko."))
                 }
 
                 if (!athlete.optBoolean("is_active", false)) {
-                    Text("Athlete record inactive.")
+                    Text(localized("Athlete record inactive.", "Atleetrekord is onaktief.", "Irekhodi lomsubathi alisebenzi."))
                 }
             }
         }

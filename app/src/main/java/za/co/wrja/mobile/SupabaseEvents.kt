@@ -140,18 +140,18 @@ fun SupabaseEvents() {
             loading -> {
                 CircularProgressIndicator()
                 Spacer(modifier = Modifier.height(12.dp))
-                Text("Loading events…")
+                Text(localized("Loading events…", "Geleenthede word gelaai…", "Kulayishwa imicimbi…"))
             }
 
             error != null -> {
                 Text(
-                    text = error ?: "Unable to load events.",
+                    text = error ?: localized("Unable to load events.", "Kon nie geleenthede laai nie.", "Ayikwazanga ukulayisha imicimbi."),
                     color = MaterialTheme.colorScheme.error
                 )
             }
 
             events.isEmpty() -> {
-                Text("No published events are available yet.")
+                Text(localized("No published events are available yet.", "Geen gepubliseerde geleenthede is nog beskikbaar nie.", "Akukho micimbi eshicilelwe etholakalayo okwamanje."))
             }
 
             else -> {
@@ -170,14 +170,14 @@ fun SupabaseEvents() {
                             )
 
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text("Date: ${event.date}")
+                            Text("${localized("Date", "Datum", "Usuku")}: ${event.date}")
 
                             if (event.startTime.isNotBlank()) {
-                                Text("Time: ${event.startTime}")
+                                Text("${localized("Time", "Tyd", "Isikhathi")}: ${event.startTime}")
                             }
 
                             if (event.location.isNotBlank()) {
-                                Text("Location: ${event.location}")
+                                Text("${localized("Location", "Plek", "Indawo")}: ${event.location}")
                             }
 
                             if (event.description.isNotBlank()) {
@@ -188,14 +188,14 @@ fun SupabaseEvents() {
                             if (event.registrationDeadline.isNotBlank()) {
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    "Registration closes: " +
+                                    "${localized("Registration closes", "Registrasie sluit", "Ukubhalisa kuyavalwa")}: " +
                                             event.registrationDeadline
                                 )
                             }
 
                             Spacer(modifier = Modifier.height(10.dp))
                             Text(
-                                "VIEW EVENT DETAILS  →",
+                                localized("VIEW EVENT DETAILS  →", "BEKYK GELEENTHEIDSBESONDERHEDE  →", "BONA IMINININGWANE YOMCIMBI  →"),
                                 color = MaterialTheme.colorScheme.primary,
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold
@@ -208,7 +208,7 @@ fun SupabaseEvents() {
 
         if (!loading) {
             TextButton(onClick = { refreshCount++ }) {
-                Text(if (error == null) "Refresh" else "Retry")
+                Text(if (error == null) localized("Refresh", "Verfris", "Vuselela") else localized("Retry", "Probeer weer", "Zama futhi"))
             }
         }
     }
@@ -219,12 +219,12 @@ fun SupabaseEvents() {
             title = { Text(event.title, fontWeight = FontWeight.Bold) },
             text = {
                 Column {
-                    Text("Date: ${event.date}")
-                    if (event.startTime.isNotBlank()) Text("Time: ${event.startTime}")
-                    if (event.location.isNotBlank()) Text("Location: ${event.location}")
+                    Text("${localized("Date", "Datum", "Usuku")}: ${event.date}")
+                    if (event.startTime.isNotBlank()) Text("${localized("Time", "Tyd", "Isikhathi")}: ${event.startTime}")
+                    if (event.location.isNotBlank()) Text("${localized("Location", "Plek", "Indawo")}: ${event.location}")
                     if (event.registrationDeadline.isNotBlank()) {
                         Spacer(Modifier.height(8.dp))
-                        Text("Registration closes: ${event.registrationDeadline}")
+                        Text("${localized("Registration closes", "Registrasie sluit", "Ukubhalisa kuyavalwa")}: ${event.registrationDeadline}")
                     }
                     if (event.description.isNotBlank()) {
                         Spacer(Modifier.height(12.dp))
@@ -233,7 +233,7 @@ fun SupabaseEvents() {
                 }
             },
             confirmButton = {
-                TextButton(onClick = { selectedEvent = null }) { Text("Close") }
+                TextButton(onClick = { selectedEvent = null }) { Text(localized("Close", "Sluit", "Vala")) }
             }
         )
     }

@@ -1,6 +1,5 @@
 package za.co.wrja.mobile
 
-import android.util.Patterns
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -30,7 +29,10 @@ fun SupabaseAuthScreen(
 
     var firstName by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
+    var firstNameInputRejected by remember { mutableStateOf(false) }
+    var lastNameInputRejected by remember { mutableStateOf(false) }
     var phone by remember { mutableStateOf("") }
+    var phoneInputRejected by remember { mutableStateOf(false) }
     var email by remember { mutableStateOf("") }
 
     // Passwords are not saved to disk or saved instance state.
@@ -46,6 +48,16 @@ fun SupabaseAuthScreen(
 
     val scope = rememberCoroutineScope()
     val gold = Color(0xFFF1BD16)
+    val invalidNameError = localized("Enter a first and last name using letters only.", "Voer 'n voor- en van in met slegs letters.", "Faka igama lokuqala nesibongo usebenzisa izinhlamvu kuphela.")
+    val invalidEmailError = localized("Enter a valid email address.", "Voer 'n geldige e-posadres in.", "Faka ikheli le-imeyili elivumelekile.")
+    val missingPasswordError = localized("Enter your password.", "Voer jou wagwoord in.", "Faka iphasiwedi yakho.")
+    val invalidDateError = localized("Enter a valid date of birth. Athletes must be at least 18.", "Voer 'n geldige geboortedatum in. Atlete moet minstens 18 wees.", "Faka usuku lokuzalwa oluvumelekile. Abasubathi kufanele babe neminyaka engu-18 okungenani.")
+    val weakPasswordError = localized("Use 8 or more characters, including a letter and a number.", "Gebruik 8 of meer karakters, insluitend 'n letter en 'n syfer.", "Sebenzisa izinhlamvu eziyi-8 noma ngaphezulu, kufaka uhlamvu nenombolo.")
+    val mismatchPasswordError = localized("The passwords do not match.", "Die wagwoorde stem nie ooreen nie.", "Amaphasiwedi awafani.")
+    val confirmationNotice = localized("Check your email for a confirmation link, then return here to log in. If you already have an account, log in.", "Gaan jou e-pos na vir 'n bevestigingskakel, en keer dan hierheen terug om aan te meld. Meld aan as jy reeds 'n rekening het.", "Hlola i-imeyili yakho ukuze uthole isixhumanisi sokuqinisekisa, bese ubuya lapha ukuze ungene. Ngena uma usuvele une-akhawunti.")
+    val connectionError = localized("Could not connect. Check your internet connection and try again.", "Kon nie koppel nie. Gaan jou internetverbinding na en probeer weer.", "Ayikwazanga ukuxhuma. Hlola uxhumano lwakho lwe-inthanethi bese uzama futhi.")
+    val authenticationFailedError = localized("Authentication failed.", "Stawing het misluk.", "Ukuqinisekisa kwehlulekile.")
+    val invalidPhoneError = localized("Enter a valid phone number with at least 7 digits.", "Voer 'n geldige telefoonnommer met minstens 7 syfers in.", "Faka inombolo yocingo evumelekile enezinombolo okungenani eziyi-7.")
 
     BackHandler(enabled = signUpMode && !busy) {
         signUpMode = false
@@ -62,6 +74,9 @@ fun SupabaseAuthScreen(
                 confirmPassword = ""
                 dateOfBirth = ""
                 acceptedTerms = false
+                phoneInputRejected = false
+                firstNameInputRejected = false
+                lastNameInputRejected = false
                 error = null
                 notice = null
             },
@@ -94,7 +109,7 @@ fun SupabaseAuthScreen(
         Spacer(modifier = Modifier.height(12.dp))
 
         Text(
-            text = if (signUpMode) "Create your account" else "Welcome back",
+            text = localized("Create your account", "Skep jou rekening", "Dala i-akhawunti yakho"),
             style = MaterialTheme.typography.titleLarge
         )
 
@@ -103,8 +118,19 @@ fun SupabaseAuthScreen(
         if (signUpMode) {
             OutlinedTextField(
                 value = firstName,
-                onValueChange = { firstName = it },
-                label = { Text("First name") },
+                onValueChange = { rawValue ->
+                    val cleaned = sanitizePersonName(rawValue)
+                    firstNameInputRejected = rawValue != cleaned
+                    firstName = cleaned
+                    error = null
+                },
+                label = { Text(localized("First name", "Voornaam", "Igama lokuqala")) },
+                isError = firstNameInputRejected || (firstName.isNotEmpty() && !isValidPersonName(firstName)),
+                supportingText = {
+                    if (firstNameInputRejected || (firstName.isNotEmpty() && !isValidPersonName(firstName))) {
+                        Text(localized("Use letters only in your name.", "Gebruik slegs letters in jou naam.", "Sebenzisa izinhlamvu kuphela egameni lakho."))
+                    }
+                },
                 singleLine = true,
                 enabled = !busy,
                 modifier = Modifier.fillMaxWidth()
@@ -114,8 +140,19 @@ fun SupabaseAuthScreen(
 
             OutlinedTextField(
                 value = lastName,
-                onValueChange = { lastName = it },
-                label = { Text("Last name") },
+                onValueChange = { rawValue ->
+                    val cleaned = sanitizePersonName(rawValue)
+                    lastNameInputRejected = rawValue != cleaned
+                    lastName = cleaned
+                    error = null
+                },
+                label = { Text(localized("Last name", "Van", "Isibongo")) },
+                isError = lastNameInputRejected || (lastName.isNotEmpty() && !isValidPersonName(lastName)),
+                supportingText = {
+                    if (lastNameInputRejected || (lastName.isNotEmpty() && !isValidPersonName(lastName))) {
+                        Text(localized("Use letters only in your name.", "Gebruik slegs letters in jou naam.", "Sebenzisa izinhlamvu kuphela egameni lakho."))
+                    }
+                },
                 singleLine = true,
                 enabled = !busy,
                 modifier = Modifier.fillMaxWidth()
@@ -125,8 +162,19 @@ fun SupabaseAuthScreen(
 
             OutlinedTextField(
                 value = phone,
-                onValueChange = { phone = it },
-                label = { Text("Phone number — optional") },
+                onValueChange = { rawValue ->
+                    val cleaned = sanitizePhoneNumber(rawValue)
+                    phoneInputRejected = rawValue != cleaned
+                    phone = cleaned
+                    error = null
+                },
+                label = { Text(localized("Phone number — optional", "Telefoonnommer — opsioneel", "Inombolo yocingo — ngokuzithandela")) },
+                isError = phoneInputRejected || (phone.isNotBlank() && !isValidPhoneNumber(phone)),
+                supportingText = {
+                    if (phoneInputRejected || (phone.isNotBlank() && !isValidPhoneNumber(phone))) {
+                        Text(localized("Use digits, spaces, +, - or parentheses only.", "Gebruik slegs syfers, spasies, +, - of hakies.", "Sebenzisa izinombolo, izikhala, +, - noma abakaki kuphela."))
+                    }
+                },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Phone
                 ),
@@ -145,14 +193,14 @@ fun SupabaseAuthScreen(
                     selected = role == "athlete",
                     onClick = { role = "athlete" },
                     enabled = !busy,
-                    label = { Text("Athlete") }
+                    label = { Text(localized("Athlete", "Atleet", "Umsubathi")) }
                 )
 
                 FilterChip(
                     selected = role == "guardian",
                     onClick = { role = "guardian" },
                     enabled = !busy,
-                    label = { Text("Parent / Guardian") }
+                    label = { Text(localized("Parent / Guardian", "Ouer / Voog", "Umzali / Umnakekeli")) }
                 )
             }
         }
@@ -164,10 +212,10 @@ fun SupabaseAuthScreen(
                     dateOfBirth = it
                     error = null
                 },
-                label = { Text("Date of birth") },
+                label = { Text(localized("Date of birth", "Geboortedatum", "Usuku lokuzalwa")) },
                 placeholder = { Text("YYYY-MM-DD") },
                 supportingText = {
-                    Text("You must be 18 or older to register as an athlete.")
+                    Text(localized("You must be 18 or older to register as an athlete.", "Jy moet 18 of ouer wees om as 'n atleet te registreer.", "Kufanele ube neminyaka engu-18 noma ngaphezulu ukuze ubhalise njengomsubathi."))
                 },
                 singleLine = true,
                 enabled = !busy,
@@ -180,7 +228,7 @@ fun SupabaseAuthScreen(
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("Email address") },
+            label = { Text(tr("email")) },
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Email
             ),
@@ -194,7 +242,7 @@ fun SupabaseAuthScreen(
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Password") },
+            label = { Text(tr("password")) },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Password
@@ -210,7 +258,7 @@ fun SupabaseAuthScreen(
             OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
-                label = { Text("Confirm password") },
+                label = { Text(localized("Confirm password", "Bevestig wagwoord", "Qinisekisa iphasiwedi")) },
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password
@@ -238,8 +286,9 @@ fun SupabaseAuthScreen(
                 )
 
                 Text(
-                    text = "I agree to the club's terms and privacy policy",
+                    text = localized("I agree to the club's terms and privacy policy", "Ek stem in tot die klub se bepalings en privaatheidsbeleid", "Ngiyavumelana nemigomo yeklabhu nenqubomgomo yobumfihlo"),
                     style = MaterialTheme.typography.bodySmall,
+                    color = Color.White,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -271,23 +320,26 @@ fun SupabaseAuthScreen(
                 notice = null
 
                 val validationError = when {
-                    !Patterns.EMAIL_ADDRESS
-                        .matcher(email.trim())
-                        .matches() ->
-                        "Enter a valid email address."
+                    !isValidPersonName(firstName) || !isValidPersonName(lastName) ->
+                        invalidNameError
+
+                    !isValidEmailAddress(email) ->
+                        invalidEmailError
+
+                    phone.isNotBlank() && !isValidPhoneNumber(phone) ->
+                        invalidPhoneError
 
                     password.isBlank() ->
-                        "Enter your password."
+                        missingPasswordError
 
-                    signUpMode &&
-                            (firstName.isBlank() || lastName.isBlank()) ->
-                        "Enter your first and last names."
+                    role == "athlete" && !isValidAdultDate(dateOfBirth) ->
+                        invalidDateError
 
-                    signUpMode && password.length < 8 ->
-                        "Use at least 8 characters for your password."
+                    !isValidRegistrationPassword(password) ->
+                        weakPasswordError
 
                     signUpMode && password != confirmPassword ->
-                        "The passwords do not match."
+                        mismatchPasswordError
 
                     else -> null
                 }
@@ -317,9 +369,7 @@ fun SupabaseAuthScreen(
                                     confirmPassword = ""
 
                                     notice =
-                                        "Check your email for a confirmation " +
-                                                "link, then return here to log in. " +
-                                                "If you already have an account, log in."
+                                        confirmationNotice
                                 }
                             } else {
                                 SupabaseAuth.login(email, password)
@@ -328,10 +378,9 @@ fun SupabaseAuthScreen(
                             throw cancelled
                         } catch (failure: Exception) {
                             error = if (failure is IOException) {
-                                "Could not connect. Check your internet " +
-                                        "connection and try again."
+                                connectionError
                             } else {
-                                failure.message ?: "Authentication failed."
+                                failure.message ?: authenticationFailedError
                             }
                         } finally {
                             busy = false
@@ -347,7 +396,7 @@ fun SupabaseAuthScreen(
                     strokeWidth = 2.dp
                 )
             } else {
-                Text(if (signUpMode) "CREATE ACCOUNT" else "LOG IN")
+                Text(if (signUpMode) localized("CREATE ACCOUNT", "SKEP REKENING", "DALA I-AKHAWUNTI") else tr("login").uppercase())
             }
         }
 
@@ -363,9 +412,9 @@ fun SupabaseAuthScreen(
         ) {
             Text(
                 if (signUpMode) {
-                    "Already have an account? Log in"
+                    localized("Already have an account? Log in", "Het jy reeds 'n rekening? Meld aan", "Usunayo i-akhawunti? Ngena")
                 } else {
-                    "Don't have an account? Sign up"
+                    localized("Don't have an account? Sign up", "Het jy nie 'n rekening nie? Registreer", "Awunayo i-akhawunti? Bhalisa")
                 }
             )
         }

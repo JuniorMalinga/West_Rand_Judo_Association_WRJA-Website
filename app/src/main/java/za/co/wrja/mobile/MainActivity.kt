@@ -214,14 +214,15 @@ class MainActivity : FragmentActivity() {
         return
     }
     val scope = rememberCoroutineScope()
+    val changeLanguage: (AppLanguage) -> Unit = { selected ->
+        language = selected
+        LanguageStore.save(context, selected)
+    }
 
     CompositionLocalProvider(LocalAppLanguage provides language) {
     if (!SupabaseAuth.isLoggedIn) {
         SupabaseAuthScreen(
-            onLanguageChanged = { selected ->
-                language = selected
-                LanguageStore.save(context, selected)
-            },
+            onLanguageChanged = changeLanguage,
             onFingerprintUnlock = { onError ->
                 if (activity != null) {
                     activity.requestFingerprintUnlock(onError)
@@ -259,7 +260,8 @@ class MainActivity : FragmentActivity() {
                     }
                 }
             },
-            update = { screen = it }
+            update = { screen = it },
+            onLanguageChanged = changeLanguage
         )
 
         if (loggingOut) {
@@ -380,6 +382,11 @@ internal fun LoginScreen(
     var error by remember { mutableStateOf<String?>(null) }
 
     val scope = rememberCoroutineScope()
+    val missingEmailError = localized("Enter your email address.", "Voer jou e-posadres in.", "Faka ikheli lakho le-imeyili.")
+    val invalidEmailError = localized("Enter a valid email address.", "Voer 'n geldige e-posadres in.", "Faka ikheli le-imeyili elivumelekile.")
+    val missingPasswordError = localized("Enter your password.", "Voer jou wagwoord in.", "Faka iphasiwedi yakho.")
+    val connectionError = localized("Could not connect. Check your connection.", "Kon nie koppel nie. Gaan jou verbinding na.", "Ayikwazanga ukuxhuma. Hlola uxhumano lwakho.")
+    val loginFailedError = localized("Login failed.", "Aanmelding het misluk.", "Ukungena kwehlulekile.")
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(OffWhite),
@@ -508,7 +515,7 @@ internal fun LoginScreen(
                             enabled = !busy,
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = GoldDark)
-                        ) { Text("USE FINGERPRINT", fontWeight = FontWeight.Bold) }
+                        ) { Text(localized("USE FINGERPRINT", "GEBRUIK VINGERAFDRUK", "SEBENZISA ISIGXIVIZO SOMUNWE"), fontWeight = FontWeight.Bold) }
                         Spacer(Modifier.height(10.dp))
                     }
 
@@ -516,8 +523,12 @@ internal fun LoginScreen(
                         onClick = {
                             error = null
 
-                            if (email.isBlank() || password.isBlank()) {
-                                error = "Enter your email and password."
+                            if (email.isBlank()) {
+                                error = missingEmailError
+                            } else if (!isValidEmailAddress(email)) {
+                                error = invalidEmailError
+                            } else if (password.isBlank()) {
+                                error = missingPasswordError
                             } else {
                                 busy = true
 
@@ -536,11 +547,10 @@ internal fun LoginScreen(
                                     } catch (failure: Exception) {
                                         error =
                                             if (failure is java.io.IOException) {
-                                                "Could not connect. " +
-                                                        "Check your connection."
+                                                connectionError
                                             } else {
                                                 failure.message
-                                                    ?: "Login failed."
+                                                    ?: loginFailedError
                                             }
                                     } finally {
                                         busy = false
@@ -598,7 +608,12 @@ internal fun LoginScreen(
 @Composable private fun RowScope.Toggle(text: String, active: Boolean, action: () -> Unit) = Text(text, Modifier.weight(1f).background(if (active) Gold else OffWhite).clickable { action() }.padding(13.dp), textAlign = TextAlign.Center, fontSize = 11.sp, fontWeight = FontWeight.Bold)
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable private fun MainSite(initial: String, logout: () -> Unit, update: (String) -> Unit) {
+@Composable private fun MainSite(
+    initial: String,
+    logout: () -> Unit,
+    update: (String) -> Unit,
+    onLanguageChanged: (AppLanguage) -> Unit
+) {
     var page by rememberSaveable { mutableStateOf(initial) }
     val drawer = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -628,7 +643,20 @@ internal fun LoginScreen(
                             )
                         )
                     }
-                    Spacer(Modifier.weight(1f)); HorizontalDivider(color = Color(0xFF343434), modifier = Modifier.padding(horizontal = 16.dp))
+                    Spacer(Modifier.height(12.dp))
+                    HorizontalDivider(color = Color(0xFF343434), modifier = Modifier.padding(horizontal = 16.dp))
+                    Text(
+                        tr("change_language").uppercase(),
+                        modifier = Modifier.padding(start = 22.dp, top = 18.dp, bottom = 8.dp),
+                        color = Gold,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.sp
+                    )
+                    Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                        LanguageSelector(onLanguageChanged)
+                    }
+                    Spacer(Modifier.height(16.dp))
+                    HorizontalDivider(color = Color(0xFF343434), modifier = Modifier.padding(horizontal = 16.dp))
                     Text(tr("log_out").uppercase(), Modifier.fillMaxWidth().clickable { logout() }.padding(22.dp), color = Gold, fontWeight = FontWeight.Bold)
                 }
             }
@@ -637,7 +665,7 @@ internal fun LoginScreen(
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Column { Text("WEST RAND JUDO", fontWeight = FontWeight.Black, fontSize = 16.sp); Text("DISCIPLINE • RESPECT • EXCELLENCE", color = Gold, fontSize = 8.sp, letterSpacing = 0.8.sp) } },
+                    title = { Column { Text("WEST RAND JUDO", fontWeight = FontWeight.Black, fontSize = 16.sp); Text(localized("DISCIPLINE • RESPECT • EXCELLENCE", "DISSIPLINE • RESPEK • UITNEMENDHEID", "ISIMILO • INHLONIPHO • UBUHLE"), color = Gold, fontSize = 8.sp, letterSpacing = 0.8.sp) } },
                     navigationIcon = { IconButton({ scope.launch { drawer.open() } }) { Icon(Icons.Default.Menu, "Menu") } },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Charcoal, scrolledContainerColor = Charcoal2, titleContentColor = Color.White, navigationIconContentColor = Color.White)
                 )
@@ -658,7 +686,18 @@ internal fun LoginScreen(
 }
 
 @Composable private fun SitePage(page: String, modifier: Modifier, onNavigate: (String) -> Unit) {
-    val descriptions = mapOf("home" to "Building discipline, respect, and excellence through judo for athletes of all ages across the West Rand community.", "about" to "Building character on and off the mat. We develop confident, disciplined and respectful individuals through judo.", "events" to "Club gradings, competitions and training activities.", "programs" to "Judo programmes for children and adults at every level.","book" to "Choose your program and preferred training session.", "news" to "Competition results and achievements from WRJA athletes.", "gallery" to "Training, competition and community moments.", "faq" to "Answers to common questions from new judoka, parents and returning athletes.", "contact" to "Send us a message or contact our training venues.", "chat assistant" to "Your WRJA guide for training, programmes, events and club information.")
+    val descriptions = mapOf(
+        "home" to localized("Building discipline, respect, and excellence through judo for athletes of all ages across the West Rand community.", "Bou dissipline, respek en uitnemendheid deur judo vir atlete van alle ouderdomme in die Wes-Rand-gemeenskap.", "Sakha isimilo, inhlonipho nobuhle nge-judo kubasubathi bayo yonke iminyaka emphakathini wase-West Rand."),
+        "about" to localized("Building character on and off the mat. We develop confident, disciplined and respectful individuals through judo.", "Bou karakter op en van die mat af. Ons ontwikkel selfversekerde, gedissiplineerde en respekvolle mense deur judo.", "Sakha isimilo ngaphakathi nangaphandle komata. Sithuthukisa abantu abazethembayo, abanesimilo nabahloniphekile nge-judo."),
+        "events" to localized("Club gradings, competitions and training activities.", "Klubgraderings, kompetisies en oefenaktiwiteite.", "Ukukleliswa kweklabhu, imincintiswano nemisebenzi yokuqeqesha."),
+        "programs" to localized("Judo programmes for children and adults at every level.", "Judo-programme vir kinders en volwassenes op elke vlak.", "Izinhlelo ze-judo zezingane nabantu abadala kuwo wonke amazinga."),
+        "book" to localized("Choose your programme and preferred training session.", "Kies jou program en voorkeur-oefensessie.", "Khetha uhlelo lwakho neseshini yokuqeqesha oyithandayo."),
+        "news" to localized("Competition results and achievements from WRJA athletes.", "Kompetisie-uitslae en prestasies van WRJA-atlete.", "Imiphumela yemincintiswano nezimpumelelo zabasubathi be-WRJA."),
+        "gallery" to localized("Training, competition and community moments.", "Opleiding-, kompetisie- en gemeenskaps-oomblikke.", "Izikhathi zokuqeqesha, imincintiswano nezomphakathi."),
+        "faq" to localized("Answers to common questions from new judoka, parents and returning athletes.", "Antwoorde op algemene vrae van nuwe judoka, ouers en terugkerende atlete.", "Izimpendulo zemibuzo evamile evela kuma-judoka amasha, abazali nabasubathi ababuyayo."),
+        "contact" to localized("Send us a message or contact our training venues.", "Stuur vir ons 'n boodskap of kontak ons oefenplekke.", "Sithumele umlayezo noma uxhumane nezindawo zethu zokuqeqesha."),
+        "chat assistant" to localized("Your WRJA guide for training, programmes, events and club information.", "Jou WRJA-gids vir opleiding, programme, geleenthede en klub-inligting.", "Umhlahlandlela wakho wakwa-WRJA wokuqeqesha, izinhlelo, imicimbi nolwazi lweklabhu.")
+    )
     val title = when (page) { "home" -> tr("home"); "my profile" -> tr("my_profile"); "about" -> tr("about"); "events" -> tr("events"); "programs" -> tr("programs"); "book" -> tr("book"); "news" -> tr("news"); "gallery" -> tr("gallery"); "faq" -> tr("faq"); "contact" -> tr("contact"); "chat assistant" -> tr("chat_assistant"); else -> page.replaceFirstChar { it.uppercase() } }
     LazyColumn(modifier.fillMaxSize().background(Charcoal)) {
         item {
@@ -666,8 +705,8 @@ internal fun LoginScreen(
                 if (page == "home") Image(painterResource(R.drawable.landing_1), "WRJA members training together", Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0x44000000), Charcoal))))
                 Column(Modifier.padding(28.dp), horizontalAlignment = if (page == "home") Alignment.Start else Alignment.CenterHorizontally) {
-                    Text(if (page == "home") "WELCOME TO\nWEST RAND JUDO\nASSOCIATION" else title.uppercase(), color = Color.White, fontSize = if (page == "home") 29.sp else 29.sp, fontWeight = FontWeight.Black, textAlign = if (page == "home") TextAlign.Start else TextAlign.Center)
-                    Spacer(Modifier.height(7.dp)); Text(if (page == "home") "DISCIPLINE  •  RESPECT  •  EXCELLENCE" else "HOME  /  $title", color = Gold, fontSize = 11.sp, letterSpacing = 1.sp, fontWeight = FontWeight.Bold)
+                    Text(if (page == "home") localized("WELCOME TO\nWEST RAND JUDO\nASSOCIATION", "WELKOM BY\nWEST RAND JUDO\nASSOCIATION", "SIYAKWAMUKELA E\nWEST RAND JUDO\nASSOCIATION") else title.uppercase(), color = Color.White, fontSize = if (page == "home") 29.sp else 29.sp, fontWeight = FontWeight.Black, textAlign = if (page == "home") TextAlign.Start else TextAlign.Center)
+                    Spacer(Modifier.height(7.dp)); Text(if (page == "home") localized("DISCIPLINE  •  RESPECT  •  EXCELLENCE", "DISSIPLINE  •  RESPEK  •  UITNEMENDHEID", "ISIMILO  •  INHLONIPHO  •  UBUHLE") else "${tr("home").uppercase()}  /  $title", color = Gold, fontSize = 11.sp, letterSpacing = 1.sp, fontWeight = FontWeight.Bold)
                     if (page == "home") {
                         Spacer(Modifier.height(14.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -675,13 +714,13 @@ internal fun LoginScreen(
                                 onClick = { onNavigate("contact") },
                                 modifier = Modifier.height(44.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Charcoal)
-                            ) { Text("CONTACT THE CLUB", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold) }
+                            ) { Text(localized("CONTACT THE CLUB", "KONTAK DIE KLUB", "XHUMANA NEKLABHU"), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold) }
                             OutlinedButton(
                                 onClick = { onNavigate("about") },
                                 modifier = Modifier.height(44.dp),
                                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Ink),
                                 border = androidx.compose.foundation.BorderStroke(1.dp, Gold)
-                            ) { Text("LEARN MORE", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold) }
+                            ) { Text(localized("LEARN MORE", "LEES MEER", "FUNDA KABANZI"), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold) }
                         }
                     }
                 }
@@ -768,12 +807,12 @@ internal fun LoginScreen(
 @Composable private fun ContactForm() {
     var name by remember { mutableStateOf("") }; var email by remember { mutableStateOf("") }; var message by remember { mutableStateOf("") }
     WrjaContentCard(Modifier.fillMaxWidth().wrjaReveal()) {
-        Text("SEND US A MESSAGE", color = Gold, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.ExtraBold)
-        Spacer(Modifier.height(6.dp)); Text("We’ll make sure your message reaches the right WRJA team.", color = Muted, style = MaterialTheme.typography.bodySmall)
-        Spacer(Modifier.height(18.dp)); OutlinedTextField(name, { name = it }, label = { Text("Your name") }, modifier = Modifier.fillMaxWidth())
-        Spacer(Modifier.height(10.dp)); OutlinedTextField(email, { email = it }, label = { Text("Email address") }, modifier = Modifier.fillMaxWidth())
-        Spacer(Modifier.height(10.dp)); OutlinedTextField(message, { message = it }, label = { Text("Message") }, minLines = 3, modifier = Modifier.fillMaxWidth())
-        Spacer(Modifier.height(16.dp)); Button({}, Modifier.fillMaxWidth().height(50.dp), colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Charcoal)) { Text("SEND MESSAGE", fontWeight = FontWeight.Bold) }
+        Text(localized("SEND US A MESSAGE", "STUUR ONS 'N BOODSKAP", "SITHUMELE UMLAYEZO"), color = Gold, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.ExtraBold)
+        Spacer(Modifier.height(6.dp)); Text(localized("We’ll make sure your message reaches the right WRJA team.", "Ons sal seker maak jou boodskap bereik die regte WRJA-span.", "Sizoqinisekisa ukuthi umlayezo wakho ufika ethimbeni elilungile le-WRJA."), color = Muted, style = MaterialTheme.typography.bodySmall)
+        Spacer(Modifier.height(18.dp)); OutlinedTextField(name, { name = it }, label = { Text(localized("Your name", "Jou naam", "Igama lakho")) }, modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(10.dp)); OutlinedTextField(email, { email = it }, label = { Text(tr("email")) }, modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(10.dp)); OutlinedTextField(message, { message = it }, label = { Text(localized("Message", "Boodskap", "Umlayezo")) }, minLines = 3, modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(16.dp)); Button({}, Modifier.fillMaxWidth().height(50.dp), colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Charcoal)) { Text(localized("SEND MESSAGE", "STUUR BOODSKAP", "THUMELA UMLAYEZO"), fontWeight = FontWeight.Bold) }
     }
 }
 

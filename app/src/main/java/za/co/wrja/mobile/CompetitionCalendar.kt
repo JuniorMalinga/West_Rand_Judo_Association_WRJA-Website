@@ -163,31 +163,31 @@ fun CompetitionCalendar() {
         )
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("Gold = competition day", color = CalendarMuted,
+            Text(localized("Gold = competition day", "Goud = kompetisiedag", "Igolide = usuku lomncintiswano"), color = CalendarMuted,
                 modifier = Modifier.weight(1f), fontSize = 13.sp)
             TextButton(enabled = !loading, onClick = { reload++ }) {
-                Text("Refresh", color = CalendarGold)
+                Text(localized("Refresh", "Verfris", "Vuselela"), color = CalendarGold)
             }
         }
         when {
             loading || (loadedMonth != visibleMonth && error == null) -> {
                 LinearProgressIndicator(Modifier.fillMaxWidth(), color = CalendarGold)
-                Text("Loading competition dates…", color = CalendarMuted)
+                Text(localized("Loading competition dates…", "Kompetisiedatums word gelaai…", "Kulayishwa izinsuku zemincintiswano…"), color = CalendarMuted)
             }
             error != null -> Text(error.orEmpty(), color = Color(0xFFFFD1D1))
             ready -> {
                 val date = selectedDate?.let { LocalDate.parse(it) }
                 if (date == null) {
                     Text(
-                        if (competitions.isEmpty()) "No published competitions this month."
-                        else "Tap a date to see its competitions. Swipe or use the arrows to change month.",
+                        if (competitions.isEmpty()) localized("No published competitions this month.", "Geen gepubliseerde kompetisies hierdie maand nie.", "Ayikho imincintiswano eshicilelwe kule nyanga.")
+                        else localized("Tap a date to see its competitions. Swipe or use the arrows to change month.", "Tik 'n datum om sy kompetisies te sien. Vee of gebruik die pyltjies om maand te verander.", "Thepha usuku ukuze ubone imincintiswano yalo. Swayipha noma usebenzise imicibisholo ukushintsha inyanga."),
                         color = CalendarMuted, fontSize = 13.sp
                     )
                 } else {
                     Text(date.format(DateLabel), fontWeight = FontWeight.Bold)
                     val selectedCompetitions = byDate[date].orEmpty()
                     if (selectedCompetitions.isEmpty()) {
-                        Text("No published competitions on this date.", color = CalendarMuted)
+                        Text(localized("No published competitions on this date.", "Geen gepubliseerde kompetisies op hierdie datum nie.", "Ayikho imincintiswano eshicilelwe ngalolu suku."), color = CalendarMuted)
                     }
                     selectedCompetitions.forEach { competition ->
                         Card(
@@ -198,7 +198,7 @@ fun CompetitionCalendar() {
                         ) {
                             Column(Modifier.padding(14.dp)) {
                                 Text(competition.title, color = Color.White, fontWeight = FontWeight.Bold)
-                                if (competition.time.isNotBlank()) Text("Time: ${competition.time}", color = CalendarMuted)
+                                if (competition.time.isNotBlank()) Text("${localized("Time", "Tyd", "Isikhathi")}: ${competition.time}", color = CalendarMuted)
                                 if (competition.location.isNotBlank()) Text(competition.location, color = CalendarMuted)
                             }
                         }

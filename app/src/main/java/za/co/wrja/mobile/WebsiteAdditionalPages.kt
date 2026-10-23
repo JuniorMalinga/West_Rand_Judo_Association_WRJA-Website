@@ -49,18 +49,18 @@ private fun WebsiteEventCategoryHeader(
     onBack: () -> Unit
 ) {
     TextButton(onClick = onBack, contentPadding = androidx.compose.foundation.layout.PaddingValues()) {
-        Text("← Back to Events hub", color = WrjaGold, fontWeight = FontWeight.Bold)
+        Text(localized("← Back to Events hub", "← Terug na geleentheidsentrum", "← Buyela esikhungweni semicimbi"), color = WrjaGold, fontWeight = FontWeight.Bold)
     }
     Spacer(Modifier.height(10.dp))
-    WrjaSectionHeading("Events / $title", title, description)
+    WrjaSectionHeading("${tr("events")} / $title", title, description)
     Spacer(Modifier.height(20.dp))
 }
 
 @Composable
 fun WebsiteStandardEvents(onBack: () -> Unit) {
     WebsiteEventCategoryHeader(
-        title = "Standard events",
-        description = "Upcoming WRJA gradings, training camps and association events.",
+        title = localized("Standard events", "Standaardgeleenthede", "Imicimbi ejwayelekile"),
+        description = localized("Upcoming WRJA gradings, training camps and association events.", "Komende WRJA-graderings, oefenkampe en verenigingsgeleenthede.", "Ukukleliswa kwe-WRJA okuzayo, amakamu okuqeqesha nemicimbi yenhlangano."),
         onBack = onBack
     )
     SupabaseEvents()
@@ -69,15 +69,15 @@ fun WebsiteStandardEvents(onBack: () -> Unit) {
 @Composable
 fun WebsiteEventsCalendar(onBack: () -> Unit) {
     WebsiteEventCategoryHeader(
-        title = "Calendar",
-        description = "Keep track of upcoming WRJA events and important dates.",
+        title = localized("Calendar", "Kalender", "Ikhalenda"),
+        description = localized("Keep track of upcoming WRJA events and important dates.", "Hou tred met komende WRJA-geleenthede en belangrike datums.", "Landela imicimbi ezayo ye-WRJA nezinsuku ezibalulekile."),
         onBack = onBack
     )
-    Text("UPCOMING WRJA EVENTS", color = WrjaGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
+    Text(localized("UPCOMING WRJA EVENTS", "KOMENDE WRJA-GELEENTHEDE", "IMICIMBI YE-WRJA EZAYO"), color = WrjaGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
     Spacer(Modifier.height(10.dp))
     SupabaseEvents()
     Spacer(Modifier.height(20.dp))
-    Text("COMPETITION DATES", color = WrjaGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
+    Text(localized("COMPETITION DATES", "KOMPETISIEDATUMS", "IZINSUKU ZEMINCINTISWANO"), color = WrjaGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
     Spacer(Modifier.height(10.dp))
     CompetitionCalendar()
 }
@@ -88,8 +88,8 @@ fun WebsiteSchoolsEvents(
     onRegistrationClick: () -> Unit
 ) {
     WebsiteEventCategoryHeader(
-        title = "Schools",
-        description = "School-focused competition opportunities for developing judoka across the West Rand and Gauteng.",
+        title = localized("Schools", "Skole", "Izikole"),
+        description = localized("School-focused competition opportunities for developing judoka across the West Rand and Gauteng.", "Skoolgerigte kompetisiegeleenthede vir ontwikkelende judoka oor die Wes-Rand en Gauteng.", "Amathuba emincintiswano egxile ezikoleni kuma-judoka asathuthuka e-West Rand naseGauteng."),
         onBack = onBack
     )
     val pathways = listOf(
@@ -105,13 +105,13 @@ fun WebsiteSchoolsEvents(
             elevation = CardDefaults.cardElevation(defaultElevation = 7.dp, pressedElevation = 2.dp)
         ) {
             Column(Modifier.padding(18.dp)) {
-                Text("SCHOOL JUDO", color = WrjaGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
+                Text(localized("SCHOOL JUDO", "SKOOLJUDO", "I-JUDO YEZIKOLE"), color = WrjaGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
                 Spacer(Modifier.height(5.dp))
                 Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(8.dp))
                 Text(copy, color = WrjaMuted, style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(14.dp))
-                Text("VIEW REGISTRATION & PAYMENT  →", color = WrjaGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
+                Text(localized("VIEW REGISTRATION & PAYMENT  →", "BEKYK REGISTRASIE EN BETALING  →", "BONA UKUBHALISA NENKOKHELO  →"), color = WrjaGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
             }
         }
     }
@@ -124,7 +124,7 @@ fun WebsiteStore(
     onPosterEnquiryClick: () -> Unit
 ) {
     TextButton(onClick = onBack, contentPadding = androidx.compose.foundation.layout.PaddingValues()) {
-        Text("← Events hub", color = WrjaGold, fontWeight = FontWeight.Bold)
+        Text(localized("← Events hub", "← Geleentheidsentrum", "← Isikhungo semicimbi"), color = WrjaGold, fontWeight = FontWeight.Bold)
     }
     Spacer(Modifier.height(10.dp))
     WrjaContentCard(Modifier.fillMaxWidth().wrjaReveal()) {
@@ -140,11 +140,11 @@ fun WebsiteStore(
             )
         }
         Column(Modifier.padding(18.dp)) {
-            Text("WRJA MERCH / OFFICIAL COLLECTION", color = WrjaGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
+            Text(localized("WRJA MERCH / OFFICIAL COLLECTION", "WRJA-HANDELSWARE / AMPTELIKE VERSAMELING", "IZIMPAHLA ZE-WRJA / IQOQO ELISEMTHETHWENI"), color = WrjaGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
             Spacer(Modifier.height(7.dp))
-            Text("Represent the club.\nOn and off the mat.", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(localized("Represent the club.\nOn and off the mat.", "Verteenwoordig die klub.\nOp en van die mat af.", "Melela iklabhu.\nNgaphakathi nangaphandle komata."), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(8.dp))
-            Text("Official WRJA apparel and club prints for athletes, coaches, families and supporters.", color = WrjaMuted)
+            Text(localized("Official WRJA apparel and club prints for athletes, coaches, families and supporters.", "Amptelike WRJA-klere en klubdrukwerk vir atlete, afrigters, gesinne en ondersteuners.", "Izingubo ezisemthethweni ze-WRJA nokuphrintwa kweklabhu kwabasubathi, abaqeqeshi, imindeni nabasekeli."), color = WrjaMuted)
             Spacer(Modifier.height(14.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                 StoreChip("Official WRJA")
@@ -156,9 +156,9 @@ fun WebsiteStore(
     Spacer(Modifier.height(24.dp))
     Row(verticalAlignment = Alignment.Bottom) {
         Column(Modifier.weight(1f)) {
-            Text("THE WRJA COLLECTION", color = WrjaGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
+            Text(localized("THE WRJA COLLECTION", "DIE WRJA-VERSAMELING", "IQOQO LE-WRJA"), color = WrjaGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
             Spacer(Modifier.height(4.dp))
-            Text("Club essentials", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(localized("Club essentials", "Klubbenodigdhede", "Okubalulekile kweklabhu"), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         }
         Text("02 PRODUCTS", color = WrjaMuted, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
     }
@@ -216,7 +216,7 @@ private fun StoreProductCard(
             Spacer(Modifier.height(8.dp))
             Text(description, color = WrjaMuted, style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(16.dp))
-            Text("ORDER BY ENQUIRY", color = WrjaMuted, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+            Text(localized("ORDER BY ENQUIRY", "BESTEL PER NAVRAAG", "ODA NGOKUBUZA"), color = WrjaMuted, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(5.dp))
             Text("$action  →", color = WrjaGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
         }
@@ -252,12 +252,68 @@ private val websiteFaqs = listOf(
 )
 
 @Composable
+private fun WebsiteFaq.localizedQuestion(): String = when (question) {
+    "What is Judo?" -> localized(question, "Wat is Judo?", "Iyini i-Judo?")
+    "At what age can children start Judo?" -> localized(question, "Op watter ouderdom kan kinders met Judo begin?", "Izingane zingaqala i-Judo zineminyaka emingaki?")
+    "Does my child need to be strong or athletic to do Judo?" -> localized(question, "Moet my kind sterk of atleties wees om Judo te doen?", "Ingabe ingane yami kufanele iqine noma ibe ngumsubathi ukuze yenze i-Judo?")
+    "Is Judo dangerous?" -> localized(question, "Is Judo gevaarlik?", "Ingabe i-Judo iyingozi?")
+    "Will my child learn to fight?" -> localized(question, "Sal my kind leer baklei?", "Ingabe ingane yami izofunda ukulwa?")
+    "What does Judo teach children?" -> localized(question, "Wat leer Judo vir kinders?", "I-Judo ifundisani izingane?")
+    "Does my child have to compete?" -> localized(question, "Moet my kind meeding?", "Ingabe ingane yami kufanele incintisane?")
+    "What should my child wear to their first class?" -> localized(question, "Wat moet my kind na hul eerste klas dra?", "Ingane yami kufanele igqokeni ekilasini layo lokuqala?")
+    "What is a Judo gi?" -> localized(question, "Wat is 'n Judo-gi?", "Iyini i-Judo gi?")
+    "Will Judo help my child with confidence?" -> localized(question, "Sal Judo my kind met selfvertroue help?", "Ingabe i-Judo izosiza ingane yami ngokuzethemba?")
+    "What happens if my child is shy or nervous?" -> localized(question, "Wat gebeur as my kind skaam of senuweeagtig is?", "Kwenzekani uma ingane yami inamahloni noma ikhathazekile?")
+    "Can Judo help with concentration?" -> localized(question, "Kan Judo met konsentrasie help?", "Ingabe i-Judo ingasiza ngokugxila?")
+    "Can Judo help with self-defence?" -> localized(question, "Kan Judo met selfverdediging help?", "Ingabe i-Judo ingasiza ngokuzivikela?")
+    "Is Judo only for boys?" -> localized(question, "Is Judo net vir seuns?", "Ingabe i-Judo ingeyabafana kuphela?")
+    "What are the different Judo belt colours?" -> localized(question, "Wat is die verskillende Judo-gordelkleure?", "Yimiphi imibala yamabhande e-Judo ehlukene?")
+    "What does “Sensei” mean?" -> localized(question, "Wat beteken “Sensei”?", "Kusho ukuthini “Sensei”? ")
+    "What does “Judoka” mean?" -> localized(question, "Wat beteken “Judoka”?", "Kusho ukuthini “Judoka”? ")
+    "Does Judo improve physical fitness?" -> localized(question, "Verbeter Judo fisieke fiksheid?", "Ingabe i-Judo ithuthukisa ukuqina komzimba?")
+    "Can Judo help children learn how to deal with losing?" -> localized(question, "Kan Judo kinders help om verlies te hanteer?", "Ingabe i-Judo ingasiza izingane zifunde ukubhekana nokuhlulwa?")
+    "Why should my child try Judo?" -> localized(question, "Hoekom moet my kind Judo probeer?", "Kungani ingane yami kufanele izame i-Judo?")
+    "Is Judo just another sport?" -> localized(question, "Is Judo net nog 'n sport?", "Ingabe i-Judo ingomunye umdlalo nje?")
+    "My child is already at club level. How do they advance to the next level?" -> localized(question, "My kind is reeds op klubvlak. Hoe vorder hulle na die volgende vlak?", "Ingane yami isisezingeni leklabhu. Iqhubekela kanjani ezingeni elilandelayo?")
+    "Is Judo a registered and recognised sport?" -> localized(question, "Is Judo 'n geregistreerde en erkende sport?", "Ingabe i-Judo ingumdlalo obhalisiwe futhi owaziwayo?")
+    else -> question
+}
+
+@Composable
+private fun WebsiteFaq.localizedAnswer(): String = when (question) {
+    "What is Judo?" -> localized(answer, "Judo is 'n Japannese gevegskuns en Olimpiese sport wat op werpe, grondwerk, balans, beweging en beheer fokus.", "I-Judo ubuciko bokulwa baseJapane nomdlalo wama-Olympic ogxile ekuphonseni, ekubambaneni, ekulinganiseleni nasekulawuleni.")
+    "At what age can children start Judo?" -> localized(answer, "Kinders kan gewoonlik vanaf ongeveer vier jaar begin, afhangend van hul volwassenheid en vermoë om veilig deel te neem.", "Izingane zingaqala cishe eminyakeni emine, kuye ngokuvuthwa kwazo nokukwazi ukubamba iqhaza ngokuphepha.")
+    "Does my child need to be strong or athletic to do Judo?" -> localized(answer, "Nee. Judo help kinders om krag, koördinasie, balans, buigsaamheid en fiksheid te ontwikkel.", "Cha. I-Judo isiza izingane zakhe amandla, ukuhambisana, ukulinganisela, ukuguquguquka nokuqina.")
+    "Is Judo dangerous?" -> localized(answer, "Soos enige fisieke sport het Judo risiko's, maar veilige val, beheer en gekwalifiseerde toesig beperk dit.", "Njenganoma yimuphi umdlalo womzimba kunezingozi, kodwa i-Judo ifundisa ukuwa ngokuphepha, ukulawula nokuqeqeshwa ngaphansi kwabaqeqeshi abafanelekile.")
+    "Will my child learn to fight?" -> localized(answer, "Judo gaan nie oor seermaak nie; dit leer dissipline, beheer, respek, selfvertroue en beginsels van selfverdediging.", "I-Judo ayimayelana nokulimaza; ifundisa isimilo, ukulawula, inhlonipho, ukuzethemba nezimiso zokuzivikela.")
+    "What does Judo teach children?" -> localized(answer, "Benewens fisieke vaardighede leer kinders dissipline, respek, fokus, deursettingsvermoë, spanwerk en selfbeheer.", "Ngaphandle kwamakhono omzimba, izingane zifunda isimilo, inhlonipho, ukugxila, ukubekezela, ukusebenzisana nokuzilawula.")
+    "Does my child have to compete?" -> localized(answer, "Nee. Kompetisie is opsioneel; baie kinders oefen vir fiksheid, selfvertroue, dissipline en pret.", "Cha. Ukuncintisana kuyazikhethela; izingane eziningi ziqeqesha ukuze ziqine, zizethembe, zibe nesimilo futhi zijabule.")
+    "What should my child wear to their first class?" -> localized(answer, "Vir 'n proefsessie is gemaklike sportklere gewoonlik geskik; later sal 'n Judo-gi benodig word.", "Esifundweni sokuzama, izingubo zemidlalo ezikhululekile zivame ukufaneleka; kamuva kuzodingeka i-Judo gi.")
+    "What is a Judo gi?" -> localized(answer, "'n Judo-gi is die tradisionele uniform vir opleiding en kompetisie, gemaak vir greep, werpe en grondwerk.", "I-Judo gi iyunifomu yendabuko yokuqeqesha nemincintiswano, eyenzelwe ukubanjwa, ukuphonswa nokubambana.")
+    "Will Judo help my child with confidence?" -> localized(answer, "Ja. Nuwe tegnieke en uitdagings help kinders om selfvertroue en veerkragtigheid op en van die mat af te bou.", "Yebo. Amasu amasha nezinselelo zisiza izingane zakhe ukuzethemba nokubekezela ngaphakathi nangaphandle komata.")
+    "What happens if my child is shy or nervous?" -> localized(answer, "Dit is normaal. Afrigters werk teen elke kind se eie tempo sonder om hulle in ongereed situasies te dwing.", "Lokho kujwayelekile. Abaqeqeshi basebenza ngesivinini sengane ngayinye ngaphandle kokuyiphoqa ezimeni engakazilungeli.")
+    "Can Judo help with concentration?" -> localized(answer, "Ja. Judo vereis dat kinders luister, tegnieke onthou, op hul maat reageer en gefokus bly.", "Yebo. I-Judo idinga izingane zilalele, zikhumbule amasu, zisabele kumlingani futhi zihlale zigxile.")
+    "Can Judo help with self-defence?" -> localized(answer, "Judo leer balans, liggaamsbeheer, veilige val, greep en beheerde werpe, saam met bewustheid en selfbeheer.", "I-Judo ifundisa ukulinganisela, ukulawula umzimba, ukuwa ngokuphepha, ukubamba nokuphonsa okulawulwayo, kanye nokuqaphela nokuzilawula.")
+    "Is Judo only for boys?" -> localized(answer, "Nee. Judo is vir almal; seuns en meisies kan in toepaslike kategorieë saam oefen en meeding.", "Cha. I-Judo eyawo wonke umuntu; abafana namantombazane bangaqeqesha futhi bancintisane ndawonye ezigabeni ezifanele.")
+    "What are the different Judo belt colours?" -> localized(answer, "Gordelgrade erken 'n judoka se vordering. Beginners beweeg deur grade soos hul kennis en vaardighede groei.", "Amabanga amabhande abonisa inqubekela phambili ye-judoka. Abaqalayo baqhubeka ngamabanga njengoba ulwazi namakhono abo ekhula.")
+    "What does “Sensei” mean?" -> localized(answer, "Sensei is 'n Japannese term vir 'n onderwyser of instrukteur en word met respek vir 'n Judo-afrigter gebruik.", "I-Sensei yigama lesiJapane elisho uthisha noma umqeqeshi, elisetshenziswa ngenhlonipho kumqeqeshi we-Judo.")
+    "What does “Judoka” mean?" -> localized(answer, "'n Judoka is 'n persoon wat Judo beoefen.", "I-judoka ngumuntu owenza i-Judo.")
+    "Does Judo improve physical fitness?" -> localized(answer, "Ja. Judo kan kardiovaskulêre fiksheid, krag, ratsheid, buigsaamheid, koördinasie en balans verbeter.", "Yebo. I-Judo ingathuthukisa ukuqina kwenhliziyo, amandla, ukushesha, ukuguquguquka, ukuhambisana nokulinganisela.")
+    "Can Judo help children learn how to deal with losing?" -> localized(answer, "Ja. Kinders leer dat foute en terugslae deel van leer is en dat respek en verbetering belangrik is.", "Yebo. Izingane zifunda ukuthi amaphutha nokuhlulwa kuyingxenye yokufunda, nokuthi inhlonipho nokuthuthuka kubalulekile.")
+    "Why should my child try Judo?" -> localized(answer, "Judo bied sport, dissipline, selfvertroue, vriendskap en persoonlike ontwikkeling terwyl kinders pret het.", "I-Judo inikeza ezemidlalo, isimilo, ukuzethemba, ubungane nokukhula komuntu ngenkathi izingane zijabula.")
+    "Is Judo just another sport?" -> localized(answer, "Judo leer lewensvaardighede soos respek, emosiebeheer, samewerking en deursettingsvermoë, ver buite die mat.", "I-Judo ifundisa amakhono empilo njengokuhlonipha, ukulawula imizwa, ukusebenzisana nokubekezela, ngale komata.")
+    "My child is already at club level. How do they advance to the next level?" -> localized(answer, "Vordering volg gereelde klasse, vereiste tegnieke en graderings. Afrigters beoordeel vaardigheid, kennis, houding, toewyding en gereedheid.", "Inqubekela phambili ilandela amakilasi avamile, amasu adingekayo nokukleliswa. Abaqeqeshi bahlola ikhono, ulwazi, isimo sengqondo, ukuzibophezela nokulungela.")
+    "Is Judo a registered and recognised sport?" -> localized(answer, "Ja. Judo is 'n erkende Olimpiese sport met internasionale, nasionale en provinsiale beheerstrukture, insluitend Judo South Africa.", "Yebo. I-Judo ngumdlalo wama-Olympic owaziwayo onezinhlaka zokuphatha zamazwe ngamazwe, zikazwelonke nezesifundazwe, okubandakanya i-Judo South Africa.")
+    else -> answer
+}
+
+@Composable
 fun WebsiteFaq(onContactClick: () -> Unit) {
     var expandedIndex by rememberSaveable { mutableStateOf<Int?>(null) }
     WrjaSectionHeading(
-        "Frequently asked questions",
-        "Everything you need to know before stepping on the mat.",
-        "Clear guidance for new judoka, parents and returning athletes."
+        localized("Frequently asked questions", "Gereelde vrae", "Imibuzo evame ukubuzwa"),
+        localized("Everything you need to know before stepping on the mat.", "Alles wat jy moet weet voordat jy op die mat stap.", "Konke odinga ukukwazi ngaphambi kokungena emateni."),
+        localized("Clear guidance for new judoka, parents and returning athletes.", "Duidelike leiding vir nuwe judoka, ouers en terugkerende atlete.", "Isiqondiso esicacile sama-judoka amasha, abazali nabasubathi ababuyayo.")
     )
     Spacer(Modifier.height(18.dp))
     websiteFaqs.forEachIndexed { index, item ->
@@ -272,7 +328,7 @@ fun WebsiteFaq(onContactClick: () -> Unit) {
             Column(Modifier.padding(17.dp)) {
                 Row(verticalAlignment = Alignment.Top) {
                     Text(
-                        text = item.question,
+                        text = item.localizedQuestion(),
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
@@ -287,7 +343,7 @@ fun WebsiteFaq(onContactClick: () -> Unit) {
                 ) {
                     Column {
                         Spacer(Modifier.height(12.dp))
-                        Text(item.answer, color = WrjaMuted, style = MaterialTheme.typography.bodyMedium)
+                        Text(item.localizedAnswer(), color = WrjaMuted, style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }
@@ -296,15 +352,15 @@ fun WebsiteFaq(onContactClick: () -> Unit) {
     Spacer(Modifier.height(8.dp))
     WrjaContentCard(Modifier.fillMaxWidth().wrjaReveal(4)) {
         Column(Modifier.padding(18.dp)) {
-            Text("STILL HAVE A QUESTION?", color = WrjaGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
+            Text(localized("STILL HAVE A QUESTION?", "HET JY NOG 'N VRAAG?", "USENOMBHUZO?"), color = WrjaGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
             Spacer(Modifier.height(6.dp))
-            Text("Send WRJA a message and we’ll get back to you.", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(localized("Send WRJA a message and we’ll get back to you.", "Stuur vir WRJA 'n boodskap en ons sal na jou terugkeer.", "Thumela i-WRJA umlayezo futhi sizobuyela kuwe."), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(14.dp))
             Button(
                 onClick = onContactClick,
                 colors = ButtonDefaults.buttonColors(containerColor = WrjaGold, contentColor = Color(0xFF090909))
             ) {
-                Text("CONTACT US", fontWeight = FontWeight.ExtraBold)
+                Text(localized("CONTACT US", "KONTAK ONS", "XHUMANA NATHI"), fontWeight = FontWeight.ExtraBold)
             }
         }
     }
