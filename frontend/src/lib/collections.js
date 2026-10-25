@@ -48,7 +48,7 @@ export function createRemoteCollection(path) {
           if (document.visibilityState === "visible" && !inflight) store.refresh();
         };
         const onAdminChanged = (event) => {
-          if (event.detail?.path === path) return;
+          if (event.detail?.path === path && !event.detail?.crossTab) return;
           if (!inflight) store.refresh();
         };
         window.addEventListener("wrja:admin-changed", onAdminChanged);

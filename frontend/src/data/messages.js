@@ -1,52 +1,39 @@
 import { createRemoteCollection } from "../lib/collections";
+import { api, notifyAdminChanged } from "../lib/api";
 
-export const messages = [
-  {
-    id: 1,
-    name: "Sample member",
-    email: "member@example.com",
-    phone: "",
-    message: "Hello, I would like to learn more about junior classes.",
-    source: "Contact form",
-    status: "new",
-    createdAt: new Date().toISOString(),
-  },
-];
+const ADMIN_MESSAGES_PATH = "/api/admin/messages";
 
-export const messagesStore = createRemoteCollection("/api/messages");
-messagesStore.setItems(messages);
+export const messagesStore = createRemoteCollection(ADMIN_MESSAGES_PATH);
 
 export function isUnread(message) {
-  return !message || message.status === "new" || message.status === "unread";
+  return message?.status === "new" || message?.status === "unread";
+}
+
+async function finishMessageChange(request) {
+  const result = await request;
+  await messagesStore.refresh();
+  notifyAdminChanged(messagesStore.path);
+  return result;
 }
 
 export function deleteMessage(messageId) {
-  const next = messagesStore.getSnapshot().items.filter((item) => item.id !== messageId);
-  messagesStore.setItems(next);
-  return Promise.resolve({ ok: true });
+  return finishMessageChange(api(`${ADMIN_MESSAGES_PATH}/${encodeURIComponent(messageId)}`, { method: "DELETE" }));
 }
 
 export function markAllMessagesRead() {
-  const next = messagesStore.getSnapshot().items.map((item) => ({ ...item, status: "read" }));
-  messagesStore.setItems(next);
-  return Promise.resolve(next);
+  return finishMessageChange(api(`${ADMIN_MESSAGES_PATH}/read-all`, { method: "POST", body: {} }));
 }
 
-export function setMessageStatus(messageId, status) {
-  const next = messagesStore.getSnapshot().items.map((item) => (item.id === messageId ? { ...item, status } : item));
-  messagesStore.setItems(next);
-  return Promise.resolve(next.find((item) => item.id === messageId));
+export async function setMessageStatus(messageId, status) {
+  const { item } = await finishMessageChange(api(`${ADMIN_MESSAGES_PATH}/${encodeURIComponent(messageId)}`, {
+    method: "PATCH",
+    body: { status },
+  }));
+  return item;
 }
 
 export async function submitMessage(data) {
-  const next = [...messagesStore.getSnapshot().items, {
-    id: Date.now(),
-    ...data,
-    status: "new",
-    createdAt: new Date().toISOString(),
-  }];
-  messagesStore.setItems(next);
-  return { ok: true, item: next[next.length - 1] };
+  const result = await api("/api/messages", { method: "POST", body: data });
+  notifyAdminChanged(messagesStore.path);
+  return result;
 }
-
-export default messages;

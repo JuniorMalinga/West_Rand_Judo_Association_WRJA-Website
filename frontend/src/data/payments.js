@@ -1,52 +1,53 @@
 import { createRemoteCollection } from "../lib/collections";
+import { api, apiUrl, notifyAdminChanged } from "../lib/api";
+import { readAsDataUrl } from "../lib/images";
 
-export const PAYMENT_STATUSES = ["pending", "approved", "rejected"];
+const ADMIN_PAYMENTS_PATH = "/api/admin/payments";
 
-export const payments = [
-  {
-    id: 1,
-    memberName: "Sample member",
-    competitionSlug: "spring-open",
-    competitionName: "Spring Open",
-    fileName: "proof.pdf",
-    fileUrl: "/src/assets/images/Logo/wrja-logo.png",
-    status: "pending",
-    createdAt: new Date().toISOString(),
-  },
-];
+export const PAYMENT_STATUSES = ["Submitted for review", "Approved", "Rejected"];
 
-export const paymentsStore = createRemoteCollection("/api/payments");
-paymentsStore.setItems(payments);
+export const paymentsStore = createRemoteCollection(ADMIN_PAYMENTS_PATH);
 export const myPaymentsStore = createRemoteCollection("/api/payments/mine");
-myPaymentsStore.setItems(payments);
+
+async function finishPaymentChange(request) {
+  const result = await request;
+  await paymentsStore.refresh();
+  notifyAdminChanged(paymentsStore.path);
+  return result;
+}
 
 export function pendingPayments(items = []) {
-  return items.filter((item) => item.status === "pending");
+  return items.filter((item) => item.status === "Submitted for review");
 }
 
-export function paymentFileUrl(file) {
-  return file || "/src/assets/images/Logo/wrja-logo.png";
+export function paymentFileUrl(paymentId) {
+  return apiUrl(`/api/payments/${encodeURIComponent(paymentId)}/file`);
 }
 
-export async function submitPayment(payload) {
-  const next = [...paymentsStore.getSnapshot().items, { id: Date.now(), status: "pending", createdAt: new Date().toISOString(), ...payload }];
-  paymentsStore.setItems(next);
-  myPaymentsStore.setItems(next);
-  return { ok: true, item: next[next.length - 1] };
+export async function submitPayment({ file, competition }) {
+  if (!file) throw new Error("Choose a proof of payment file first.");
+  const dataUrl = await readAsDataUrl(file);
+  const result = await api("/api/payments", {
+    method: "POST",
+    body: {
+      fileName: file.name,
+      dataUrl,
+      competitionSlug: competition?.slug || "",
+    },
+  });
+  await myPaymentsStore.refresh();
+  notifyAdminChanged(paymentsStore.path);
+  return result.item;
 }
 
 export function deletePayment(paymentId) {
-  const next = paymentsStore.getSnapshot().items.filter((item) => item.id !== paymentId);
-  paymentsStore.setItems(next);
-  myPaymentsStore.setItems(next);
-  return Promise.resolve({ ok: true });
+  return finishPaymentChange(api(`${ADMIN_PAYMENTS_PATH}/${encodeURIComponent(paymentId)}`, { method: "DELETE" }));
 }
 
-export function setPaymentStatus(paymentId, status) {
-  const next = paymentsStore.getSnapshot().items.map((item) => (item.id === paymentId ? { ...item, status } : item));
-  paymentsStore.setItems(next);
-  myPaymentsStore.setItems(next);
-  return Promise.resolve(next.find((item) => item.id === paymentId));
+export async function setPaymentStatus(paymentId, status) {
+  const { item } = await finishPaymentChange(api(`${ADMIN_PAYMENTS_PATH}/${encodeURIComponent(paymentId)}`, {
+    method: "PATCH",
+    body: { status },
+  }));
+  return item;
 }
-
-export default payments;

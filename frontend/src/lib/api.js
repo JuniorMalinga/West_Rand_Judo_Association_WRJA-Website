@@ -12,7 +12,9 @@ const adminChangesChannel = typeof window === "undefined" || typeof BroadcastCha
   : new BroadcastChannel("wrja:admin-changed");
 
 adminChangesChannel?.addEventListener("message", (event) => {
-  window.dispatchEvent(new CustomEvent(ADMIN_CHANGED_EVENT, { detail: { path: event.data } }));
+  window.dispatchEvent(new CustomEvent(ADMIN_CHANGED_EVENT, {
+    detail: { path: event.data, crossTab: true },
+  }));
 });
 
 export class ApiError extends Error {
@@ -57,6 +59,6 @@ export async function api(path, { method = "GET", body } = {}) {
 
 // Tells the admin sidebar/overview to re-check its counts.
 export const notifyAdminChanged = (path) => {
-  window.dispatchEvent(new CustomEvent(ADMIN_CHANGED_EVENT, { detail: { path } }));
+  window.dispatchEvent(new CustomEvent(ADMIN_CHANGED_EVENT, { detail: { path, crossTab: false } }));
   adminChangesChannel?.postMessage(path);
 };
