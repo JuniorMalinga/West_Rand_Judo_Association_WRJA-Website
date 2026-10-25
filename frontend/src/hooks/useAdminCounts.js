@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../lib/api";
 
+const ADMIN_COUNTS_REFRESH_INTERVAL = 5000;
+
 // Live numbers for the admin sidebar and overview (unread messages, pending payments...).
 export default function useAdminCounts(enabled = true) {
   const [counts, setCounts] = useState(null);
@@ -18,7 +20,7 @@ export default function useAdminCounts(enabled = true) {
   useEffect(() => {
     if (!enabled) return undefined;
     refresh();
-    const timer = window.setInterval(refresh, 30000);
+    const timer = window.setInterval(refresh, ADMIN_COUNTS_REFRESH_INTERVAL);
     window.addEventListener("wrja:admin-changed", refresh);
     return () => {
       window.clearInterval(timer);

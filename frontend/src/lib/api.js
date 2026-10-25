@@ -6,6 +6,14 @@
 //   on anything that changes data (protects against cross-site request forgery).
 
 const BASE = import.meta.env?.VITE_API_URL || "";
+const ADMIN_CHANGED_EVENT = "wrja:admin-changed";
+const adminChangesChannel = typeof window === "undefined" || typeof BroadcastChannel === "undefined"
+  ? null
+  : new BroadcastChannel("wrja:admin-changed");
+
+adminChangesChannel?.addEventListener("message", (event) => {
+  window.dispatchEvent(new CustomEvent(ADMIN_CHANGED_EVENT, { detail: { path: event.data } }));
+});
 
 export class ApiError extends Error {
   constructor(message, status = 0, data = null) {
@@ -48,4 +56,7 @@ export async function api(path, { method = "GET", body } = {}) {
 }
 
 // Tells the admin sidebar/overview to re-check its counts.
-export const notifyAdminChanged = () => window.dispatchEvent(new Event("wrja:admin-changed"));
+export const notifyAdminChanged = (path) => {
+  window.dispatchEvent(new CustomEvent(ADMIN_CHANGED_EVENT, { detail: { path } }));
+  adminChangesChannel?.postMessage(path);
+};

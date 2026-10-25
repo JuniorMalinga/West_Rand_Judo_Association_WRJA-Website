@@ -1,15 +1,19 @@
-// Server-backed lists ("collections") shared by every component that needs them.
-// A store loads once, all components using it re-render together, and it
-// reloads itself when someone logs in or out (visitors and members can see
-// different fields).
+// Server-backed lists shared by every component that needs them. A store
+// refreshes while it is being observed so database changes appear without a
+// page reload, and reloads on auth changes so visitors and members see the
+// right fields.
 
 import { api, notifyAdminChanged } from "./api";
+
+const COLLECTION_REFRESH_INTERVAL = 5000;
 
 export function createRemoteCollection(path) {
   const listeners = new Set();
   let snapshot = { items: [], loaded: false, loading: false, error: null };
   let inflight = null;
   let sequence = 0;
+  let refreshTimer = null;
+  let stopWatching = null;
 
   const emit = (patch) => {
     snapshot = { ...snapshot, ...patch };
@@ -39,7 +43,34 @@ export function createRemoteCollection(path) {
     path,
     subscribe(listener) {
       listeners.add(listener);
-      return () => listeners.delete(listener);
+      if (listeners.size === 1 && typeof window !== "undefined") {
+        const refreshIfVisible = () => {
+          if (document.visibilityState === "visible" && !inflight) store.refresh();
+        };
+        const onAdminChanged = (event) => {
+          if (event.detail?.path === path) return;
+          if (!inflight) store.refresh();
+        };
+        window.addEventListener("wrja:admin-changed", onAdminChanged);
+        window.addEventListener("focus", refreshIfVisible);
+        document.addEventListener("visibilitychange", refreshIfVisible);
+        refreshTimer = window.setInterval(refreshIfVisible, COLLECTION_REFRESH_INTERVAL);
+        if (snapshot.loaded) refreshIfVisible();
+        stopWatching = () => {
+          window.removeEventListener("wrja:admin-changed", onAdminChanged);
+          window.removeEventListener("focus", refreshIfVisible);
+          document.removeEventListener("visibilitychange", refreshIfVisible);
+          window.clearInterval(refreshTimer);
+          refreshTimer = null;
+        };
+      }
+      return () => {
+        listeners.delete(listener);
+        if (!listeners.size && stopWatching) {
+          stopWatching();
+          stopWatching = null;
+        }
+      };
     },
     getSnapshot: () => snapshot,
     load({ force = false } = {}) {
@@ -61,6 +92,7 @@ export function createRemoteCollection(path) {
   if (typeof window !== "undefined") {
     window.addEventListener("wrja:auth-changed", () => store.invalidate());
   }
+
   return store;
 }
 
@@ -68,7 +100,7 @@ export function createRemoteCollection(path) {
 export function adminCrud(path, store) {
   const finish = async (result) => {
     await store.refresh();
-    notifyAdminChanged();
+    notifyAdminChanged(store.path);
     return result;
   };
   return {
