@@ -273,7 +273,7 @@ section {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 40px;
+  padding: 16px 40px;
   gap: 24px;
   position: relative;
 }
@@ -288,12 +288,12 @@ section {
   display: inline-flex;
   align-items: center;
   background: var(--bg-light);
-  padding: 6px 14px;
+  padding: 7px 16px;
   border-radius: var(--radius);
 }
 
 .nav-logo-image {
-  height: 44px;
+  height: 51px;
   width: auto;
 }
 

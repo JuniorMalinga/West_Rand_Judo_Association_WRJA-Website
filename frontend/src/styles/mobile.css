@@ -27,16 +27,16 @@ svg {
 @media (max-width: 900px) {
   /* ----- Header ----- */
   .nav-inner {
-    padding: 10px 16px;
+    padding: 11px 16px;
     gap: 12px;
   }
 
   .nav-logo-image {
-    height: 36px;
+    height: 42px;
   }
 
   .nav-logo-badge {
-    padding: 4px 10px;
+    padding: 5px 12px;
   }
 
   .nav-toggle {
