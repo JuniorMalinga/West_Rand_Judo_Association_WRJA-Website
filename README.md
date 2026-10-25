@@ -100,6 +100,10 @@ Express API   (Vercel serverless function, or a Node server locally)
 
 The browser never holds a secret key. All privileged work happens in the Express API, which is the only place that uses the Supabase service role key and the SMTP key.
 
+## Architecture
+
+The project keeps the existing root deployment configuration while making responsibilities explicit. `frontend/` contains the Vite/React browser application, `backend/` contains the Express API and server-only code, `backend/src/database/` contains the SQLite connection, repositories, schema, and migrations, and `backend/src/integrations/` contains external-provider adapters and the standalone WRJA assistant package. `backend/knowledge/` contains static chatbot knowledge data. The root `api/index.js` remains a thin Vercel adapter because the platform requires that path.
+
 ## Setup
 
 ### Requirements
@@ -122,14 +126,14 @@ The root `package.json` contains the dependencies for both the frontend and the 
 
 ### 2. Create the required environment file
 
-**IMPORTANT:** `server/.env` is intentionally **not included in the GitHub repository** because it contains API credentials.
+**IMPORTANT:** `backend/.env` is intentionally **not included in the GitHub repository** because it contains API credentials.
 
 Anyone cloning this project must create this file manually.
 
-Create this file inside the server folder:
+Create this file inside the backend folder:
 
 ```text
-server/.env
+backend/.env
 ```
 
 Add the values required by your deployment:
@@ -151,7 +155,7 @@ PUBLIC_SITE_URL=https://your-site.vercel.app
 
 Replace the placeholders with your own credentials. Never add a `VITE_` prefix to secret keys such as `SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY` or `SMTP_PASS`.
 
-**Do not copy API keys from someone else's environment file or commit `server/.env` to GitHub. Do not send it inside zip files either.**
+**Do not copy API keys from someone else's environment file or commit `backend/.env` to GitHub. Do not send it inside zip files either.**
 
 ### Environment variables
 
@@ -185,7 +189,7 @@ Your project should look like:
 ```text
 wrja-website/
 │
-├── server/
+├── backend/
 │   ├── .env                ← YOU MUST CREATE THIS
 │   ├── .env.example        ← placeholder values, safe to commit
 │   ├── server.js
@@ -194,7 +198,7 @@ wrja-website/
 └── ...
 ```
 
-The `server/.env` file supplies both the backend and Vite frontend configuration.
+The `backend/.env` file supplies both the backend and Vite frontend configuration.
 
 ## Run Locally
 
@@ -215,7 +219,7 @@ Express/Gemini API  http://localhost:5000
 
 Vite proxies `/api` and `/uploads` to the Express server, so the frontend and API behave like one site.
 
-Restart `npm run dev` after changing `server/.env`. The server only reads it on startup.
+Restart `npm run dev` after changing `backend/.env`. The server only reads it on startup.
 
 ## Build
 
@@ -310,7 +314,7 @@ The frontend builds to static files and the Express app runs as one serverless f
 | `api/index.js` | Exports the Express app as the Vercel function |
 | `vercel.json` | Sends `/api/*` and `/uploads/*` to the function, and everything else to `index.html` |
 | `vite.config.js` | Skips the Cloudflare plugin when building on Vercel |
-| `server/server.js` | Exports the app and only calls `listen` when not on Vercel |
+| `backend/src/server.js` | Exports the app and only calls `listen` when not on Vercel |
 
 ### Steps
 
@@ -397,9 +401,9 @@ src/
 ├── App.jsx
 └── main.jsx
 
-server/
+backend/
 ├── .env                    Not committed
-├── server.js               Express app, middleware order, chatbot, static files
+├── backend/src/server.js   Express app, middleware order, chatbot, static files
 ├── routes/api.js           Every API route and who may call it
 ├── auth.js                 Sessions, requireAuth, requireAdmin
 ├── security.js             Headers, CORS allow list, CSRF guard, rate limiter
@@ -420,7 +424,7 @@ server/
 └── tests/                  API and security tests
 ```
 
-`server/db.js`, `server/repo.js`, `server/schema.sql` and `server/seed.js` belong to an earlier local SQLite version. The live site does not use them.
+`backend/src/database/db.js`, `backend/src/database/repo.js`, `backend/src/database/schema.sql` and `backend/src/seed.js` belong to an earlier local SQLite version. The live site does not use them.
 
 ## API Overview
 
@@ -502,13 +506,13 @@ src/services/geminiChat.js
 The backend server is located at:
 
 ```text
-server/server.js
+backend/src/server.js
 ```
 
 The chatbot communicates with the Express backend so that the Gemini API key is not exposed directly in the frontend. It answers using WRJA-specific information stored in:
 
 ```text
-server/Knowledge/        clubs, programs, instructors, events, FAQ
+backend/knowledge/        clubs, programs, instructors, events, FAQ
 src/data/faq.js          FAQ page content
 ```
 
@@ -521,8 +525,8 @@ When a visitor submits the contact form, the message is saved and a professional
 The code is in:
 
 ```text
-server/mailer.js         email layout and sending
-server/routes/api.js     POST /api/messages calls the mailer after saving
+backend/src/integrations/mailer.js         email layout and sending
+backend/src/routes/api.js     POST /api/messages calls the mailer after saving
 ```
 
 The email is sent through SMTP using Nodemailer. The project is set up for Brevo, but any SMTP provider works by changing the environment variables.
@@ -540,13 +544,13 @@ The email is sent through SMTP using Nodemailer. The project is set up for Brevo
 1. Create a free account at brevo.com.
 2. Under **Senders**, add the association's sender address and click the verification link sent to it.
 3. Under **SMTP & API > SMTP**, copy the SMTP login and generate an SMTP key. The key is shown only once.
-4. Add the `SMTP_*` and `MAIL_*` variables to `server/.env` locally, and to the Vercel environment variables for production.
+4. Add the `SMTP_*` and `MAIL_*` variables to `backend/.env` locally, and to the Vercel environment variables for production.
 5. Redeploy on Vercel. Variables only apply to new deployments.
 
 ### Testing
 
 ```powershell
-node server/scripts/test-mail.js your-own-email@gmail.com
+node backend/scripts/test-mail.js your-own-email@gmail.com
 ```
 
 The script prints `Email sent to ...` on success, or the exact error if sending fails. After that, send the real contact form and check the inbox and spam folder.
@@ -574,12 +578,12 @@ The script prints `Email sent to ...` on success, or the exact error if sending 
 Never commit the environment file to GitHub:
 
 ```text
-server/.env
+backend/.env
 ```
 
 These files can contain private API credentials.
 
-Use `server/.env.example` with placeholder values to document the variables:
+Use `backend/.env.example` with placeholder values to document the variables:
 
 ```env
 VITE_MAPBOX_TOKEN=your_mapbox_token_here
@@ -658,7 +662,7 @@ The application reads the Mapbox token from:
 VITE_MAPBOX_TOKEN=your_mapbox_token_here
 ```
 
-The token must be placed in `server/.env` locally and in the Vercel environment variables in production.
+The token must be placed in `backend/.env` locally and in the Vercel environment variables in production.
 
 **Remember to create this file after cloning the repository.**
 
@@ -685,7 +689,7 @@ The tests cover login and role checks, access to payment files, input validation
 To test email sending without using the website:
 
 ```powershell
-node server/scripts/test-mail.js your-own-email@gmail.com
+node backend/scripts/test-mail.js your-own-email@gmail.com
 ```
 
 Before handing in a change, also check these by hand on the live site:
@@ -714,7 +718,7 @@ Before handing in a change, also check these by hand on the live site:
 | `Invalid login` or `535` in the logs | Wrong `SMTP_USER` or `SMTP_PASS`. Create a new SMTP key and paste it once |
 | Sender not valid or not verified | Verify the `MAIL_FROM` address under Brevo > Senders |
 | Email goes to spam | Mark it as "Not spam", or send from a verified domain |
-| Email works locally but not live | The SMTP variables are only in `server/.env`. Add them in Vercel and redeploy |
+| Email works locally but not live | The SMTP variables are only in `backend/.env`. Add them in Vercel and redeploy |
 
 ## Known Limitations
 

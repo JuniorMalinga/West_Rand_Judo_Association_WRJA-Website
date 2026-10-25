@@ -1,0 +1,861 @@
+/* ---------- Home Page Image Slider ---------- */
+.image-slider {
+  position: relative;
+  min-height: 90vh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background: var(--bg-dark);
+}
+
+.image-slides {
+  position: absolute;
+  inset: 0;
+}
+
+.image-slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 1.4s var(--ease);
+}
+
+.image-slide img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+
+.image-slide-active {
+  opacity: 1;
+}
+
+.image-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.35) 60%);
+}
+
+.image-content {
+  position: relative;
+  z-index: 2;
+  padding: 0 60px;
+  max-width: 720px;
+}
+
+.image-title {
+  color: var(--text-light);
+  font-size: 48px;
+  line-height: 1.15;
+}
+
+.image-highlight {
+  color: var(--accent);
+}
+
+.image-numbers {
+  display: flex;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.image-number {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.3s var(--ease);
+}
+
+.image-number-active {
+  background: var(--accent);
+  color: var(--text-dark);
+  border-color: var(--accent);
+}
+
+.image-text {
+  color: var(--text-muted);
+  font-size: 16px;
+  max-width: 520px;
+}
+
+.image-actions {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+/* ---------- Programs (home page cards) ---------- */
+.programs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.program-card {
+  position: relative;
+  height: 340px;
+  border-radius: var(--radius);
+
+  overflow: hidden;
+  transition: transform 0.4s var(--ease);
+  display: block;
+  text-decoration: none;
+}
+
+.program-card-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+.program-card:hover {
+  transform: translateY(-6px);
+}
+
+.program-card-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+
+  background: linear-gradient(
+    180deg,
+    transparent 40%,
+    rgba(0, 0, 0, 0.85) 100%
+  );
+
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 24px;
+}
+
+.program-card-overlay h3 {
+  color: #ffffff;
+}
+
+.program-card-overlay p {
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.program-arrow {
+  color: var(--accent);
+  font-size: 20px;
+  transition: transform 0.3s var(--ease);
+}
+
+.program-card:hover .program-arrow {
+  transform: translateX(8px);
+}
+/* ---------- About (intro section reused on Home and About page) ---------- */
+.about {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+}
+
+.about-image {
+  border-radius: var(--radius);
+}
+
+.about-quote-mark {
+  font-size: 60px;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.about-lead {
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.about-signature {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.about-name {
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0;
+}
+
+.about-role {
+  margin: 0;
+  font-size: 14px;
+}
+
+.about-signature-mark {
+  position: relative;
+  display: inline-block;
+  color: #4c3926;
+  font-family: "Segoe Script", "Brush Script MT", cursive;
+  font-size: 27px;
+  line-height: 1.25;
+  white-space: nowrap;
+  transform: rotate(-4deg);
+}
+
+.about-signature-mark::after {
+  position: absolute;
+  right: -6px;
+  bottom: -5px;
+  left: 4px;
+  height: 7px;
+  border-bottom: 2px solid var(--accent);
+  border-radius: 50%;
+  content: "";
+  transform: rotate(-2deg);
+}
+/* ---------- Features ---------- */
+
+.features {
+  --feature-glow: 201, 162, 39; /* matches --accent (#c9a227) as an RGB triplet, reused below */
+
+  position: relative;
+
+  background-image:
+    linear-gradient(
+      rgba(0, 0, 0, 0.72),
+      rgba(0, 0, 0, 0.72)
+    ),
+    url("../assets/images/background/features-background.jpg");
+
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  color: var(--text-light);
+  text-align: center;
+  padding: 90px 60px;
+}
+
+/* True parallax (background-attachment: fixed) is broken on iOS Safari —
+   the background silently fails to render as fixed, and on some versions
+   causes a blank/black section instead. Scope it to devices that can
+   actually support it and skip it everywhere else rather than risk a
+   broken section on mobile. */
+@media (min-width: 901px) {
+  .features {
+    background-attachment: fixed;
+  }
+}
+
+.features-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------- Features Header ---------- */
+
+.features-header {
+  margin-bottom: 58px;
+}
+
+.features-header h2 {
+  color: var(--text-light);
+  font-size: 38px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.features-header p {
+  color: var(--text-light);
+  font-size: 17px;
+  margin: 0;
+}
+
+/* ---------- Features Grid ---------- */
+
+.features-grid {
+  max-width: 1180px;
+  margin: 0 auto;
+
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 0;
+  text-align: left;
+}
+
+/* ---------- Individual Feature ---------- */
+
+.feature-item {
+  position: relative;
+  padding: 38px 40px 40px;
+  min-height: 230px;
+
+  border: 2px solid transparent;
+
+  transition:
+    border-color 0.25s var(--ease),
+    box-shadow 0.25s var(--ease),
+    background 0.25s var(--ease);
+}
+
+/* Vertical separators (3-column layout) */
+.feature-item:not(:nth-child(3n + 1)) {
+  border-left: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+/* Horizontal separator (3-column layout) */
+.feature-item:nth-child(n + 4) {
+  border-top: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+/* ---------- Feature Block Hover ---------- */
+
+/*
+ * Hovering anywhere over the feature block creates the thick gold
+ * outline and glow. The title's own color change is a separate,
+ * narrower rule below — this one never touches the title.
+ */
+.feature-item:hover {
+  border: 2px solid var(--accent);
+
+  background: rgba(var(--feature-glow), 0.06);
+
+  box-shadow:
+    0 0 10px rgba(var(--feature-glow), 0.65),
+    0 0 25px rgba(var(--feature-glow), 0.45),
+    0 0 45px rgba(var(--feature-glow), 0.2);
+
+  z-index: 5;
+}
+
+/* ---------- Feature Heading ---------- */
+
+.feature-heading {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin-bottom: 22px;
+}
+
+/* ---------- Feature Icon ---------- */
+
+.feature-icon {
+  width: 52px;
+  height: 52px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: transparent;
+  border: none;
+  border-radius: 0;
+
+  overflow: visible;
+}
+
+.feature-icon img {
+  width: 52px;
+  height: 52px;
+
+  object-fit: contain;
+  display: block;
+}
+
+/*
+ * The icon flashes once when the feature block is hovered. No glow is
+ * applied to the icon — that stays on the block border only.
+ */
+.feature-item:hover .feature-icon img {
+  animation: featureIconFlash 0.45s ease-out 1;
+}
+
+@keyframes featureIconFlash {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  30% {
+    opacity: 0.35;
+    transform: scale(1.12);
+  }
+
+  55% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Respect reduced-motion preferences — the scale/opacity flash is
+   purely decorative, so it's safe to just skip it entirely rather
+   than trying to offer a toned-down version. */
+@media (prefers-reduced-motion: reduce) {
+  .feature-item:hover .feature-icon img {
+    animation: none;
+  }
+
+  .feature-item {
+    transition: none;
+  }
+}
+
+/* ---------- Feature Title ---------- */
+
+.feature-item h3 {
+  color: var(--text-light);
+  font-size: 20px;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin: 0;
+  line-height: 1.2;
+
+  /* The title itself is the hover target here, not the whole block. */
+  cursor: pointer;
+
+  transition:
+    color 0.2s var(--ease),
+    background-color 0.2s var(--ease);
+}
+
+/*
+ * ONLY hovering directly over the title highlights it — intentionally
+ * NOT `.feature-item:hover h3`, since that would highlight the title
+ * every time the whole block is hovered, not just when the title
+ * itself is the target.
+ */
+.feature-item h3:hover {
+  color: var(--accent);
+  background: rgba(var(--feature-glow), 0.12);
+}
+
+/* ---------- Feature Description ---------- */
+
+.feature-item p {
+  color: var(--text-light);
+  font-size: 15px;
+  line-height: 1.9;
+  margin: 0;
+  max-width: 360px;
+}
+
+/* ---------- Responsive Features ---------- */
+
+@media (max-width: 900px) {
+  .features {
+    padding: 70px 30px;
+  }
+
+  .features-header h2 {
+    font-size: 32px;
+  }
+
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Reset the 3-column separators, then apply 2-column ones instead */
+  .feature-item:not(:nth-child(3n + 1)) {
+    border-left: none;
+  }
+
+  .feature-item:nth-child(even) {
+    border-left: 1px solid rgba(255, 255, 255, 0.22);
+  }
+
+  .feature-item:nth-child(n + 3) {
+    border-top: 1px solid rgba(255, 255, 255, 0.22);
+  }
+}
+
+@media (max-width: 600px) {
+  .features {
+    padding: 60px 24px;
+  }
+
+  .features-header {
+    margin-bottom: 35px;
+  }
+
+  .features-header h2 {
+    font-size: 28px;
+  }
+
+  .features-header p {
+    font-size: 15px;
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Single column: every item just stacks with a top border, no
+     left borders needed at all. */
+  .feature-item {
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.22);
+    padding: 30px 10px;
+    min-height: auto;
+  }
+
+  .feature-item:first-child {
+    border-top: none;
+  }
+
+  .feature-heading {
+    gap: 18px;
+  }
+
+  .feature-icon,
+  .feature-icon img {
+    width: 46px;
+    height: 46px;
+  }
+
+  .feature-item h3 {
+    font-size: 18px;
+  }
+
+  .feature-item p {
+    font-size: 14px;
+    line-height: 1.7;
+  }
+}
+
+/* ---------- Trainers / instructors grid ---------- */
+.trainers-header {
+  text-align: center;
+}
+
+.trainers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 400px));
+  justify-content: center;
+  gap: 24px;
+}
+
+.trainer-card {
+  position: relative;
+  height: 420px;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.trainer-card-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+.trainer-info {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 24px;
+  background: linear-gradient(180deg, transparent 30%, rgba(0, 0, 0, 0.9) 100%);
+  color: var(--text-light);
+}
+
+.trainer-role {
+  color: var(--accent);
+  font-size: 13px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.trainer-bio {
+  color: var(--text-muted);
+  font-size: 13px;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.4s var(--ease), opacity 0.4s var(--ease);
+}
+
+.trainer-card:hover .trainer-bio {
+  max-height: 100px;
+  opacity: 1;
+}
+
+.trainer-socials {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.35s var(--ease);
+}
+
+.trainer-card:hover .trainer-socials {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.trainer-socials a {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--text-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--text-light);
+  transition: background 0.25s var(--ease), color 0.25s var(--ease);
+}
+
+.trainer-socials a:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-dark);
+}
+/* ---------- News (home page grid) ---------- */
+.news {
+  background: var(--bg-light-2);
+}
+
+.news-header {
+  text-align: center;
+}
+
+.news-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+/* Only affects images inside the home page news cards.
+   This does NOT affect the News Image Slider from news.css (NB: gets confusing). */
+.news-grid .news-image {
+  width: 100%;
+  height: 300px; /*adjusts the height of the card in the home page */
+  object-fit: cover;
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  transition: transform 0.4s var(--ease);
+}
+
+.news-card:hover .news-image {
+  transform: scale(1.03);
+}
+
+.news-date {
+  font-size: 13px;
+  color: var(--text-dark-muted);
+}
+
+.news-title {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* ---------- Testimonials ---------- */
+.testimonials {
+  display: flex;
+  justify-content: center;
+}
+
+.testimonial-card {
+  max-width: 700px;
+  text-align: left;
+}
+
+.testimonial-quote-mark {
+  font-size: 60px;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.testimonial-body {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.testimonial-avatar {
+  display: block;
+  width: 56px;
+  height: 56px;
+  flex: 0 0 56px;
+  border-radius: 50%;
+  border: 2px solid rgba(201, 162, 39, .65);
+  object-fit: cover;
+  background: var(--bg-light-2);
+}
+
+.testimonial-role {
+  margin: 0;
+  font-size: 14px;
+}
+
+.testimonial-controls {
+  display: flex;
+  gap: 16px;
+}
+
+.testimonial-controls button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--text-dark-muted);
+  background: none;
+  cursor: pointer;
+  transition: all 0.25s var(--ease);
+}
+
+.testimonial-controls button:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-dark);
+}
+
+/* ---------- Free trial ---------- */
+.free-trial {
+  position: relative;
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+}
+
+.free-trial-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.free-trial-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  color: var(--text-light);
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.free-trial-content p {
+  color: var(--text-muted);
+}
+
+.free-trial-form {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.free-trial-form textarea {
+  grid-column: 1 / -1;
+}
+
+.free-trial-form input,
+.free-trial-form textarea {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  color: var(--text-light);
+  font-family: inherit;
+  resize: vertical;
+}
+
+.free-trial-form input::placeholder,
+.free-trial-form textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.free-trial-form button {
+  grid-column: 1 / 2;
+  margin-top: 8px;
+}
+
+/* ---------- Location (Home page map) ---------- */
+.location {
+  padding: 0;
+}
+
+.location-map-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+.map-wrapper-static { cursor: pointer; }
+.map-wrapper-static:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+.location-map-canvas {
+  width: 100%;
+  height: 400px;
+  position: relative;
+  overflow: hidden;
+  pointer-events: none;
+  filter: saturate(0.85);
+  transition: filter 0.4s var(--ease);
+}
+
+.location-map-canvas-active {
+  pointer-events: auto;
+  filter: saturate(1);
+}
+
+.location-map-placeholder {
+  height: 400px;
+  background: repeating-linear-gradient(45deg, #e5e5e5, #e5e5e5 10px, #ececec 10px, #ececec 20px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dark-muted);
+  font-size: 14px;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 900px) {
+  .programs-grid,
+  .features-grid,
+  .trainers-grid,
+  .news-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about {
+    grid-template-columns: 1fr;
+  }
+
+  .free-trial-form {
+    grid-template-columns: 1fr;
+  }
+
+  .free-trial-form button {
+    grid-column: 1;
+  }
+}
+
+
+/* ---------- Post-login entrance: overrides the normal scroll-reveal
+   for a more dramatic one-time "landing" on the sections already
+   visible when you arrive fresh from logging in. Sections further
+   down the page that aren't in view yet still use the normal
+   scroll-triggered Reveal behavior unchanged. ---------- */
+.home-page-login-entrance > .reveal {
+  animation: judoLandingIn 0.7s var(--ease) both;
+}
+
+.home-page-login-entrance > *:nth-child(1) { animation-delay: 0s; }
+.home-page-login-entrance > *:nth-child(2) { animation-delay: 0.15s; }
+.home-page-login-entrance > *:nth-child(3) { animation-delay: 0.3s; }
+.home-page-login-entrance > *:nth-child(4) { animation-delay: 0.45s; }
+.home-page-login-entrance > *:nth-child(5) { animation-delay: 0.6s; }
+.home-page-login-entrance > *:nth-child(n+6) { animation-delay: 0.75s; }
+
+@keyframes judoLandingIn {
+  0% {
+    opacity: 0;
+    transform: translateY(50px) scale(0.96) rotate(-1deg);
+  }
+  60% {
+    /* the "landing with control" overshoot */
+    opacity: 1;
+    transform: translateY(-6px) scale(1.01) rotate(0.3deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+}

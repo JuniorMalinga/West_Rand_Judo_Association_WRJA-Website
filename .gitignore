@@ -3,17 +3,22 @@
 .env.local
 server/.env
 server/.env.local
+backend/.env
+backend/.env.local
 
 # Dependencies
 node_modules/
 server/node_modules/
+backend/node_modules/
 
 # Build output
 dist/
 server/dist/
+backend/dist/
 
 # Local database and uploads
 server/data/
+backend/data/
 
 doc/
 docs/WRJA-website-presentation.md
