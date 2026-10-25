@@ -43,6 +43,17 @@ const panels = {
   users: AdminUsersPanel,
 };
 
+const adminStores = [
+  competitionsStore,
+  schoolsStore,
+  eventsStore,
+  newsStore,
+  adminGalleryStore,
+  messagesStore,
+  paymentsStore,
+  usersStore,
+];
+
 export default function AdminPage() {
   const { isAdmin, displayName, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState(() => {
@@ -59,6 +70,11 @@ export default function AdminPage() {
     return () => window.removeEventListener("wrja:admin-tab", handleTabRequest);
   }, []);
 
+  useEffect(() => {
+    if (!isAdmin) return;
+    adminStores.forEach((store) => { void store.load(); });
+  }, [isAdmin]);
+
   if (!isAdmin) return <Navigate to="/login" replace />;
 
   const badges = { messages: counts?.unreadMessages || 0, payments: counts?.pendingPayments || 0 };
@@ -70,7 +86,7 @@ export default function AdminPage() {
 
   // Reload every list from the server, then remount the panel.
   const refresh = () => {
-    [competitionsStore, schoolsStore, eventsStore, newsStore, adminGalleryStore, messagesStore, paymentsStore, usersStore].forEach((store) => store.refresh());
+    adminStores.forEach((store) => { void store.refresh(); });
     setRefreshKey((key) => key + 1);
     refreshCounts();
     setNotice("Data refreshed");
