@@ -292,7 +292,7 @@ Under Authentication > URL Configuration, set the **Site URL** to your live addr
 
 ### 7. Create the first administrator
 
-1. Sign up through the website.
+1. Create an account through the website or Supabase Authentication. The app does not seed administrator or demo-user credentials.
 2. Run this in the Supabase SQL Editor:
 
 ```sql
@@ -302,6 +302,9 @@ where email = 'your-email@example.com';
 ```
 
 After that, administrators can create and manage other users from the admin console.
+If any existing Supabase account used credentials that were previously published in this repository, reset its password or delete the account before launch.
+
+Login attempts are throttled by the API to 20 attempts per IP and 5 failed attempts per email in a 15-minute window. These in-process limits are useful for a single server, but can reset or differ between Vercel function instances. Supabase Auth remains the source of authentication and may apply its own project-level protections; configure and monitor those protections in the Supabase dashboard for production.
 
 ## Deploying to Vercel
 

@@ -7,7 +7,7 @@ before(async () => { server = await startServer(); });
 after(() => server.stop());
 
 describe("login & sessions", () => {
-  it("logs in the default admin and sets a hardened cookie", async () => {
+  it("logs in a configured administrator and sets a hardened cookie", async () => {
     const b = browser(server.base);
     const { status, data, headers } = await b.login(...ADMIN);
     assert.equal(status, 200);
@@ -35,7 +35,7 @@ describe("login & sessions", () => {
     assert.equal(r2.status, 401);
   });
 
-  it("locks an account after 5 failed attempts, even with the right password", async () => {
+  it("blocks an email after 5 failed login attempts", async () => {
     const b = browser(server.base);
     for (let i = 0; i < 5; i += 1) {
       const r = await b.post("/api/auth/login", { email: MEMBER[0], password: "wrong-pass1" });

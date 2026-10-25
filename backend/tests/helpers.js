@@ -77,6 +77,15 @@ export const PDF_DATA_URL = `data:application/pdf;base64,${Buffer.from("%PDF-1.4
 export const SVG_DATA_URL = `data:image/svg+xml;base64,${Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>').toString("base64")}`;
 export const HTML_AS_PNG = `data:image/png;base64,${Buffer.from("<html><script>alert(1)</script></html>").toString("base64")}`;
 
-export const ADMIN = ["admin@wrja.co.za", "Admin123!"];
-export const MEMBER = ["user@wrja.co.za", "User123!"];
-export const DEMO_MEMBER = ["Demo1@gmail.com", "DemoUser@1"];
+export const ADMIN = [
+  process.env.WRJA_TEST_ADMIN_EMAIL || "test-admin@example.invalid",
+  process.env.WRJA_TEST_ADMIN_PASSWORD || "invalid-test-password",
+];
+export const MEMBER = [
+  process.env.WRJA_TEST_MEMBER_EMAIL || "test-member@example.invalid",
+  process.env.WRJA_TEST_MEMBER_PASSWORD || "invalid-test-password",
+];
+export const DEMO_MEMBER = [
+  process.env.WRJA_TEST_DEMO_EMAIL || "test-demo@example.invalid",
+  process.env.WRJA_TEST_DEMO_PASSWORD || "invalid-test-password",
+];

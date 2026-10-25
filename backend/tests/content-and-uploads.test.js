@@ -278,7 +278,7 @@ describe("user management guards", () => {
     // the raw database never contains a plaintext password
     const dbFiles = ["wrja.db", "wrja.db-wal"].filter((f) => fs.existsSync(path.join(server.dataDir, f)));
     const raw = dbFiles.map((f) => fs.readFileSync(path.join(server.dataDir, f)).toString("latin1")).join("");
-    assert.ok(!raw.includes("Passw0rd!") && !raw.includes("Admin123!"), "no plaintext passwords on disk");
+    assert.ok(!raw.includes("Passw0rd!"), "no plaintext passwords on disk");
     assert.ok(raw.includes("scrypt$"));
   });
 

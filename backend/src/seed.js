@@ -5,18 +5,10 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import * as repo from "./database/repo.js";
-import { hashPassword, verifyPassword } from "./auth.js";
 import { ensureSeedAssets } from "./uploads.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const img = (name) => `/uploads/public/${name}`;
-
-// Default logins (kept as requested – change them before going live).
-const DEFAULT_USERS = [
-  { firstName: "WRJA", lastName: "Admin", email: "admin@wrja.co.za", password: "Admin123!", role: "admin" },
-  { firstName: "Test", lastName: "User", email: "user@wrja.co.za", password: "User123!", role: "athlete" },
-  { firstName: "Demo", lastName: "User", email: "Demo1@gmail.com", password: "DemoUser@1", role: "athlete" },
-];
 
 const COMPETITIONS = [
   ["nre", "NRE", "National Ranking Event", true],
@@ -52,13 +44,6 @@ const EVENTS = [
 
 export async function seedIfEmpty() {
   ensureSeedAssets();
-
-  if (await repo.tableIsEmpty("users")) {
-    for (const { password, ...user } of DEFAULT_USERS) {
-      await repo.createUser({ ...user, passwordHash: await hashPassword(password) });
-    }
-    console.log("Seeded default users.");
-  }
 
   if (await repo.tableIsEmpty("competitions")) {
     for (const [index, [slug, name, type, paymentRequired]] of COMPETITIONS.entries()) {
@@ -96,9 +81,4 @@ export async function seedIfEmpty() {
     console.log("Seeded news.");
   }
 
-  // Be upfront that the well-known default admin login is still active.
-  const admin = await repo.findUserByEmail(DEFAULT_USERS[0].email);
-  if (admin && (await verifyPassword(DEFAULT_USERS[0].password, admin.passwordHash))) {
-    console.warn("⚠  The default admin login (admin@wrja.co.za / Admin123!) is still active. Change it before going live.");
-  }
 }

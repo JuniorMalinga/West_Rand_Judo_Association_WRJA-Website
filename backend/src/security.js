@@ -88,7 +88,7 @@ export function csrfGuard(req, res, next) {
   return next();
 }
 
-// ---- Rate limiting (in memory – fine for a single local server) -------------
+// ---- Rate limiting (in memory; distributed deployments need a shared store) -
 export function createLimiter({ windowMs, max }) {
   const hits = new Map(); // key -> { count, resetAt }
 

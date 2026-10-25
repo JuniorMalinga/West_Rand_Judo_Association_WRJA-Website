@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { createHash } from "node:crypto";
 import * as eventsRepo from "../database/eventsRepo.js";
 import * as newsRepo from "../database/newsRepo.js";
 import * as contactMessagesRepo from "../database/contactMessagesRepo.js";
@@ -33,7 +34,7 @@ const MINUTE = 60 * 1000;
 // =============================================================================
 // AUTH
 // =============================================================================
-const loginFailuresByIp = createLimiter({ windowMs: 15 * MINUTE, max: 20 });
+const loginAttemptsByIp = createLimiter({ windowMs: 15 * MINUTE, max: 20 });
 const loginFailuresByEmail = createLimiter({ windowMs: 15 * MINUTE, max: 5 });
 
 router.post("/auth/login", async (req, res) => {
@@ -41,23 +42,24 @@ router.post("/auth/login", async (req, res) => {
   const password = String(req.body?.password || "").slice(0, 256);
   if (!email || !password) throw new HttpError(400, "Please enter your email and password.");
 
-  const wait = Math.max(loginFailuresByIp.blocked(req.ip), loginFailuresByEmail.blocked(email));
+  const ip = req.ip || req.socket.remoteAddress || "unknown";
+  const emailKey = createHash("sha256").update(email).digest("hex");
+  const wait = Math.max(loginAttemptsByIp.blocked(ip), loginFailuresByEmail.blocked(emailKey));
   if (wait) {
     res.setHeader("Retry-After", String(wait));
-    throw new HttpError(429, `Too many failed attempts. Please try again in ${Math.ceil(wait / 60)} minute(s).`);
+    throw new HttpError(429, `Too many login attempts. Please try again in ${Math.ceil(wait / 60)} minute(s).`);
   }
+  loginAttemptsByIp.hit(ip);
 
   const client = authClient();
   const { data, error } = await client.auth.signInWithPassword({ email, password });
   if (error || !data.session) {
-    loginFailuresByIp.hit(req.ip);
-    loginFailuresByEmail.hit(email);
+    loginFailuresByEmail.hit(emailKey);
     throw new HttpError(401, "Invalid email or password.");
   }
   // Never trust a role supplied by the browser or user metadata.
   const profile = await loadProfile(createUserClient(data.session.access_token), data.user);
-  loginFailuresByIp.reset(req.ip);
-  loginFailuresByEmail.reset(email);
+  loginFailuresByEmail.reset(emailKey);
   setSession(req, res, data.session);
   res.json({ success: true, user: publicUser(profile) });
 });
