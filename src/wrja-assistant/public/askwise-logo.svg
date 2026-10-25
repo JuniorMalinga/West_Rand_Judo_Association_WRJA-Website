@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Askwise monogram">
+  <rect width="64" height="64" rx="17" fill="#f6f7f4"/>
+  <g fill="none" stroke="#34796d" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.2">
+    <path d="M21 13h-6v38h6M43 13h6v38h-6"/>
+    <path d="m24.5 43 7.5-24 7.5 24M27.5 35h9"/>
+  </g>
+</svg>

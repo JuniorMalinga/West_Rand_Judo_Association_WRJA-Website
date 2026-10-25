@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "kb-local-first",
+      "title": "Local-first answering",
+      "category": "How Askwise works",
+      "keywords": ["local", "knowledge", "offline", "Gemini", "answer"],
+      "relatedTerms": ["without internet", "API unavailable", "fallback", "saved notes"],
+      "questions": ["Does Askwise need Gemini to answer?", "Can it work if the AI service is offline?", "Where does it look first?"],
+      "answer": "Askwise searches your saved knowledge base first. It can answer known questions without Gemini. Gemini is only used when the local information is not a confident match or you ask for deeper explanation. If Gemini is unavailable, Askwise still uses local information and tells you when it cannot verify an answer.",
+      "source": "Askwise product guide",
+      "updatedAt": "2026-10-23"
+    },
+    {
+      "id": "kb-import-json",
+      "title": "Importing a knowledge base",
+      "category": "Knowledge base",
+      "keywords": ["import", "JSON", "upload", "knowledge base", "file"],
+      "relatedTerms": ["add my notes", "bring my data", "load a dataset", "knowledge file"],
+      "questions": ["How do I add my own knowledge?", "Can I upload my notes?", "What file format can I import?"],
+      "answer": "Open Knowledge Base and choose Import JSON. Askwise accepts a JSON object with an `entries` array or a JSON array of entries. Each entry needs a title and answer; keywords, category, relatedTerms, questions, source, and notes are optional. Imported content is saved in this browser profile. Use Export JSON to back it up or move it to another browser.",
+      "source": "Askwise knowledge-base format",
+      "updatedAt": "2026-10-23"
+    },
+    {
+      "id": "kb-browser-storage",
+      "title": "Where imported knowledge is stored",
+      "category": "Privacy and storage",
+      "keywords": ["storage", "browser", "localStorage", "private", "sync", "device"],
+      "relatedTerms": ["where is my data", "between devices", "cloud sync", "browser profile"],
+      "questions": ["Is my knowledge uploaded to a server?", "Will my notes appear on another device?", "Can I back up imported data?"],
+      "answer": "Imported knowledge is stored in this browser's local storage and is not uploaded just by importing it. It does not automatically sync to other devices or browser profiles. Export the knowledge base as JSON to keep a backup or move it. When you explicitly use Gemini, only a few relevant excerpts are sent to Gemini with the question and recent conversation context.",
+      "source": "Askwise privacy note",
+      "updatedAt": "2026-10-23"
+    },
+    {
+      "id": "kb-source-citations",
+      "title": "Answer sources and confidence",
+      "category": "Answer quality",
+      "keywords": ["source", "citation", "confidence", "uncertain", "verified"],
+      "relatedTerms": ["where did this come from", "show evidence", "trust the answer", "made up"],
+      "questions": ["How do I know where an answer came from?", "Does it make up answers?", "What if it does not know?"],
+      "answer": "A local answer shows the knowledge-base entries that support it. Askwise does not treat a weak match as verified; it can ask Gemini for additional help or say the available sources are insufficient. Gemini is instructed to preserve the local sources and not invent or contradict facts as though they came from your knowledge base.",
+      "source": "Askwise answer policy",
+      "updatedAt": "2026-10-23"
+    },
+    {
+      "id": "kb-context-follow-up",
+      "title": "Conversation context and follow-up questions",
+      "category": "How Askwise works",
+      "keywords": ["context", "follow-up", "conversation", "pronoun", "history", "referent"],
+      "relatedTerms": ["what about it", "tell me more", "that one", "why", "continue"],
+      "questions": ["Does Askwise remember what I just asked?", "Can I ask a follow-up without repeating the subject?", "How does it know what 'that' means?"],
+      "answer": "Askwise keeps the current chat in the browser and uses recent turns to interpret follow-ups. If you ask “what about that?” or “tell me more,” it carries the current subject into the next search or Gemini request. Starting a new chat clears that conversation context.",
+      "source": "Askwise conversation guide",
+      "updatedAt": "2026-10-23"
+    },
+    {
+      "id": "kb-gemini-key",
+      "title": "Gemini API configuration",
+      "category": "Setup",
+      "keywords": ["Gemini", "API key", "environment", "server", "setup"],
+      "relatedTerms": ["configure Gemini", "missing key", "credential", "provider"],
+      "questions": ["Where do I put my Gemini key?", "Why does Gemini mode say it needs a key?", "Can the browser read the secret?"],
+      "answer": "For local development, copy `.env.example` to `.env` in the project root and set `GEMINI_API_KEY` there. The Express server reads the key; React never receives it. In a managed deployment, configure the secret in the server environment. If the key is missing, Askwise continues to answer from local knowledge and explains that Gemini assistance is not configured.",
+      "source": "Askwise setup guide",
+      "updatedAt": "2026-10-23"
+    }
+  ]
+}

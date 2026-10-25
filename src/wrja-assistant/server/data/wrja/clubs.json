@@ -1,0 +1,23 @@
+[
+  {
+    "id": "randburg-club",
+    "title": "Randburg Judo Club",
+    "category": "club",
+    "keywords": ["randburg", "club", "location", "address", "main", "headquarters"],
+    "content": "Our main club is located at 123 Judo Street, Randburg, Johannesburg, 2194. This is our headquarters and where all WRJA training sessions take place. Training runs Monday through Saturday. Free parking is available."
+  },
+  {
+    "id": "roodepoort-club",
+    "title": "Roodepoort Judo Club",
+    "category": "club",
+    "keywords": ["roodepoort", "club", "west", "rand", "training"],
+    "content": "Our Roodepoort club is located at 456 Dojo Avenue, Roodepoort, 1724. Training sessions are held on Tuesdays and Thursdays from 18:00-19:30. This is a satellite location of WRJA offering the same high-quality instruction."
+  },
+  {
+    "id": "krugersdorp-club",
+    "title": "Krugersdorp Judo Club",
+    "category": "club",
+    "keywords": ["krugersdorp", "club", "mogale", "city", "training"],
+    "content": "Our Krugersdorp club is located at 789 Sensei Road, Krugersdorp, 1739. Training sessions are held on Mondays and Wednesdays from 18:00-19:30. This club serves the Mogale City area and is a proud member of WRJA."
+  }
+]

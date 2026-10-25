@@ -1,0 +1,91 @@
+# Terminal Full Output
+# Terminal: default
+# Command: python3 - <<'PY'
+import json, time, urllib.request
+base='http://127.0.0.1:3000'
+for attempt in range(12):
+    try:
+        with urllib.request.urlopen(base+'/api/health', timeout=5) as response:
+            health=json.loads(response.read())
+        break
+    except Exception:
+        if attempt == 11: raise
+        time.sleep(1)
+print('health:', health)
+assert health.get('geminiConfigured') is True, 'Server did not load the protected Gemini configuration.'
+payload={
+  'message':'Tell me more about why local knowledge is used first. Preserve the note as authoritative and do not invent product-specific facts.',
+  'history':[{'role':'user','content':'Can Askwise answer if Gemini is unavailable?'}],
+  'matches':[{'id':'kb-local-first','title':'Local-first answering','category':'How Askwise works','answer':'Askwise searches your saved knowledge base first. It can answer known questions without Gemini. Gemini is only used when the local information is not a confident match or you ask for deeper explanation. If Gemini is unavailable, Askwise still uses local information and tells you when it cannot verify an answer.','source':'Askwise product guide','score':0.9,'confidence':0.9}],
+  'forceGemini':True
+}
+request=urllib.request.Request(base+'/api/chat', data=json.dumps(payload).encode(), headers={'Content-Type':'application/json'}, method='POST')
+with urllib.request.urlopen(request, timeout=30) as response:
+    result=json.loads(response.read())
+    print('chat status:', response.status, 'mode:', result.get('mode'), 'model:', result.get('model'), 'durationMs:', result.get('durationMs'))
+    print('answer preview:', (result.get('answer') or '')[:360].replace('\n',' '))
+    print('fallback note:', result.get('note',''))
+    assert result.get('mode') in ('gemini','fallback')
+    assert result.get('answer') or result.get('mode') == 'fallback'
+PY
+printf '\n--- browser bundle secret check ---\n'
+if grep -R -n 'GEMINI_API_KEY' dist/assets; then echo 'FAIL: secret variable name appears in browser bundle'; exit 1; else echo 'PASS: no Gemini key identifier in built browser assets'; fi
+# PID: 1151
+# Timestamp: 2026-10-23_20-43-02.518612
+# Original Length: 11921 characters
+# ----------------------------------------
+
+[32mubuntu@sandbox:~/askwise$ [0mpython3 - <<'PY'
+import json, time, urllib.request
+base='http://127.0.0.1:3000'
+for attempt in range(12):
+    try:
+        with urllib.request.urlopen(base+'/api/health', timeout=5) as response:
+            health=json.loads(response.read())
+        break
+    except Exception:
+        if attempt == 11: raise
+        time.sleep(1)
+print('health:', health)
+assert health.get('geminiConfigured') is True, 'Server did not load the protected Gemini configuration.'
+payload={
+  'message':'Tell me more about why local knowledge is used first. Preserve the note as authoritative and do not invent product-specific facts.',
+  'history':[{'role':'user','content':'Can Askwise answer if Gemini is unavailable?'}],
+  'matches':[{'id':'kb-local-first','title':'Local-first answering','category':'How Askwise works','answer':'Askwise searches your saved knowledge base first. It can answer known questions without Gemini. Gemini is only used when the local information is not a confident match or you ask for deeper explanation. If Gemini is unavailable, Askwise still uses local information and tells you when it cannot verify an answer.','source':'Askwise product guide','score':0.9,'confidence':0.9}],
+  'forceGemini':True
+}
+request=urllib.request.Request(base+'/api/chat', data=json.dumps(payload).encode(), headers={'Content-Type':'application/json'}, method='POST')
+with urllib.request.urlopen(request, timeout=30) as response:
+    result=json.loads(response.read())
+    print('chat status:', response.status, 'mode:', result.get('mode'), 'model:', result.get('model'), 'durationMs:', result.get('durationMs'))
+    print('answer preview:', (result.get('answer') or '')[:360].replace('\n',' '))
+    print('fallback note:', result.get('note',''))
+    assert result.get('mode') in ('gemini','fallback')
+    assert result.get('answer') or result.get('mode') == 'fallback'
+PY
+printf '\n--- browser bundle secret check ---\n'
+if grep -R -n 'GEMINI_API_KEY' dist/assets; then echo 'FAIL: secret variable name appears in browser bundle'; exit 1; else echo 'PASS: no Gemini key identifier in built browser assets'; fi
+health: {'ok': True, 'geminiConfigured': True}
+chat status: 200 mode: fallback model: None durationMs: 15003
+answer preview: Askwise searches your saved knowledge base first. It can answer known questions without Gemini. Gemini is only used when the local information is not a confident match or you ask for deeper explanation. If Gemini is unavailable, Askwise still uses local information and tells you when it cannot verify an answer.
+fallback note: Gemini timed out. Showing the verified local note instead.
+--- browser bundle secret check ---
+dist/assets/index-C04t4dGQ.js:9:`).replace(Nv,"")}function Ep(t,e){return e=Sp(e),Sp(t)===e}function Vt(t,e,n,i,r,c){switch(n){case"children":if(typeof i=="string")e==="body"||e==="textarea"&&i===""||xi(t,i);else if(typeof i=="number"||typeof i=="bigint")e!=="body"&&xi(t,""+i);else return;break;case"className":Nu(t,"class",i);break;case"tabIndex":Nu(t,"tabindex",i);break;case"dir":case"role":case"viewBox":case"width":case"height":Nu(t,n,i);break;case"style":yh(t,i,c);return;case"data":if(e!=="ob
+ject"){Nu(t,"data",i);break}case"src":case"href":if(i===""&&(e!=="a"||n!=="href")){t.removeAttribute(n);break}if(i==null||typeof i=="function"||typeof i=="symbol"||typeof i=="boolean"){t.removeAttribute(n);break}i=Ou(i),t.setAttribute(n,i);break;case"action":case"formAction":if(typeof i=="function"){t.setAttribute(n,"javascript:throw new Error('A React form was unexpectedly submitted. If you called form.submit() manually, consider using form.requestSubmit() instead. If you\\'re trying to use eve
+nt.stopPropagation() in a submit event handler, consider also calling event.preventDefault().')");break}else typeof c=="function"&&(n==="formAction"?(e!=="input"&&Vt(t,e,"name",r.name,r,null),Vt(t,e,"formEncType",r.formEncType,r,null),Vt(t,e,"formMethod",r.formMethod,r,null),Vt(t,e,"formTarget",r.formTarget,r,null)):(Vt(t,e,"encType",r.encType,r,null),Vt(t,e,"method",r.method,r,null),Vt(t,e,"target",r.target,r,null)));if(i==null||typeof i=="symbol"||typeof i=="boolean"){t.removeAttribute(n);brea
+k}i=Ou(i),t.setAttribute(n,i);break;case"onClick":i!=null&&(t.onclick=Tn);return;case"onScroll":i!=null&&Nt("scroll",t);return;case"onScrollEnd":i!=null&&Nt("scrollend",t);return;case"dangerouslySetInnerHTML":if(i!=null){if(typeof i!="object"||!("__html"in i))throw Error(o(61));if(n=i.__html,n!=null){if(r.children!=null)throw Error(o(60));c?.__html!==n&&(t.innerHTML=n)}}break;case"multiple":t.multiple=i&&typeof i!="function"&&typeof i!="symbol";break;case"muted":t.muted=i&&typeof i!="function"&&
+typeof i!="symbol";break;case"suppressContentEditableWarning":case"suppressHydrationWarning":case"defaultValue":case"defaultChecked":case"innerHTML":case"ref":break;case"autoFocus":break;case"xlinkHref":if(i==null||typeof i=="function"||typeof i=="boolean"||typeof i=="symbol"){t.removeAttribute("xlink:href");break}n=Ou(i),t.setAttributeNS("http://www.w3.org/1999/xlink","xlink:href",n);break;case"contentEditable":case"spellCheck":case"draggable":case"value":case"autoReverse":case"externalResource
+sRequired":case"focusable":case"preserveAlpha":i!=null&&typeof i!="function"&&typeof i!="symbol"?t.setAttribute(n,i):t.removeAttribute(n);break;case"inert":case"allowFullScreen":case"async":case"autoPlay":case"controls":case"credentialless":case"default":case"defer":case"disabled":case"disablePictureInPicture":case"disableRemotePlayback":case"formNoValidate":case"hidden":case"loop":case"noModule":case"noValidate":case"open":case"playsInline":case"readOnly":case"required":case"reversed":case"scop
+ed":case"seamless":case"itemScope":i&&typeof i!="function"&&typeof i!="symbol"?t.setAttribute(n,""):t.removeAttribute(n);break;case"capture":case"download":i===!0?t.setAttribute(n,""):i!==!1&&i!=null&&typeof i!="function"&&typeof i!="symbol"?t.setAttribute(n,i):t.removeAttribute(n);break;case"cols":case"rows":case"size":case"span":i!=null&&typeof i!="function"&&typeof i!="symbol"&&!isNaN(i)&&1<=i?t.setAttribute(n,i):t.removeAttribute(n);break;case"rowSpan":case"start":i==null||typeof i=="functio
+n"||typeof i=="symbol"||isNaN(i)?t.removeAttribute(n):t.setAttribute(n,i);break;case"popover":Nt("beforetoggle",t),Nt("toggle",t),Au(t,"popover",i);break;case"xlinkActuate":Yn(t,"http://www.w3.org/1999/xlink","xlink:actuate",i);break;case"xlinkArcrole":Yn(t,"http://www.w3.org/1999/xlink","xlink:arcrole",i);break;case"xlinkRole":Yn(t,"http://www.w3.org/1999/xlink","xlink:role",i);break;case"xlinkShow":Yn(t,"http://www.w3.org/1999/xlink","xlink:show",i);break;case"xlinkTitle":Yn(t,"http://www.w3.o
+rg/1999/xlink","xlink:title",i);break;case"xlinkType":Yn(t,"http://www.w3.org/1999/xlink","xlink:type",i);break;case"xmlBase":Yn(t,"http://www.w3.org/XML/1998/namespace","xml:base",i);break;case"xmlLang":Yn(t,"http://www.w3.org/XML/1998/namespace","xml:lang",i);break;case"xmlSpace":Yn(t,"http://www.w3.org/XML/1998/namespace","xml:space",i);break;case"is":Au(t,"is",i);break;case"innerText":case"textContent":return;default:if(!(2<n.length)||n[0]!=="o"&&n[0]!=="O"||n[1]!=="n"&&n[1]!=="N")n=I1.get(n
+)||n,Au(t,n,i);else return}Rt=!0}function ps(t,e,n,i,r,c){switch(n){case"style":yh(t,i,c);return;case"dangerouslySetInnerHTML":if(i!=null){if(typeof i!="object"||!("__html"in i))throw Error(o(61));if(n=i.__html,n!=null){if(r.children!=null)throw Error(o(60));c?.__html!==n&&(t.innerHTML=n)}}break;case"children":if(typeof i=="string")xi(t,i);else if(typeof i=="number"||typeof i=="bigint")xi(t,""+i);else return;break;case"onScroll":i!=null&&Nt("scroll",t);return;case"onScrollEnd":i!=null&&Nt("scrol
+lend",t);return;case"onClick":i!=null&&(t.onclick=Tn);return;case"suppressContentEditableWarning":case"suppressHydrationWarning":case"innerHTML":case"ref":return;case"innerText":case"textContent":return;default:if(!rh.hasOwnProperty(n))t:{if(n[0]==="o"&&n[1]==="n"&&(r=n.endsWith("Capture"),c=n.slice(2,r?n.length-7:void 0),e=t[je]||null,e=e!=null?e[n]:null,typeof e=="function"&&t.removeEventListener(c,e,r),typeof i=="function")){typeof e!="function"&&e!==null&&(n in t?t[n]=null:t.hasAttribute(n)&
+&t.removeAttribute(n)),t.addEventListener(c,i,r);break t}Rt=!0,n in t?t[n]=i:i===!0?t.setAttribute(n,""):Au(t,n,i)}return}Rt=!0}function Ee(t,e,n){switch(e){case"div":case"span":case"svg":case"path":case"a":case"g":case"p":case"li":break;case"img":Nt("error",t),Nt("load",t);var i=!1,r=!1,c;for(c in n)if(n.hasOwnProperty(c)){var m=n[c];if(m!=null)switch(c){case"src":i=!0;break;case"srcSet":r=!0;break;case"children":case"dangerouslySetInnerHTML":throw Error(o(137,e));default:Vt(t,e,c,m,n,null)}}r&
+&Vt(t,e,"srcSet",n.srcSet,n,null),i&&Vt(t,e,"src",n.src,n,null);return;case"input":Nt("invalid",t);var b=c=m=r=null,E=null,_=null;for(i in n)if(n.hasOwnProperty(i)){var U=n[i];if(U!=null)switch(i){case"name":r=U;break;case"type":m=U;break;case"checked":E=U;break;case"defaultChecked":_=U;break;case"value":c=U;break;case"defaultValue":b=U;break;case"children":case"dangerouslySetInnerHTML":if(U!=null)throw Error(o(137,e));break;default:Vt(t,e,i,U,n,null)}}dh(t,c,b,E,_,m,r,!1);return;case"select":Nt
+("invalid",t),i=m=c=null;for(r in n)if(n.hasOwnProperty(r)&&(b=n[r],b!=null))switch(r){case"value":c=b;break;case"defaultValue":m=b;break;case"multiple":i=b;default:Vt(t,e,r,b,n,null)}e=c,n=m,t.multiple=!!i,e!=null?bi(t,!!i,e,!1):n!=null&&bi(t,!!i,n,!0);return;case"textarea":Nt("invalid",t),c=r=i=null;for(m in n)if(n.hasOwnProperty(m)&&(b=n[m],b!=null))switch(m){case"value":i=b;break;case"defaultValue":r=b;break;case"children":c=b;break;case"dangerouslySetInnerHTML":if(b!=null)throw Error(o(91))
+;break;default:Vt(t,e,m,b,n,null)}ph(t,i,r,c);return;case"option":for(E in n)n.hasOwnProperty(E)&&(i=n[E],i!=null)&&(E==="selected"?t.selected=i&&typeof i!="function"&&typeof i!="symbol":Vt(t,e,E,i,n,null));return;case"dialog":Nt("beforetoggle",t),Nt("toggle",t),Nt("cancel",t),Nt("close",t);break;case"iframe":case"object":Nt("load",t);break;case"video":case"audio":for(i=0;i<Ja.length;i++)Nt(Ja[i],t);break;case"image":Nt("error",t),Nt("load",t);break;case"details":Nt("toggle",t);break;case"embed"
+:case"source":case"link":Nt("error",t),Nt("load",t);case"area":case"base":case"br":case"col":case"hr":case"keygen":case"meta":case"param":case"track":case"wbr":case"menuitem":for(_ in n)if(n.hasOwnProperty(_)&&(i=n[_],i!=null))switch(_){case"children":case"dangerouslySetInnerHTML":throw Error(o(137,e));default:Vt(t,e,_,i,n,null)}return;default:if(yo(e)){for(U in n)n.hasOwnProperty(U)&&(i=n[U],i!==void 0&&ps(t,e,U,i,n,void 0));return}}for(b in n)n.hasOwnProperty(b)&&(i=n[b],i!=null&&Vt(t,e,b,i,n,
+null))}var Ov={};function _v(t,e,n,i){switch(e){case"div":case"span":case"svg":case"path":case"a":case"g":case"p":case"li":break;case"input":var r=null,c=null,m=null,b=null,E=null,_=null,U=null;for(R in n){var V=n[R];if(n.hasOwnProperty(R)&&V!=null)switch(R){case"checked":break;case"value":break;case"defaultValue":E=V;default:i.hasOwnProperty(R)||Vt(t,e,R,null,i,V)}}for(var N in i){var R=i[N];if(V=n[N],i.hasOwnProperty(N)&&(R!=null||V!=null))switch(N){case"type":R!==V&&(Rt=!0),c=R;break;case"nam
+e":R!==V&&(Rt=!0),r=R;break;case"checked":R!==V&&(Rt=!0),_=R;break;case"defaultChecked":R!==V&&(Rt=!0),U=R;break;case"value":R!==V&&(Rt=!0),m=R;break;case"defaultValue":R!==V&&(Rt=!0),b=R;break;case"children":case"dangerouslySetInnerHTML":if(R!=null)throw Error(o(137,e));break;default:R!==V&&Vt(t,e,N,R,i,V)}}po(t,m,b,E,_,U,c,r);return;case"select":R=m=b=N=null;for(c in n)if(E=n[c],n.hasOwnProperty(c)&&E!=null)switch(c){case"value":break;case"multiple":R=E;default:i.hasOwnProperty(c)||Vt(t,e,c,nu
+ll,i,E)}for(r in i)if(c=i[r],E=n[r],i.hasOwnProperty(r)&&(c!=null||E!=null))switch(r){case"value":c!==E&&(Rt=!0),N=c;break;case"defaultValue":c!==E&&(Rt=!0),b=c;break;case"multiple":c!==E&&(Rt=!0),m=c;default:c!==E&&

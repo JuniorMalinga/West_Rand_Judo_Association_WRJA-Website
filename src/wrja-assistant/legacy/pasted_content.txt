@@ -1,0 +1,131 @@
+# Build a React Chatbot with Local Knowledge and Gemini AI Assistance
+
+I want to build a React-based chatbot that can answer questions using its own local knowledge base while also having the ability to use the Google Gemini API for additional assistance when necessary.
+
+## 1. Core Objective
+
+Develop an intelligent, reliable chatbot that **works independently using local information first**, even when the Gemini API is unavailable, and can use Gemini to handle questions that require more advanced reasoning or responses beyond its existing knowledge.
+
+The chatbot must not depend entirely on Gemini to function.
+
+## 2. Local Knowledge Base
+
+Implement a local knowledge system that stores information relevant to the chatbot's purpose.
+
+- Store information in structured JSON files or another suitable local data format.
+- Organise information into categories, topics, keywords, questions, answers, and related terms.
+- Allow the chatbot to retrieve relevant information based on the meaning and context of a user's question, rather than relying exclusively on exact keyword matches.
+- Support follow-up questions by remembering relevant context from the current conversation.
+- Provide accurate answers from the local knowledge base without making unnecessary API calls.
+- Make the knowledge base easy to update and expand without modifying the chatbot's core logic.
+- If the local knowledge base contains the answer, prioritise that information over generating a new answer.
+
+## 3. Gemini API Integration
+
+Integrate the Google Gemini API as a secondary source of assistance.
+
+- Use the Gemini API when the local knowledge base cannot confidently answer a question, when a user requests further explanation, or when additional reasoning is required.
+- Store the `GEMINI_API_KEY` securely in a server-side `.env` file.
+- Never expose the API key in React frontend code, browser requests, or publicly accessible environment variables.
+- Create a backend API endpoint that communicates with Gemini securely.
+- Send relevant conversation history and retrieved local information to Gemini when appropriate.
+- Instruct Gemini to prioritise verified local information when answering questions about the chatbot's specific subject.
+- If Gemini is unavailable, times out, or returns an error, fall back to the local knowledge system without crashing or leaving the user without a response.
+- Avoid unnecessary API calls to reduce latency and token consumption.
+
+## 4. Intelligent Response System
+
+Implement a clear response pipeline:
+
+1. Receive the user's message.
+2. Identify the intent and relevant conversation context.
+3. Search the local knowledge base using keywords, synonyms, and semantic similarity where appropriate.
+4. Return a locally generated answer if a sufficiently reliable match is found.
+5. If the local information is insufficient, send the question and relevant context to Gemini.
+6. If Gemini fails, provide the best available local answer or a helpful explanation of the limitation.
+7. Maintain the conversation context so follow-up questions make sense.
+
+The chatbot must distinguish between questions it can answer confidently and questions requiring additional assistance. It must not invent facts or present uncertain information as verified.
+
+## 5. React Chat Interface
+
+Create a modern, responsive chat interface with:
+
+- A clean, professional design.
+- A scrollable conversation history.
+- Distinct user and assistant messages.
+- A message input field and send button.
+- Enter-to-send support and Shift+Enter for a new line.
+- Loading indicators while the chatbot processes a message.
+- Clear error handling and retry functionality.
+- Auto-scrolling to the latest message.
+- Support for desktop and mobile screens.
+- Proper rendering of paragraphs, lists, links, and formatted responses.
+- Clear visual feedback when the assistant is responding locally versus using Gemini, where appropriate.
+
+The interface should remain responsive while the chatbot processes requests.
+
+## 6. Performance Requirements
+
+Performance is a priority.
+
+- Local answers should be returned as quickly as possible.
+- Avoid unnecessary delays, repeated searches, and redundant API requests.
+- Cache suitable results when appropriate.
+- Use lightweight retrieval methods before introducing expensive AI processing.
+- Keep the backend responsive and handle concurrent requests safely.
+- Measure local response time and Gemini response time separately.
+- Prevent duplicate message submissions and handle API timeouts gracefully.
+
+## 7. Technology Stack
+
+Use the following architecture unless there is a strong technical reason to change it:
+
+- **Frontend:** React with Vite.
+- **Backend:** Node.js with Express.
+- **AI assistance:** Google Gemini API.
+- **Knowledge storage:** Local JSON files initially, with an option to introduce a database later.
+- **Configuration:** Server-side `.env` file.
+- **Communication:** HTTP requests from React to the Express backend.
+
+Keep the frontend, backend, and knowledge base logically organised without unnecessarily complicating the project.
+
+## 8. Code Quality and Deliverables
+
+Provide a complete, working implementation rather than a conceptual demonstration.
+
+- Inspect the existing project structure before making changes if a project already exists.
+- Preserve existing functionality and avoid unnecessary file renaming or architectural changes.
+- Provide the complete code for every file that needs to be created or modified.
+- Include exact file paths and clear setup instructions.
+- Add beginner-friendly comments explaining important logic and any fixes.
+- Include a sample local knowledge base with realistic example questions and answers.
+- Include `.env.example` with the required environment variable names, but never include a real API key.
+- Include error handling, input validation, and basic protection against abuse.
+- Provide instructions for installing dependencies, configuring the Gemini API key, starting the backend, and running the React frontend.
+- Include test scenarios demonstrating local responses, Gemini fallback, follow-up questions, and API failure handling.
+
+## 9. Testing and Verification
+
+Test the following scenarios:
+
+1. A question answered entirely by the local knowledge base.
+2. A differently worded question with the same underlying meaning.
+3. A follow-up question that depends on previous messages.
+4. A question that requires Gemini assistance.
+5. An unavailable or invalid Gemini API key.
+6. A network failure or Gemini timeout.
+7. A question for which neither source has reliable information.
+8. Multiple messages sent in quick succession.
+9. A response that requires a list or structured formatting.
+10. A local answer that must not be overridden by unsupported AI-generated claims.
+
+Report actual test results and any remaining limitations. Do not claim that a feature works unless it has been implemented and verified.
+
+## Final Goal
+
+Build a chatbot that is **local-first, context-aware, fast, reliable, and AI-assisted rather than AI-dependent**.
+
+The local knowledge base should handle known questions efficiently. Gemini should extend the chatbot's capabilities when necessary, not become a mandatory dependency for every message.
+
+Start by examining the project requirements and proposing the simplest suitable architecture. Then implement the system in manageable stages, verifying each stage before moving on.
