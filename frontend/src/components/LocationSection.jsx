@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Reveal from "./Reveal";
 import { useMapboxReady } from "../lib/loadMapbox";
 import { getMapDirectionsLinks } from "../lib/mapDirections";
+import { openPrivacySettings, usePrivacyPreferences } from "../lib/privacyPreferences";
 
 // Same three real locations as the Contact page map, shown here as a
 // quick overview so visitors don't have to leave the homepage to see
@@ -36,13 +37,14 @@ export default function LocationSection() {
   // Same click-to-activate pattern as the Contact page map, so this
   // never hijacks scroll while someone's scrolling past it on Home.
   const [isActive, setIsActive] = useState(false);
+  const { externalContent } = usePrivacyPreferences();
 
   const token = import.meta.env.VITE_MAPBOX_TOKEN;
   const tokenLooksValid = isLikelyValidToken(token);
-  const mapboxReady = useMapboxReady();
+  const mapboxReady = useMapboxReady(externalContent);
 
   useEffect(() => {
-    if (!tokenLooksValid || !mapContainerRef.current || !mapboxReady || didInitializeRef.current) {
+    if (!externalContent || !tokenLooksValid || !mapContainerRef.current || !mapboxReady || didInitializeRef.current) {
       return;
     }
 
@@ -85,7 +87,13 @@ export default function LocationSection() {
     });
 
     mapRef.current = map;
-  }, [token, tokenLooksValid, mapboxReady]);
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+      didInitializeRef.current = false;
+    };
+  }, [externalContent, token, tokenLooksValid, mapboxReady]);
 
   const handleActivate = () => {
     setIsActive(true);
@@ -101,7 +109,15 @@ export default function LocationSection() {
 
   return (
     <Reveal className="location">
-      {tokenLooksValid && !mapError ? (
+      {!externalContent ? (
+        <div className="location-map-placeholder">
+          <p>The interactive map uses Mapbox, an optional external service.</p>
+          <button type="button" className="policy-settings-button" onClick={openPrivacySettings}>
+            Manage privacy preferences to enable the map
+          </button>
+          <p><a href="https://maps.google.com/?q=West+Rand+Judo+Association+Krugersdorp" target="_blank" rel="noopener noreferrer">Open directions in Google Maps</a></p>
+        </div>
+      ) : tokenLooksValid && !mapError ? (
         <div
           className={`location-map-wrapper ${isActive ? "" : "map-wrapper-static"}`}
           onClick={() => { if (!isActive) handleActivate(); }}

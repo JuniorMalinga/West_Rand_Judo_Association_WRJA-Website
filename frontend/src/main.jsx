@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { usePrivacyPreferences } from "./lib/privacyPreferences";
 import "./styles/base.css";
 import "./styles/home.css";
 import "./styles/programs.css";
@@ -17,10 +18,16 @@ import "./styles/notfound.css";
 import "./styles/faq.css";
 import "./styles/instructors.css";
 import "./styles/eventdetail.css";
+import "./styles/policies.css";
 import "./styles/mobile.css";
 
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
+
+function ConsentAwareSpeedInsights() {
+  const { analytics } = usePrivacyPreferences();
+  return analytics ? <SpeedInsights /> : null;
+}
 
 async function bootstrap() {
   try {
@@ -29,7 +36,7 @@ async function bootstrap() {
     root.render(
       <React.StrictMode>
         <App />
-        <SpeedInsights />
+        <ConsentAwareSpeedInsights />
       </React.StrictMode>
     );
   } catch (error) {

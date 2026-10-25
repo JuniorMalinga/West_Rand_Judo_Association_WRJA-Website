@@ -778,6 +778,122 @@ html:has(.signup-page), body:has(.signup-page) { background: #080808; }
   transform: translateX(-50%);
 }
 
+.cookie-notice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+
+.cookie-notice-actions .btn {
+  flex: 1 1 132px;
+  min-width: 132px;
+  height: 48px;
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: var(--radius);
+  box-shadow: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: normal;
+  transform: none;
+}
+
+.cookie-notice-actions .btn:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.cookie-notice .btn-accent {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--text-dark);
+}
+
+.cookie-notice .btn-accent:hover {
+  background: #dbb53e;
+  color: var(--text-dark);
+}
+
+.cookie-notice .btn-outline-dark {
+  background: transparent;
+  color: var(--text-light);
+}
+
+.cookie-notice .btn-outline-dark:hover {
+  background: var(--text-light);
+  color: var(--text-dark);
+}
+
+.cookie-notice .btn-ghost {
+  border-color: rgba(255, 255, 255, 0.42);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-light);
+}
+
+.cookie-notice .btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--text-light);
+}
+
+.cookie-notice-copy a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.privacy-preference-options {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius);
+}
+
+.privacy-preference-options legend {
+  padding: 0 6px;
+  color: var(--text-light);
+  font-weight: 700;
+}
+
+.privacy-preference-options label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--text-light);
+  font-size: 13px;
+}
+
+.privacy-preference-options input {
+  flex: 0 0 auto;
+  margin-top: 3px;
+  accent-color: var(--accent);
+}
+
+.privacy-preference-error {
+  color: #ffd5d5 !important;
+}
+
+.signup-terms {
+  flex-wrap: wrap;
+}
+
+.signup-terms label {
+  color: inherit;
+  line-height: 1.5;
+}
+
+.signup-terms a {
+  color: #f1bd16;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .cookie-notice .eyebrow {
   margin-bottom: 5px;
   color: var(--accent);
@@ -795,8 +911,6 @@ html:has(.signup-page), body:has(.signup-page) { background: #080808; }
   font-size: 13px;
   line-height: 1.5;
 }
-
-.cookie-notice .btn { white-space: nowrap; }
 
 .session-idle-dialog {
   width: min(460px, calc(100vw - 32px));

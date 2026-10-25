@@ -28,11 +28,11 @@ export function loadMapbox() {
 }
 
 // Returns true once Mapbox is ready. Starts loading when the browser is idle.
-export function useMapboxReady() {
+export function useMapboxReady(enabled = true) {
   const [ready, setReady] = useState(Boolean(window.mapboxgl));
 
   useEffect(() => {
-    if (ready) return undefined;
+    if (!enabled || ready) return undefined;
     let cancelled = false;
 
     const start = () =>
@@ -52,7 +52,7 @@ export function useMapboxReady() {
       if ("cancelIdleCallback" in window) window.cancelIdleCallback(handle);
       else window.clearTimeout(handle);
     };
-  }, [ready]);
+  }, [enabled, ready]);
 
   return ready;
 }

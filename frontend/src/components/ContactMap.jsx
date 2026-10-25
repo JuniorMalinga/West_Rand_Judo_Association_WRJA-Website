@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Reveal from "./Reveal";
 import { useMapboxReady } from "../lib/loadMapbox";
 import { getMapDirectionsLinks } from "../lib/mapDirections";
+import { openPrivacySettings, usePrivacyPreferences } from "../lib/privacyPreferences";
 
 const locations = [
   {
@@ -37,14 +38,16 @@ export default function ContactMap() {
   // Map starts inert (no scroll/drag capture) so it never hijacks page
   // scroll — the person has to click it once to switch it on.
   const [isActive, setIsActive] = useState(false);
+  const { externalContent } = usePrivacyPreferences();
 
   const token = import.meta.env.VITE_MAPBOX_TOKEN;
   const tokenLooksValid = isLikelyValidToken(token);
-  const mapboxReady = useMapboxReady();
+  const mapboxReady = useMapboxReady(externalContent);
 
   useEffect(() => {
     if (
       !tokenLooksValid ||
+      !externalContent ||
       !mapContainerRef.current ||
       !mapboxReady ||
       didInitializeRef.current
@@ -97,7 +100,13 @@ export default function ContactMap() {
     });
 
     mapRef.current = map;
-  }, [token, tokenLooksValid, mapboxReady]);
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+      didInitializeRef.current = false;
+    };
+  }, [externalContent, token, tokenLooksValid, mapboxReady]);
 
   const handleActivate = () => {
     setIsActive(true);
@@ -113,7 +122,15 @@ export default function ContactMap() {
 
   return (
     <Reveal className="contact-map">
-      {tokenLooksValid && !mapError ? (
+      {!externalContent ? (
+        <div className="contact-map-placeholder">
+          <p>The interactive map uses Mapbox, an optional external service.</p>
+          <button type="button" className="policy-settings-button" onClick={openPrivacySettings}>
+            Manage privacy preferences to enable the map
+          </button>
+          <p><a href="https://maps.google.com/?q=West+Rand+Judo+Association+Krugersdorp" target="_blank" rel="noopener noreferrer">Open directions in Google Maps</a></p>
+        </div>
+      ) : tokenLooksValid && !mapError ? (
         <div
           className={`contact-map-wrapper ${isActive ? "" : "map-wrapper-static"}`}
           onClick={() => { if (!isActive) handleActivate(); }}

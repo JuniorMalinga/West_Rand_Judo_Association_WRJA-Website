@@ -265,7 +265,7 @@ Roles are stored in `profiles.profile_role` as `athlete`, `guardian` or `adminis
 
 ### 3. Run the migrations
 
-Run every file in `database/migrations/` in order, using the Supabase SQL Editor. These files:
+Run every file in `backend/src/database/migrations/` in order, using the Supabase SQL Editor. These files:
 
 * normalise public media paths and set upload limits
 * change the foreign keys so a user can be deleted without destroying payment records, and add the `uploader_name` and `uploader_email` columns to `payment_proofs`

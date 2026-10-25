@@ -1,0 +1,65 @@
+.policy-content {
+  width: min(100% - 40px, 900px);
+  margin: 0 auto;
+  padding: 56px 0 80px;
+}
+
+.policy-content h2 {
+  margin-top: 36px;
+  font-size: 22px;
+}
+
+.policy-content p,
+.policy-content li {
+  color: var(--text-dark-muted);
+  line-height: 1.75;
+}
+
+.policy-content ul {
+  padding-left: 24px;
+}
+
+.policy-content li + li {
+  margin-top: 8px;
+}
+
+.policy-content a {
+  color: var(--accent-dark);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.policy-content .policy-updated {
+  margin-bottom: 24px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.policy-settings-button {
+  padding: 10px 14px;
+  border: 1px solid var(--text-dark-muted);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-dark);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.policy-settings-button:hover {
+  background: var(--text-dark);
+  color: var(--text-light);
+}
+
+.policy-contact {
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid #ddd;
+}
+
+@media (max-width: 600px) {
+  .policy-content {
+    width: min(100% - 32px, 900px);
+    padding: 36px 0 56px;
+  }
+}

@@ -78,7 +78,12 @@ export default function SignupPage() {
         <div className="signup-grid-two"><SignupField animationIndex="2" icon="person" label="Email address" type="email" value={form.email} onChange={update("email")} placeholder="you@example.com" /><SignupField animationIndex="3" icon="person" label="Phone number" type="tel" value={form.phone} onChange={update("phone")} placeholder="Optional" required={false} /></div>
         {role === "athlete" && <SignupField animationIndex="4" icon="calendar" label="Date of birth" type="date" value={form.dateOfBirth} onChange={update("dateOfBirth")} />}
         <div className="signup-grid-two"><SignupField animationIndex="5" icon="lock" label="Password" type="password" value={form.password} onChange={update("password")} placeholder="At least 8 characters" /><SignupField animationIndex="6" icon="lock" label="Confirm password" type="password" value={form.confirmPassword} onChange={update("confirmPassword")} placeholder="Repeat password" /></div>
-        <label className="reference-remember signup-terms"><input type="checkbox" checked={accepted} onChange={(event) => setAccepted(event.target.checked)} required /><span>I agree to the club&apos;s terms and privacy policy.</span></label>
+        <div className="reference-remember signup-terms">
+          <input id="signup-terms" type="checkbox" checked={accepted} onChange={(event) => setAccepted(event.target.checked)} required />
+          <label htmlFor="signup-terms">
+            I accept the <Link to="/terms">website terms</Link> and have read the <Link to="/privacy">privacy notice</Link>.
+          </label>
+        </div>
         {errorMessage && <p className="auth-error">{errorMessage}</p>}
         <button type="submit" className="reference-login-button" disabled={isSubmitting}>{isSubmitting ? "Creating account..." : "Create account"}</button>
       </form>}

@@ -58,6 +58,32 @@ section {
   color: var(--accent);
 }
 
+.skip-link {
+  position: fixed;
+  z-index: 10000;
+  top: 12px;
+  left: 12px;
+  padding: 12px 16px;
+  transform: translateY(-160%);
+  border-radius: var(--radius);
+  background: var(--bg-light);
+  color: var(--text-dark);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+:focus-visible {
+  outline: 3px solid var(--accent-dark);
+  outline-offset: 3px;
+}
+
+#main-content:focus {
+  outline: none;
+}
+
 /* ---------- Buttons ---------- */
 .btn {
   display: inline-flex;
@@ -162,6 +188,39 @@ section {
 .program-row-list {
   list-style: none;
   margin: 0;
+}
+
+.footer-legal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 14px;
+}
+
+.footer-legal-links a,
+.footer-legal-links button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
   padding: 0;
 }
 

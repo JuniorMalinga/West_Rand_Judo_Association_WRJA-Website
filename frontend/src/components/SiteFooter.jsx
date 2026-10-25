@@ -4,6 +4,7 @@ import { clubLocations } from "../data/clubContacts";
 import { toTelHref } from "../lib/format";
 import { useCollectionState } from "../hooks/useCollection";
 import { galleryStore } from "../data/gallery";
+import { openPrivacySettings } from "../lib/privacyPreferences";
 
 export default function SiteFooter() {
   const { items } = useCollectionState(galleryStore);
@@ -93,6 +94,13 @@ export default function SiteFooter() {
           &copy; {new Date().getFullYear()} West Rand Judo Association. All
           rights reserved.
         </p>
+        <nav className="footer-legal-links" aria-label="Legal and site information">
+          <Link to="/privacy">Privacy</Link>
+          <Link to="/terms">Terms</Link>
+          <Link to="/accessibility">Accessibility</Link>
+          <Link to="/security">Security</Link>
+          <button type="button" onClick={openPrivacySettings}>Cookie settings</button>
+        </nav>
       </div>
     </footer>
   );

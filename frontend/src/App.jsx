@@ -29,6 +29,10 @@ const EventDetailPage = lazy(() => import("./pages/EventDetailPage"));
 const CompetitionPaymentPage = lazy(() => import("./pages/CompetitionPaymentPage"));
 const ProofOfPaymentPage = lazy(() => import("./pages/ProofOfPaymentPage"));
 const ChatWidget = lazy(() => import("./components/ChatWidget"));
+const PrivacyPage = lazy(() => import("./pages/PoliciesPage").then((module) => ({ default: module.PrivacyPage })));
+const TermsPage = lazy(() => import("./pages/PoliciesPage").then((module) => ({ default: module.TermsPage })));
+const AccessibilityPage = lazy(() => import("./pages/PoliciesPage").then((module) => ({ default: module.AccessibilityPage })));
+const SecurityPage = lazy(() => import("./pages/PoliciesPage").then((module) => ({ default: module.SecurityPage })));
 
 function PageLoading() {
   return (
@@ -81,36 +85,43 @@ function AppContent() {
 
   return (
     <>
+      <a className="skip-link" href="#main-content">Skip to main content</a>
       {pathname !== "/admin" && <NavigationBar />}
       <ScrollToTop />
       <Suspense fallback={<PageLoading />}>
-        <Routes>
-          <Route path="*" element={<NotFoundPage />} />
-          <Route path="/" element={<HomePage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/instructors" element={<AboutPage />} />
-          <Route path="/events" element={guard(<EventsPage />)} />
-          <Route path="/events/standard" element={guard(<EventsPage section="standard" />)} />
-          <Route path="/events/calendar" element={guard(<EventsPage section="calendar" />)} />
-          <Route path="/events/competitions" element={guard(<EventsPage section="competitions" />)} />
-          <Route path="/events/competitions/:slug/payment" element={guard(<CompetitionPaymentPage />)} />
-          <Route path="/events/competitions/:slug" element={guard(<CompetitionDetailPage />)} />
-          <Route path="/events/schools" element={guard(<EventsPage section="schools" />)} />
-          <Route path="/events/store" element={guard(<EventsPage section="store" />)} />
-          <Route path="/events/:id" element={guard(<EventDetailPage />)} />
-          <Route path="/programs" element={<Navigate to="/events/competitions" replace />} />
-          <Route path="/programs/:slug" element={<Navigate to="/events/competitions" replace />} />
-          <Route path="/gallery" element={<GalleryPage />} />
-          <Route path="/news" element={<NewsPage />} />
-          <Route path="/faq" element={<FAQPage />} />
-          <Route path="/news/:id" element={<NewsDetailPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
-          <Route path="/proof-of-payment" element={guard(<ProofOfPaymentPage />)} />
-          <Route path="/instructors/:slug" element={<InstructorDetailPage />} />
-          <Route path="/admin" element={<RequireAdmin><AdminPage /></RequireAdmin>} />
-        </Routes>
+        <div id="main-content" tabIndex="-1">
+          <Routes>
+            <Route path="*" element={<NotFoundPage />} />
+            <Route path="/" element={<HomePage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/instructors" element={<AboutPage />} />
+            <Route path="/events" element={guard(<EventsPage />)} />
+            <Route path="/events/standard" element={guard(<EventsPage section="standard" />)} />
+            <Route path="/events/calendar" element={guard(<EventsPage section="calendar" />)} />
+            <Route path="/events/competitions" element={guard(<EventsPage section="competitions" />)} />
+            <Route path="/events/competitions/:slug/payment" element={guard(<CompetitionPaymentPage />)} />
+            <Route path="/events/competitions/:slug" element={guard(<CompetitionDetailPage />)} />
+            <Route path="/events/schools" element={guard(<EventsPage section="schools" />)} />
+            <Route path="/events/store" element={guard(<EventsPage section="store" />)} />
+            <Route path="/events/:id" element={guard(<EventDetailPage />)} />
+            <Route path="/programs" element={<Navigate to="/events/competitions" replace />} />
+            <Route path="/programs/:slug" element={<Navigate to="/events/competitions" replace />} />
+            <Route path="/gallery" element={<GalleryPage />} />
+            <Route path="/news" element={<NewsPage />} />
+            <Route path="/faq" element={<FAQPage />} />
+            <Route path="/news/:id" element={<NewsDetailPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/accessibility" element={<AccessibilityPage />} />
+            <Route path="/security" element={<SecurityPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/proof-of-payment" element={guard(<ProofOfPaymentPage />)} />
+            <Route path="/instructors/:slug" element={<InstructorDetailPage />} />
+            <Route path="/admin" element={<RequireAdmin><AdminPage /></RequireAdmin>} />
+          </Routes>
+        </div>
       </Suspense>
       <CookieNotice />
       <SessionIdlePrompt />
