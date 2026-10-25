@@ -71,6 +71,14 @@ describe("login & sessions", () => {
 });
 
 describe("signup", () => {
+  it("rejects numeric or invalid characters in first and last names", async () => {
+    const b = browser(server.base);
+    const base = { lastName: "Lee", email: "name-check@x.co", password: "Passw0rd!", role: "guardian" };
+    assert.equal((await b.post("/api/auth/signup", { ...base, firstName: "Ann2" })).status, 400);
+    assert.equal((await b.post("/api/auth/signup", { ...base, firstName: "Ann", lastName: "L33" })).status, 400);
+    assert.equal((await b.post("/api/auth/signup", { ...base, firstName: "Ann3", lastName: "L33" })).status, 400);
+  });
+
   it("creates a member but never lets anyone self-assign admin", async () => {
     const b = browser(server.base);
     const bad = await b.post("/api/auth/signup", { firstName: "Eve", lastName: "Hack", email: "eve@x.co", password: "Passw0rd!", role: "admin" });

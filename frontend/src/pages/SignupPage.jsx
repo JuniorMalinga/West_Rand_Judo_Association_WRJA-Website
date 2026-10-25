@@ -46,6 +46,9 @@ export default function SignupPage() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setErrorMessage("");
+    const validName = /^[\p{L}\p{M}]+(?:[ .'-][\p{L}\p{M}]+)*$/u;
+    if (!validName.test(form.firstName.trim())) return setErrorMessage("First name can only contain letters, spaces, apostrophes, periods, and hyphens.");
+    if (!validName.test(form.lastName.trim())) return setErrorMessage("Last name can only contain letters, spaces, apostrophes, periods, and hyphens.");
     if (form.password !== form.confirmPassword) return setErrorMessage("Passwords don't match.");
     if (form.password.length < 8 || !/[A-Za-z]/.test(form.password) || !/\d/.test(form.password)) return setErrorMessage("Your password must be at least 8 characters and include a letter and a number.");
     if (!accepted) return setErrorMessage("Please accept the club's terms and privacy policy.");

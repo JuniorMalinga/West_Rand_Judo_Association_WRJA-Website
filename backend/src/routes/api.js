@@ -73,8 +73,8 @@ router.post("/auth/signup", rateLimit({ windowMs: HOUR, max: 10, message: "Too m
   }
 
   const data = {
-    firstName: v.text(body.firstName, { field: "First name", max: 60, required: true }),
-    lastName: v.text(body.lastName, { field: "Last name", max: 60, required: true }),
+    firstName: v.personName(body.firstName, "First name"),
+    lastName: v.personName(body.lastName, "Last name"),
     email: v.email(body.email),
     phone: v.text(body.phone, { field: "Phone", max: 40 }),
     dateOfBirth,
@@ -586,8 +586,8 @@ const ROLES = ["athlete", "guardian", "admin"];
 
 function cleanUser(body, { creating = false } = {}) {
   const user = {
-    firstName: v.text(body.firstName, { field: "First name", max: 60, required: true }),
-    lastName: v.text(body.lastName, { field: "Last name", max: 60, required: true }),
+    firstName: v.personName(body.firstName, "First name"),
+    lastName: v.personName(body.lastName, "Last name"),
     email: v.email(body.email),
     phone: v.text(body.phone, { field: "Phone", max: 40 }),
     role: v.oneOf(body.role, ROLES, "Role"),

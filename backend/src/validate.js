@@ -11,6 +11,14 @@ export function text(value, { field, max = 200, required = false, min = 0 } = {}
   return clean;
 }
 
+export function personName(value, field) {
+  const clean = text(value, { field, max: 60, required: true });
+  if (!/^[\p{L}\p{M}]+(?:[ .'-][\p{L}\p{M}]+)*$/u.test(clean)) {
+    throw new HttpError(400, `${field} can only contain letters, spaces, apostrophes, periods, and hyphens.`);
+  }
+  return clean;
+}
+
 export function email(value) {
   const clean = text(value, { field: "Email", max: 254, required: true }).toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) throw new HttpError(400, "Please enter a valid email address.");
