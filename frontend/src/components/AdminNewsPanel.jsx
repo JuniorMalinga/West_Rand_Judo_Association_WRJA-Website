@@ -3,6 +3,7 @@ import ImageUploadField from "./ImageUploadField";
 import { useCollectionState } from "../hooks/useCollection";
 import useNotice from "../hooks/useNotice";
 import { DEFAULT_NEWS_IMAGE, newsAdmin, newsStore } from "../data/newsPosts";
+import { getNewsCategories } from "../data/newsCategories";
 import { isHttpUrl } from "../lib/format";
 
 const emptyPost = { title: "", category: "Club news", excerpt: "", body: "", image: DEFAULT_NEWS_IMAGE, source: "", url: "" };
@@ -22,7 +23,7 @@ export default function AdminNewsPanel() {
     if (!confirmPost && dialog.open) dialog.close();
   }, [confirmPost]);
 
-  const categories = [...new Set(posts.map((post) => post.category).filter(Boolean))];
+  const categories = getNewsCategories(posts);
 
   const update = (field, value) => setFormState((current) => ({ ...current, [field]: value }));
   const openAdd = () => { clear(); setFormState({ id: null, ...emptyPost, isoDate: new Date().toISOString().slice(0, 10) }); };
@@ -82,8 +83,9 @@ export default function AdminNewsPanel() {
           <div className="admin-form-row-2">
             <label>Date<input type="date" value={formState.isoDate} onChange={(e) => update("isoDate", e.target.value)} required /></label>
             <label>Category
-              <input list="news-categories" value={formState.category} onChange={(e) => update("category", e.target.value)} required />
-              <datalist id="news-categories">{categories.map((category) => <option key={category} value={category} />)}</datalist>
+              <select value={formState.category} onChange={(e) => update("category", e.target.value)} required>
+                {categories.map((category) => <option key={category} value={category}>{category}</option>)}
+              </select>
             </label>
           </div>
           <label>Summary<textarea rows="3" value={formState.excerpt} onChange={(e) => update("excerpt", e.target.value)} required /></label>

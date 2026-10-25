@@ -1,12 +1,12 @@
 import { Link } from "react-router-dom";
 import { newsStore } from "../data/newsPosts";
+import { getPublishedNewsCategories } from "../data/newsCategories";
 import useCollection from "../hooks/useCollection";
-
-const tags = ["Judo", "Judo club", "Champion", "Athlete", "Fitness", "Dojo", "Grading", "Training"];
 
 export default function NewsSidebar() {
   const newsPosts = useCollection(newsStore);
   const recentPosts = newsPosts.slice(0, 3);
+  const categories = getPublishedNewsCategories(newsPosts);
 
   return (
     <aside className="news-sidebar">
@@ -27,14 +27,16 @@ export default function NewsSidebar() {
         </ul>
       </div>
 
-      <div className="sidebar-block">
-        <h3>Tags</h3>
-        <div className="tag-cloud">
-          {tags.map((tag) => (
-            <span key={tag} className="tag-pill">{tag}</span>
-          ))}
+      {categories.length > 0 && (
+        <div className="sidebar-block">
+          <h3>Tags</h3>
+          <div className="tag-cloud">
+            {categories.map((category) => (
+              <span key={category} className="tag-pill">{category}</span>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </aside>
   );
 }
