@@ -1,10 +1,7 @@
 import { Link } from "react-router-dom";
-import { newsStore } from "../data/newsPosts";
 import { getPublishedNewsCategories } from "../data/newsCategories";
-import useCollection from "../hooks/useCollection";
 
-export default function NewsSidebar() {
-  const newsPosts = useCollection(newsStore);
+export default function NewsSidebar({ newsPosts, activeCategory, onCategorySelect }) {
   const recentPosts = newsPosts.slice(0, 3);
   const categories = getPublishedNewsCategories(newsPosts);
 
@@ -31,8 +28,24 @@ export default function NewsSidebar() {
         <div className="sidebar-block">
           <h3>Tags</h3>
           <div className="tag-cloud">
+            <button
+              type="button"
+              className={`tag-pill ${activeCategory === "" ? "tag-pill-active" : ""}`}
+              aria-pressed={activeCategory === ""}
+              onClick={() => onCategorySelect("")}
+            >
+              All news
+            </button>
             {categories.map((category) => (
-              <span key={category} className="tag-pill">{category}</span>
+              <button
+                key={category}
+                type="button"
+                className={`tag-pill ${activeCategory === category ? "tag-pill-active" : ""}`}
+                aria-pressed={activeCategory === category}
+                onClick={() => onCategorySelect(category)}
+              >
+                {category}
+              </button>
             ))}
           </div>
         </div>

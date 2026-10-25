@@ -225,6 +225,9 @@
   padding: 8px 14px;
   border: 1px solid var(--text-dark-muted);
   border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-dark);
+  font: inherit;
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -232,10 +235,16 @@
   transition: all 0.25s var(--ease);
 }
 
-.tag-pill:hover {
+.tag-pill:hover,
+.tag-pill-active {
   background: var(--text-dark);
   color: var(--text-light);
   border-color: var(--text-dark);
+}
+
+.tag-pill:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* ---------- News post cards ---------- */
