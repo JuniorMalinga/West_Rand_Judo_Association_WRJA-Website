@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createHash } from "node:crypto";
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import * as eventsRepo from "../database/eventsRepo.js";
 import * as newsRepo from "../database/newsRepo.js";
 import * as contactMessagesRepo from "../database/contactMessagesRepo.js";
@@ -9,10 +9,17 @@ import * as systemRepo from "../database/systemRepo.js";
 import * as mediaRepo from "../database/mediaRepo.js";
 import * as galleryRepo from "../database/galleryRepo.js";
 import * as adminUsersRepo from "../database/adminUsersRepo.js";
+import * as passwordResetRepo from "../database/passwordResetRepo.js";
+import {
+  PASSWORD_RESET_OTP_TTL_MS,
+  PASSWORD_RESET_OTP_TTL_SECONDS,
+  PASSWORD_RESET_RESEND_WINDOW_MS,
+  passwordResetResendDelayMs,
+} from "../passwordResetPolicy.js";
 import * as v from "../validate.js";
 import { cleanGalleryItem } from "../galleryValidation.js";
 import { authClient, clearSession, loadProfile, setSession, revokeSession, requireAdmin, requireAuth } from "../auth.js";
-import { createUserClient } from "../integrations/supabase.js";
+import { createAdminClient, createUserClient } from "../integrations/supabase.js";
 import { canReadPaymentFile } from "../access.js";
 import { createLimiter, HttpError, rateLimit } from "../security.js";
 import {
@@ -36,6 +43,59 @@ const MINUTE = 60 * 1000;
 // =============================================================================
 const loginAttemptsByIp = createLimiter({ windowMs: 15 * MINUTE, max: 20 });
 const loginFailuresByEmail = createLimiter({ windowMs: 15 * MINUTE, max: 5 });
+const passwordResetRequestsByIp = createLimiter({ windowMs: HOUR, max: 20 });
+const passwordResetVerificationsByIp = createLimiter({ windowMs: HOUR, max: 20 });
+const passwordResetVerificationsByEmail = createLimiter({ windowMs: HOUR, max: 10 });
+const passwordResetPasswordChecksByIp = createLimiter({ windowMs: HOUR, max: 10 });
+const passwordResetPasswordChecksByEmail = createLimiter({ windowMs: HOUR, max: 5 });
+
+export function buildPasswordResetRequest(body = {}) {
+  const phone = v.text(body.phone, { field: "Phone", max: 40 });
+  const phoneDigits = phone.replace(/\D/g, "");
+  if (phone && (!/^[+()\d\s.-]+$/.test(phone) || phoneDigits.length < 7 || phoneDigits.length > 15)) {
+    throw new HttpError(400, "Enter a valid phone number, or leave the phone field blank.");
+  }
+
+  return {
+    fullName: v.text(body.fullName ?? body.name, { field: "Full name", max: 120, required: true }).replace(/\s+/g, " "),
+    email: v.email(body.email),
+    phone,
+  };
+}
+
+export function buildPasswordResetCode(value) {
+  const code = v.text(value, { field: "Reset code", max: 12, min: 6, required: true });
+  if (!/^\d{6,12}$/.test(code)) {
+    throw new HttpError(400, "Enter the numeric code from your email.");
+  }
+  return code;
+}
+
+function requestIp(req) {
+  return req.ip || req.socket.remoteAddress || "unknown";
+}
+
+function formatCooldown(seconds) {
+  if (seconds < 60) return `${seconds} second${seconds === 1 ? "" : "s"}`;
+  const minutes = Math.ceil(seconds / 60);
+  return `${minutes} minute${minutes === 1 ? "" : "s"}`;
+}
+
+function passwordResetCodeDigest(userId, code) {
+  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
+  if (!secret) throw new HttpError(503, "Password reset is not available right now. Please try again later.");
+  // Auth app metadata is visible in user claims, so short OTPs need a server-keyed digest.
+  return createHmac("sha256", secret).update(`${userId}:${code}`).digest("hex");
+}
+
+function checkRateLimit(res, limiters, keys, message) {
+  const wait = Math.max(...limiters.map((limiter, index) => limiter.blocked(keys[index])));
+  if (wait) {
+    res.setHeader("Retry-After", String(wait));
+    throw new HttpError(429, message);
+  }
+  limiters.forEach((limiter, index) => limiter.hit(keys[index]));
+}
 
 router.post("/auth/login", async (req, res) => {
   const email = String(req.body?.email || "").trim().toLowerCase().slice(0, 254);
@@ -64,6 +124,189 @@ router.post("/auth/login", async (req, res) => {
   res.json({ success: true, user: publicUser(profile) });
 });
 
+router.post("/auth/password-reset-request", async (req, res) => {
+  const { fullName, email, phone } = buildPasswordResetRequest(req.body || {});
+  checkRateLimit(
+    res,
+    [passwordResetRequestsByIp],
+    [requestIp(req)],
+    "Too many password reset requests. Please try again later.",
+  );
+
+  const account = await passwordResetRepo.findActiveProfileByEmail(email);
+  if (!account) {
+    throw new HttpError(404, "No WRJA account exists with that email address. Please create an account first.");
+  }
+  const profile = await passwordResetRepo.findMatchingProfile({ fullName, email, phone });
+  if (!profile) {
+    throw new HttpError(400, "The name or phone number does not match that account.");
+  }
+
+  const now = Date.now();
+  const currentState = await passwordResetRepo.getResetState(account.id);
+  const lastSentAt = Date.parse(currentState?.lastSentAt || "");
+  const resendSequenceActive = Number.isFinite(lastSentAt) && now - lastSentAt < PASSWORD_RESET_RESEND_WINDOW_MS;
+  const nextResendAt = resendSequenceActive ? Date.parse(currentState?.nextResendAt || "") : NaN;
+  if (Number.isFinite(nextResendAt) && nextResendAt > now) {
+    const waitSeconds = Math.ceil((nextResendAt - now) / 1000);
+    res.setHeader("Retry-After", String(waitSeconds));
+    return res.status(429).json({
+      success: false,
+      error: `Please wait ${formatCooldown(waitSeconds)} before requesting another reset code.`,
+      retryAfterSeconds: waitSeconds,
+    });
+  }
+  if (!mailer.isPasswordResetEmailConfigured()) {
+    throw new HttpError(503, "Password reset email is not available right now. Please try again later.");
+  }
+
+  const sendCount = resendSequenceActive ? Math.max(0, Number(currentState?.sendCount) || 0) + 1 : 1;
+  try {
+    const { data, error } = await createAdminClient().auth.admin.generateLink({
+      type: "recovery",
+      email,
+    });
+    if (error) throw error;
+    const code = data?.properties?.email_otp;
+    if (!code || !/^\d{6,12}$/.test(code)) {
+      throw new Error("Supabase did not provide a supported recovery code.");
+    }
+
+    const expiresAt = new Date(now + PASSWORD_RESET_OTP_TTL_MS);
+    const nextSendAt = new Date(now + passwordResetResendDelayMs(sendCount));
+    await passwordResetRepo.setResetState(account.id, {
+      codeHash: passwordResetCodeDigest(account.id, code),
+      expiresAt: expiresAt.toISOString(),
+      nextResendAt: nextSendAt.toISOString(),
+      lastSentAt: new Date(now).toISOString(),
+      sendCount,
+      attempts: 0,
+    });
+    await mailer.sendPasswordResetCode({
+      email,
+      name: profile.name,
+      code,
+      expiresAt: expiresAt.toISOString(),
+    });
+    res.status(202).json({
+      success: true,
+      message: "Your password reset code has been sent.",
+      expiresAt: expiresAt.toISOString(),
+      nextResendAt: nextSendAt.toISOString(),
+      expiresInSeconds: PASSWORD_RESET_OTP_TTL_SECONDS,
+      resendAfterSeconds: Math.ceil(passwordResetResendDelayMs(sendCount) / 1000),
+    });
+  } catch (error) {
+    console.error("Password reset code generation or delivery failed.", error.code || error.responseCode || "unknown");
+    throw new HttpError(503, "Unable to send a reset code right now. Please try again later.");
+  }
+});
+
+router.post("/auth/password-reset-verify", async (req, res) => {
+  const email = v.email(req.body?.email);
+  const code = buildPasswordResetCode(req.body?.code);
+
+  checkRateLimit(
+    res,
+    [passwordResetVerificationsByIp, passwordResetVerificationsByEmail],
+    [requestIp(req), createHash("sha256").update(email).digest("hex")],
+    "Too many code attempts. Please try again later.",
+  );
+
+  const profile = await passwordResetRepo.findActiveProfileByEmail(email);
+  if (!profile) throw new HttpError(400, "That code is invalid or expired. Request a new code and try again.");
+  const resetState = await passwordResetRepo.getResetState(profile.id);
+  if (!resetState?.codeHash) {
+    throw new HttpError(400, "That code is invalid or expired. Request a new code and try again.");
+  }
+  if ((Number(resetState.attempts) || 0) >= 5) {
+    throw new HttpError(429, "Too many incorrect code attempts. Request a new code when the resend timer allows.");
+  }
+  const expiresAt = Date.parse(resetState.expiresAt || "");
+  if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
+    await passwordResetRepo.setResetState(profile.id, { ...resetState, codeHash: null });
+    throw new HttpError(400, "That code has expired. Request a new one when the resend timer allows.");
+  }
+
+  const submittedDigest = Buffer.from(passwordResetCodeDigest(profile.id, code), "hex");
+  const expectedDigest = Buffer.from(resetState.codeHash || "", "hex");
+  if (expectedDigest.length !== submittedDigest.length || !timingSafeEqual(expectedDigest, submittedDigest)) {
+    const attempts = (Number(resetState.attempts) || 0) + 1;
+    await passwordResetRepo.setResetState(profile.id, {
+      ...resetState,
+      codeHash: attempts >= 5 ? null : resetState.codeHash,
+      attempts,
+    });
+    if (attempts >= 5) {
+      throw new HttpError(429, "Too many incorrect code attempts. Request a new code when the resend timer allows.");
+    }
+    throw new HttpError(400, "That code is incorrect or expired. Check the code and try again.");
+  }
+
+  const { data, error } = await authClient().auth.verifyOtp({
+    email,
+    token: code,
+    type: "recovery",
+  });
+  if (error || !data.user || data.user.id !== profile.id || !data.session) {
+    await passwordResetRepo.setResetState(profile.id, { ...resetState, codeHash: null });
+    throw new HttpError(400, "That code is invalid or expired. Request a new code when the resend timer allows.");
+  }
+  try {
+    await passwordResetRepo.setResetState(profile.id, { ...resetState, codeHash: null, attempts: 0 });
+  } catch (stateError) {
+    console.error("Unable to invalidate verified password reset code.", stateError.message);
+  }
+  res.json({ success: true, resetToken: data.session.access_token });
+});
+
+router.post("/auth/password-reset-complete", async (req, res) => {
+  const email = v.email(req.body?.email);
+  const resetToken = v.text(req.body?.resetToken, { field: "Reset verification", max: 4096, required: true });
+  const newPassword = v.password(req.body?.newPassword);
+  const { data, error } = await authClient().auth.getUser(resetToken);
+  if (error || !data.user || data.user.email?.toLowerCase() !== email) {
+    throw new HttpError(400, "Your reset verification has expired. Request a new code.");
+  }
+  const profile = await passwordResetRepo.findActiveProfileByEmail(email);
+  if (!profile || profile.id !== data.user.id) {
+    throw new HttpError(400, "Your reset verification has expired. Request a new code.");
+  }
+  const emailKey = createHash("sha256").update(email).digest("hex");
+  checkRateLimit(
+    res,
+    [passwordResetPasswordChecksByIp, passwordResetPasswordChecksByEmail],
+    [requestIp(req), emailKey],
+    "Too many password reset attempts. Please try again later.",
+  );
+  const passwordCheck = await authClient().auth.signInWithPassword({ email, password: newPassword });
+  if (passwordCheck.data?.session) {
+    const { error: revokeCheckError } = await createAdminClient().auth.admin.signOut(
+      passwordCheck.data.session.access_token,
+      "local",
+    );
+    if (revokeCheckError) {
+      console.error("Unable to revoke password reuse check session.", revokeCheckError.message);
+    }
+    throw new HttpError(400, "Your new password must be different from your current password.");
+  }
+  if (passwordCheck.error?.code !== "invalid_credentials") {
+    console.error("Password reuse check failed.", passwordCheck.error?.code || passwordCheck.error?.status || "unknown");
+    throw new HttpError(503, "Unable to validate your new password right now. Please try again.");
+  }
+  await adminUsersRepo.resetPassword(profile.id, newPassword);
+  try {
+    await passwordResetRepo.clearResetState(profile.id);
+  } catch (clearError) {
+    console.error("Unable to clear completed password reset state.", clearError.message);
+  }
+  const { error: revokeError } = await createAdminClient().auth.admin.signOut(resetToken, "global");
+  if (revokeError) {
+    console.error("Unable to revoke sessions after password reset.", revokeError.message);
+  }
+  res.json({ success: true });
+});
+
 router.post("/auth/signup", rateLimit({ windowMs: HOUR, max: 10, message: "Too many sign-ups from this connection. Please try again later." }), async (req, res) => {
   const body = req.body || {};
   const role = v.oneOf(body.role || "athlete", ["athlete", "guardian"], "Account type"); // never 'admin'
@@ -81,16 +324,35 @@ router.post("/auth/signup", rateLimit({ windowMs: HOUR, max: 10, message: "Too m
     role,
   };
   const password = v.password(body.password);
-  const client = authClient();
-  const { data: signedUp, error } = await client.auth.signUp({
-    email: data.email, password,
-    options: { data: { first_name: data.firstName, last_name: data.lastName,
-      phone: data.phone, date_of_birth: data.dateOfBirth, profile_role: data.role } },
+  let user;
+  try {
+    user = await adminUsersRepo.createUser({ ...data, password });
+  } catch (error) {
+    if (/already registered|already exists|duplicate key/i.test(error.message || "")) {
+      throw new HttpError(409, "An account with that email address already exists.");
+    }
+    throw error;
+  }
+
+  let emailSent = false;
+  try {
+    await mailer.sendSignupNotification({
+      email: data.email,
+      name: `${data.firstName} ${data.lastName}`,
+    });
+    emailSent = true;
+  } catch (emailError) {
+    console.error("Signup notification email failed.", emailError.code || emailError.responseCode || "unknown");
+  }
+
+  res.status(201).json({
+    success: true,
+    user: { ...data, id: user.id },
+    emailSent,
+    message: emailSent
+      ? "Account created successfully. You can now sign in."
+      : "Account created successfully, but we couldn't send the notification email. You can still sign in.",
   });
-  if (error) throw new HttpError(400, error.message);
-  // The database must create profiles with a trusted trigger; client metadata
-  // is a signup request, not proof of a privileged role.
-  res.status(201).json({ success: true, user: { ...data, id: signedUp.user?.id || null } });
 });
 
 router.post("/auth/logout", async (req, res) => {

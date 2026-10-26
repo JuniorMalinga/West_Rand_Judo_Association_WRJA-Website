@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
+import { PASSWORD_RESET_OTP_TTL_SECONDS } from "../passwordResetPolicy.js";
 
-const SITE_URL = process.env.PUBLIC_SITE_URL || "https://westrandjudoassociation.vercel.app/";
+const getSiteUrl = () => process.env.PUBLIC_SITE_URL || "https://westrandjudoassociation.vercel.app/";
 
 const escapeHtml = (value) =>
   String(value ?? "").replace(/[&<>"']/g, (char) => ({
@@ -32,7 +33,14 @@ function getTransporter() {
   return transporter;
 }
 
+export function isPasswordResetEmailConfigured() {
+  return Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+}
+
+export const isEmailConfigured = isPasswordResetEmailConfigured;
+
 function buildEmail({ name, message }) {
+  const siteUrl = getSiteUrl();
   const firstName = String(name || "").trim().split(/\s+/)[0] || "there";
   const preview = String(message || "").trim().slice(0, 600);
   const truncated = String(message || "").trim().length > 600 ? "..." : "";
@@ -49,7 +57,7 @@ function buildEmail({ name, message }) {
     "",
     "Kind regards,",
     "West Rand Judo Association",
-    SITE_URL,
+    siteUrl,
   ].join("\n");
 
   const html = `<!doctype html>
@@ -78,7 +86,7 @@ function buildEmail({ name, message }) {
             <tr>
               <td style="background:#faf8f2;padding:20px 32px;font-size:12px;color:#777777;line-height:1.5;">
                 You are receiving this email because a request was submitted on our website using this address. If this was not you, you can ignore this message.<br />
-                <a href="${escapeHtml(SITE_URL)}" style="color:#7a6a1c;">${escapeHtml(SITE_URL.replace(/^https?:\/\//, ""))}</a>
+                <a href="${escapeHtml(siteUrl)}" style="color:#7a6a1c;">${escapeHtml(siteUrl.replace(/^https?:\/\//, ""))}</a>
               </td>
             </tr>
           </table>
@@ -107,4 +115,95 @@ export async function sendContactConfirmation({ name, email, message }) {
     html,
   });
   return true;
+}
+
+export async function sendPasswordResetCode({ email, name, code, expiresAt }) {
+  const mail = getTransporter();
+  if (!mail) {
+    throw new Error("Password recovery email is not configured. Set SMTP_HOST, SMTP_USER, and SMTP_PASS.");
+  }
+
+  const firstName = String(name || "").trim().split(/\s+/)[0] || "there";
+  const expiryMinutes = Math.ceil(PASSWORD_RESET_OTP_TTL_SECONDS / 60);
+  const expiryTime = new Intl.DateTimeFormat("en-ZA", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Africa/Johannesburg",
+  }).format(new Date(expiresAt));
+  const text = [
+    `Dear ${firstName},`,
+    "",
+    `Your WRJA password reset code is: ${code}`,
+    "",
+    `Enter this code on the password reset page. The ${expiryMinutes}-minute timer ends at ${expiryTime} SAST. The code can only be used once.`,
+    "If you did not request this code, you can ignore this email. Do not share this code with anyone.",
+    "",
+    "West Rand Judo Association",
+  ].join("\n");
+  const html = `<!doctype html>
+<html lang="en">
+  <body style="margin:0;padding:32px 12px;background:#f2f0eb;font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;margin:auto;background:#ffffff;border-radius:12px;overflow:hidden;">
+      <tr><td style="background:#1a1a1a;padding:28px 32px;color:#c9a227;font-size:12px;letter-spacing:2px;font-weight:bold;">WEST RAND JUDO ASSOCIATION</td></tr>
+      <tr><td style="padding:32px;font-size:16px;line-height:1.6;">
+        <p>Dear ${escapeHtml(firstName)},</p>
+        <p>Use this one-time code to reset your WRJA password:</p>
+        <p style="padding:18px;background:#faf8f2;border-radius:8px;text-align:center;font-size:32px;font-weight:bold;letter-spacing:8px;color:#1a1a1a;">${escapeHtml(code)}</p>
+        <p>This ${expiryMinutes}-minute timer ends at <strong>${escapeHtml(expiryTime)} SAST</strong>. The code can only be used once. If you did not request it, ignore this email. Never share this code.</p>
+      </td></tr>
+    </table>
+  </body>
+</html>`;
+
+  await mail.sendMail({
+    from: process.env.MAIL_FROM || process.env.SMTP_USER,
+    replyTo: process.env.MAIL_REPLY_TO || process.env.SMTP_USER,
+    to: email,
+    subject: "Your WRJA password reset code",
+    text,
+    html,
+  });
+}
+
+export async function sendSignupNotification({ email, name }) {
+  const mail = getTransporter();
+  if (!mail) {
+    throw new Error("Email delivery is not configured. Set SMTP_HOST, SMTP_USER, and SMTP_PASS.");
+  }
+
+  const firstName = String(name || "").trim().split(/\s+/)[0] || "there";
+  const text = [
+    `Dear ${firstName},`,
+    "",
+    "Your West Rand Judo Association account has been created successfully.",
+    "",
+    "No email confirmation is required. You can sign in to the website with the password you chose during registration.",
+    "",
+    "If you did not create this account, please contact the West Rand Judo Association.",
+    "",
+    "West Rand Judo Association",
+  ].join("\n");
+  const html = `<!doctype html>
+<html lang="en">
+  <body style="margin:0;padding:32px 12px;background:#f2f0eb;font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;margin:auto;background:#ffffff;border-radius:12px;overflow:hidden;">
+      <tr><td style="background:#1a1a1a;padding:28px 32px;color:#c9a227;font-size:12px;letter-spacing:2px;font-weight:bold;">WEST RAND JUDO ASSOCIATION</td></tr>
+      <tr><td style="padding:32px;font-size:16px;line-height:1.6;">
+        <p>Dear ${escapeHtml(firstName)},</p>
+        <p>Your West Rand Judo Association account has been created successfully.</p>
+        <p>No email confirmation is required. You can sign in to the website with the password you chose during registration.</p>
+        <p>If you did not create this account, please contact the West Rand Judo Association.</p>
+      </td></tr>
+    </table>
+  </body>
+</html>`;
+
+  await mail.sendMail({
+    from: process.env.MAIL_FROM || process.env.SMTP_USER,
+    replyTo: process.env.MAIL_REPLY_TO || process.env.SMTP_USER,
+    to: email,
+    subject: "Your WRJA account is ready",
+    text,
+    html,
+  });
 }

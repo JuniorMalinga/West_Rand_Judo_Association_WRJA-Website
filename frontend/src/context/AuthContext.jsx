@@ -95,7 +95,7 @@ export function AuthProvider({ children }) {
         setLoginTransitionId((current) => current + 1);
         return toSession(data.user);
       },
-      signUp: (details) => api("/api/auth/signup", { method: "POST", body: details }).then((data) => data.user),
+      signUp: (details) => api("/api/auth/signup", { method: "POST", body: details }),
       signOut: async () => {
         try {
           window.localStorage.setItem(SESSION_ENDED_KEY, `${Date.now()}-${Math.random()}`);

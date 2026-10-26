@@ -35,8 +35,11 @@ export default function AboutPage() {
           links, sourced from WRJA_WEB_DETAILS.docx. */}
       <section className="about-mission">
         <Reveal className="about-mission-header">
-          <h2>Our mission</h2>
-          <p>
+          <div className="about-mission-heading">
+            <p className="about-mission-eyebrow">WHAT GUIDES US</p>
+            <h2>Our mission</h2>
+          </div>
+          <p className="about-mission-intro">
             Our mission is to develop confident, disciplined, and respectful
             individuals through the practice of judo. We are committed to providing
             high-quality coaching, fostering sportsmanship, promoting inclusivity,

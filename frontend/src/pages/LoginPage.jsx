@@ -39,7 +39,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { signIn } = useAuth();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(location.state?.email || "");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -83,12 +83,6 @@ export default function LoginPage() {
           </p>
         }
       >
-        {location.state?.justSignedUp && (
-          <p className="auth-success">
-            Account created! Check your email to confirm, then log in below.
-          </p>
-        )}
-
         <form className="reference-auth-form login-reference-form" onSubmit={handleSubmit}>
           <div className="reference-input login-field login-field-0">
             <span className="reference-input-icon"><UserIcon /></span>
@@ -123,7 +117,7 @@ export default function LoginPage() {
           </div>
 
           <div className="reference-form-options">
-            <Link to="/forgot-password" className="reference-forgot">
+            <Link to="/forgot-password" state={{ email }} className="reference-forgot">
               Forgot Password?
             </Link>
           </div>

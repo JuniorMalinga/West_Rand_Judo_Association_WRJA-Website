@@ -173,14 +173,42 @@ Replace the placeholders with your own credentials. Never add a `VITE_` prefix t
 | `SMTP_USER` | For email | SMTP login from the provider |
 | `SMTP_PASS` | For email | SMTP key from the provider. Server only, never use a `VITE_` prefix |
 | `MAIL_FROM` | For email | Sender shown to the visitor, for example `"West Rand Judo Association" <info@example.com>` |
-| `MAIL_REPLY_TO` | For email | Address that receives replies to the confirmation email |
+| `MAIL_REPLY_TO` | For email | Address that receives replies to transactional emails |
 | `PUBLIC_SITE_URL` | No | Website address shown in the email footer |
 | `ALLOWED_ORIGINS` | Production | Comma separated site URLs allowed to call the API |
 | `TRUST_PROXY` | Production | Set to `true` behind Vercel so cookies and IP rate limits work |
 | `WRJA_DATA_DIR` | No | Temporary folder for default images. On Vercel it defaults to the system temp folder |
 | `PORT` | No | Local API port. Default is 5000 |
 
-If the SMTP variables are missing, the site still works and messages are still saved. The confirmation email is skipped and a warning is logged.
+If the SMTP variables are missing, contact messages are still saved and accounts can still be created, but signup notifications and password recovery emails cannot be sent. Configure working SMTP settings in the backend environment (including the production/Vercel environment) to enable email delivery.
+
+### Signup notification
+
+New signup accounts are created as confirmed and can sign in immediately; no
+email confirmation step or custom database migration is required. The backend
+sends an informational account-created notification through Nodemailer when
+SMTP is configured. If that notification cannot be delivered, the account
+remains available and the signup page explains that the email was not sent.
+
+### Password reset
+
+The forgot-password flow checks the supplied full name and account email against
+an active member profile, and also checks the phone number when one is provided.
+Matching accounts receive a numeric code by email. The form accepts 6-12 digits
+to support the configured Supabase Auth code length. Each code expires after
+10 minutes; the email states the expiry time in South African Standard Time
+and the reset page shows a live countdown. Resend cooldowns increase from 30
+seconds to 2 minutes, 5 minutes, then 30 minutes. The schedule resets after a
+successful password change or 24 hours without a reset-code request, and is
+enforced against account metadata. The API also limits
+requests by IP, limits verification attempts, and rejects reuse of the current
+password. An email address without an active WRJA account is rejected before
+any recovery code is generated or email is sent.
+
+Supabase Auth generates and verifies the reset OTP, while Nodemailer sends it.
+Recovery state is stored in Supabase Auth app metadata, so no custom database
+migration is required. SMTP must be configured for code
+delivery; recovery requests do not appear in the admin Messages inbox.
 
 ### Supabase Storage setup
 
@@ -345,7 +373,7 @@ Variables only apply to new deployments, so always redeploy after changing one.
 * The disk is read-only except for the temp folder. All user uploads go to Supabase Storage.
 * Rate limit counters are held in memory, so they reset between function instances.
 * The first request after a quiet period can be slower because of a cold start.
-* The confirmation email is sent before the response is returned, because Vercel can stop a function as soon as it responds.
+* The signup notification is sent before the response is returned, because Vercel can stop a function as soon as it responds.
 
 ## Project Structure
 
@@ -421,7 +449,7 @@ backend/
 ├── security.js             Headers, CORS allow list, CSRF guard, rate limiter
 ├── validate.js             Input validation for every field
 ├── uploads.js              File type, size and signature checks
-├── mailer.js               Builds and sends the confirmation email
+├── mailer.js               Builds and sends transactional emails
 ├── supabase.js             Supabase clients (public, user and admin)
 ├── eventsRepo.js           Events and competitions queries
 ├── newsRepo.js             News queries
@@ -432,7 +460,7 @@ backend/
 ├── mediaRepo.js            Public image storage
 ├── Knowledge/              JSON files the chatbot uses
 ├── scripts/
-│   └── test-mail.js        Sends a test confirmation email from the command line
+│   └── test-mail.js        Sends a test email from the command line
 └── tests/                  API and security tests
 ```
 

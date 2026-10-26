@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import AuthCard from "../components/AuthCard";
 import { useAuth } from "../context/AuthContext";
@@ -18,8 +18,8 @@ function FieldIcon({ type }) {
   return <svg className="signup-icon signup-icon-person" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4.2" fill="currentColor" /><path d="M3.5 21c.55-4.65 3.35-7 8.5-7s7.95 2.35 8.5 7H3.5Z" fill="currentColor" /></svg>;
 }
 
-function SignupField({ icon, label, type = "text", value, onChange, placeholder, required = true, animationIndex }) {
-  return <label className={`signup-field signup-field-${animationIndex}`}><span className="signup-label">{label}</span><span className="reference-input"><span className="reference-input-icon"><FieldIcon type={icon} /></span><input type={type} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} required={required} /></span></label>;
+function SignupField({ icon, label, type = "text", value, onChange, placeholder, required = true }) {
+  return <label className="signup-field"><span className="signup-label">{label}</span><span className="reference-input"><span className="reference-input-icon"><FieldIcon type={icon} /></span><input type={type} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} required={required} /></span></label>;
 }
 
 export default function SignupPage() {
@@ -30,18 +30,10 @@ export default function SignupPage() {
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", phone: "", dateOfBirth: "", password: "", confirmPassword: "" });
   const [accepted, setAccepted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isConfirming, setIsConfirming] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const update = (key) => (value) => setForm((current) => ({ ...current, [key]: value }));
-
-  useEffect(() => {
-    if (!showSuccess) return undefined;
-    const timer = window.setTimeout(() => {
-      navigate("/login", { state: { ...(location.state || {}), justSignedUp: true } });
-    }, 2000);
-    return () => window.clearTimeout(timer);
-  }, [location.state, navigate, showSuccess]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -58,26 +50,26 @@ export default function SignupPage() {
     }
     setIsSubmitting(true);
     try {
-      await signUp({ firstName: form.firstName, lastName: form.lastName, email: form.email, phone: form.phone || null, dateOfBirth: role === "athlete" ? form.dateOfBirth : null, password: form.password, role });
-      setIsConfirming(true);
-      window.setTimeout(() => setShowSuccess(true), 1500);
+      const result = await signUp({ firstName: form.firstName, lastName: form.lastName, email: form.email, phone: form.phone || null, dateOfBirth: role === "athlete" ? form.dateOfBirth : null, password: form.password, role });
+      setEmailSent(result.emailSent);
+      setShowSuccess(true);
     } catch (error) {
       setErrorMessage(error.message || "Unable to create your account.");
       setIsSubmitting(false);
     }
   };
 
-  return <main className={`signup-page login-page ${isConfirming ? "signup-is-confirming" : ""} ${showSuccess ? "signup-is-success" : ""}`}>
+  return <main className="signup-page login-page">
     <aside className="login-visual" aria-label="West Rand Judo Association">
       <div className="login-visual-content"><p className="login-kicker">WEST RAND JUDO ASSOCIATION</p><h1>Find your<br /><span>place on the mat.</span></h1><p className="login-visual-copy">Join a club built on discipline, confidence, and community.</p><div className="login-visual-rule" aria-hidden="true" /><p className="login-visual-caption">JUDO • DISCIPLINE • COMMUNITY</p></div>
     </aside>
-    <AuthCard title={showSuccess ? "You're in" : "Join the club"} subtitle={showSuccess ? "Your WRJA account is ready. Welcome to the club." : "Create your WRJA account and start your journey on the mat."} footer={showSuccess ? <p><Link to="/login" state={{ ...(location.state || {}), justSignedUp: true }}>Continue to login</Link></p> : <p>Already have an account? <Link to="/login" state={location.state}>Log in</Link></p>}>
-      {showSuccess ? <div className="signup-success-content" role="status"><div className="signup-success-mark">✓</div><p>Your account has been created successfully.</p><button type="button" className="reference-login-button" onClick={() => navigate("/login", { state: { ...(location.state || {}), justSignedUp: true } })}>Continue</button></div> : <form className="reference-auth-form signup-reference-form" onSubmit={handleSubmit}>
+    <AuthCard title={showSuccess ? "Account created" : "Join the club"} subtitle={showSuccess ? "Your WRJA account is ready. You can now sign in." : "Create your WRJA account and start your journey on the mat."} footer={showSuccess ? null : <p>Already have an account? <Link to="/login" state={location.state}>Log in</Link></p>}>
+      {showSuccess ? <div className="signup-success-content" role="status"><div className="signup-success-mark">✓</div><p>{emailSent ? `A notification has been sent to ${form.email}.` : "Your account was created, but we couldn't send the notification email."} No email confirmation is required.</p><button type="button" className="reference-login-button" onClick={() => navigate("/login", { state: { ...(location.state || {}), email: form.email } })}>Continue to login</button></div> : <form className="reference-auth-form signup-reference-form" onSubmit={handleSubmit}>
         <div className="auth-role-toggle reference-role-toggle" role="radiogroup" aria-label="Account type"><button type="button" className={role === "athlete" ? "auth-role-active" : ""} onClick={() => setRole("athlete")}>Athlete (18+)</button><button type="button" className={role === "guardian" ? "auth-role-active" : ""} onClick={() => setRole("guardian")}>Parent / Guardian</button></div>
-        <div className="signup-grid-two"><SignupField animationIndex="0" icon="person" label="First name" value={form.firstName} onChange={update("firstName")} placeholder="First name" /><SignupField animationIndex="1" icon="person" label="Last name" value={form.lastName} onChange={update("lastName")} placeholder="Last name" /></div>
-        <div className="signup-grid-two"><SignupField animationIndex="2" icon="person" label="Email address" type="email" value={form.email} onChange={update("email")} placeholder="you@example.com" /><SignupField animationIndex="3" icon="person" label="Phone number" type="tel" value={form.phone} onChange={update("phone")} placeholder="Optional" required={false} /></div>
-        {role === "athlete" && <SignupField animationIndex="4" icon="calendar" label="Date of birth" type="date" value={form.dateOfBirth} onChange={update("dateOfBirth")} />}
-        <div className="signup-grid-two"><SignupField animationIndex="5" icon="lock" label="Password" type="password" value={form.password} onChange={update("password")} placeholder="At least 8 characters" /><SignupField animationIndex="6" icon="lock" label="Confirm password" type="password" value={form.confirmPassword} onChange={update("confirmPassword")} placeholder="Repeat password" /></div>
+        <div className="signup-grid-two"><SignupField icon="person" label="First name" value={form.firstName} onChange={update("firstName")} placeholder="First name" /><SignupField icon="person" label="Last name" value={form.lastName} onChange={update("lastName")} placeholder="Last name" /></div>
+        <div className="signup-grid-two"><SignupField icon="person" label="Email address" type="email" value={form.email} onChange={update("email")} placeholder="you@example.com" /><SignupField icon="person" label="Phone number" type="tel" value={form.phone} onChange={update("phone")} placeholder="Optional" required={false} /></div>
+        {role === "athlete" && <SignupField icon="calendar" label="Date of birth" type="date" value={form.dateOfBirth} onChange={update("dateOfBirth")} />}
+        <div className="signup-grid-two"><SignupField icon="lock" label="Password" type="password" value={form.password} onChange={update("password")} placeholder="At least 8 characters" /><SignupField icon="lock" label="Confirm password" type="password" value={form.confirmPassword} onChange={update("confirmPassword")} placeholder="Repeat password" /></div>
         <div className="reference-remember signup-terms">
           <input id="signup-terms" type="checkbox" checked={accepted} onChange={(event) => setAccepted(event.target.checked)} required />
           <label htmlFor="signup-terms">

@@ -20,6 +20,7 @@ const GalleryPage = lazy(() => import("./pages/GalleryPage"));
 const NewsPage = lazy(() => import("./pages/NewsPage"));
 const ContactPage = lazy(() => import("./pages/ContactPage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
+const ForgotPasswordPage = lazy(() => import("./pages/PasswordRecoveryPages").then((module) => ({ default: module.ForgotPasswordPage })));
 const SignupPage = lazy(() => import("./pages/SignupPage"));
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
@@ -117,6 +118,8 @@ function AppContent() {
             <Route path="/accessibility" element={<AccessibilityPage />} />
             <Route path="/security" element={<SecurityPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<Navigate to="/forgot-password" replace />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/proof-of-payment" element={guard(<ProofOfPaymentPage />)} />
             <Route path="/profile" element={guard(<ProfilePage />)} />

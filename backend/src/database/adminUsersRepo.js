@@ -43,14 +43,14 @@ export async function listUsers(accessToken) {
   })).sort((a, b) => Number(b.role === "admin") - Number(a.role === "admin") || a.firstName.localeCompare(b.firstName));
 }
 
-export async function createUser({ firstName, lastName, email, phone, password, role }) {
+export async function createUser({ firstName, lastName, email, phone, dateOfBirth = "", password, role }) {
   const client = createAdminClient();
   const profileRole = role === "admin" ? "administrator" : role;
   const created = await client.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
-    user_metadata: { first_name: firstName, last_name: lastName, phone, profile_role: profileRole },
+    user_metadata: { first_name: firstName, last_name: lastName, phone, date_of_birth: dateOfBirth, profile_role: profileRole },
   });
   throwIfError(created.error);
 
@@ -99,6 +99,11 @@ export async function updateUser(id, { firstName, lastName, email, phone, passwo
   const result = await client.from("profiles").select(PROFILE_FIELDS).eq("id", id).single();
   throwIfError(result.error);
   return toUser(updated.data.user, result.data);
+}
+
+export async function resetPassword(id, password) {
+  const result = await createAdminClient().auth.admin.updateUserById(id, { password });
+  throwIfError(result.error);
 }
 
 export async function deleteUser(id) {
