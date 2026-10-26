@@ -1,4 +1,13 @@
 import { createRemoteCollection } from "../lib/collections";
+import senseiCarien from "../assets/images/Instructors/sensei-carien.jpeg";
+import senseiJean from "../assets/images/Instructors/sensei-jean.jpeg";
+import senseiJohan from "../assets/images/Instructors/sensei-johan.jpeg";
+import senseiKatja from "../assets/images/Instructors/sensei-katja.jpg";
+import senseiMichelle from "../assets/images/Instructors/sensei-michelle.jpg";
+import senseiNeil from "../assets/images/Instructors/sensei-neil.jpeg";
+import senseiReece from "../assets/images/Instructors/sensei-reece.jpeg";
+import senseiShasha from "../assets/images/Instructors/sensei-shasha.jpeg";
+import senseiShombo from "../assets/images/Instructors/sensei-shombo.jpeg";
 
 export const instructors = [
   {
@@ -6,7 +15,7 @@ export const instructors = [
     slug: "katja-bruwer",
     name: "Katja Bruwer",
     role: "7th Dan | IJF Level 2 Coach | Kata Judge",
-    image: "/src/assets/images/Instructors/sensei-katja.jpg",
+    image: senseiKatja,
     imagePosition: "center",
     excerpt: "Katja coaches across age groups and specialises in both kumite and kata development.",
     bio: [
@@ -29,7 +38,7 @@ export const instructors = [
     slug: "michelle-diamond",
     name: "Michelle Diamond",
     role: "Founder & Head Coach | 3rd Dan",
-    image: "/src/assets/images/Instructors/sensei-michelle.jpg",
+    image: senseiMichelle,
     imagePosition: "center top",
     excerpt: "Michelle leads the club's competitive pathway and develops athletes through discipline and confidence.",
     bio: [
@@ -51,7 +60,7 @@ export const instructors = [
     slug: "reece-hunter-erasmus",
     name: "Reece-Hunter Erasmus",
     role: "Coach | 3rd Dan | National Referee",
-    image: "/src/assets/images/Instructors/sensei-reece.jpeg",
+    image: senseiReece,
     imagePosition: "center",
     excerpt: "Reece focuses on progressive learning, beginner confidence, and advanced technical development.",
     bio: [
@@ -73,7 +82,7 @@ export const instructors = [
     slug: "shasa-mercedez-erasmus",
     name: "Shasa-Mercedez Erasmus",
     role: "Coach | Provincial C Referee",
-    image: "/src/assets/images/Instructors/sensei-shasha.jpeg",
+    image: senseiShasha,
     imagePosition: "center",
     excerpt: "Shasa works closely with youth judoka and supports development at school and club level.",
     bio: [
@@ -95,7 +104,7 @@ export const instructors = [
     slug: "niel-bruwer",
     name: "Niel Bruwer",
     role: "Coach | 1st Dan | Nutrition & Conditioning",
-    image: "/src/assets/images/Instructors/sensei-neil.jpeg",
+    image: senseiNeil,
     imagePosition: "center top",
     excerpt: "Niel supports school and club programmes while blending technical training with wellness knowledge.",
     bio: [
@@ -117,7 +126,7 @@ export const instructors = [
     slug: "jean-kotze",
     name: "Jean Kotze",
     role: "Assistant Coach | 1st Dan",
-    image: "/src/assets/images/Instructors/sensei-jean.jpeg",
+    image: senseiJean,
     imagePosition: "center",
     excerpt: "Jean supports club-level technical development and helps athletes grow with consistency.",
     bio: [
@@ -139,7 +148,7 @@ export const instructors = [
     slug: "carien-du-plessis",
     name: "Carien du Plessis",
     role: "Head of Fitness & Conditioning | 1st Dan",
-    image: "/src/assets/images/Instructors/sensei-carien.jpeg",
+    image: senseiCarien,
     imagePosition: "center",
     excerpt: "Carien leads strength, mobility and conditioning work that supports athlete performance.",
     bio: [
@@ -162,7 +171,7 @@ export const instructors = [
     slug: "okende-shombo-djibril",
     name: "Okende Shombo Djibril",
     role: "Coach PJ | Resilience & Technique Coach",
-    image: "/src/assets/images/Instructors/sensei-shombo.jpeg",
+    image: senseiShombo,
     imagePosition: "center",
     excerpt: "Coach PJ brings resilience, technical focus and character-building to the mat.",
     bio: [
@@ -184,7 +193,7 @@ export const instructors = [
     slug: "johan-collins",
     name: "Johan Collins",
     role: "Coach | Uchi Mata Specialist",
-    image: "/src/assets/images/Instructors/sensei-johan.jpeg",
+    image: senseiJohan,
     imagePosition: "center",
     excerpt: "Johan helps young athletes build discipline, confidence and technical understanding.",
     bio: [
