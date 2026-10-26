@@ -53,7 +53,7 @@ askwise/
 ├── tests/                    # Retrieval, API, import, UI interaction, and render tests
 ├── public/
 │   ├── askwise-logo.svg
-│   └── manus-routes.json
+│   └── routes.json
 ├── .env.example
 ├── .gitignore
 ├── app.config.ts

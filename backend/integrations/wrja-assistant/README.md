@@ -16,6 +16,8 @@ pnpm build && pnpm start # production-style run
 
 **Add `GEMINI_API_KEY`.** Without it the server starts in a basic *offline mode* (it logs a warning, and `/api/health` reports `geminiConfigured: false`). Offline mode is a decent safety net, but the natural, context-aware conversation comes from the model.
 
+Set `ALLOWED_HOSTS` in `.env` to a comma-separated list of preview hostnames when the development server is accessed through a proxy. It is empty by default, so Vite keeps its normal host validation.
+
 ## How a conversation works
 
 1. **Every message goes to Gemini with the complete WRJA fact set** (clubs, events, coaches, FAQ — about 6k tokens, so nothing is missed by a retrieval ranking), a detailed persona/rules prompt, today's date, and up to 24 previous turns. Follow-ups like "and the cost?" or "what about Roodepoort?" are resolved by the model from the real conversation.
