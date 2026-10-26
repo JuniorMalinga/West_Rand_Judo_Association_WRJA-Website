@@ -1,4 +1,4 @@
-export const TOUR_ORDER = ["/", "/about", "/gallery", "/faq", "/instructors", "/news", "/contact", "/signup", "/events"];
+export const TOUR_ORDER = ["/", "/about", "/gallery", "/faq", "/instructors", "/news", "/contact", "/signup", "/events", "/profile"];
 
 export const TOUR_ROUTES = {
   "/": {
@@ -68,6 +68,16 @@ export const TOUR_ROUTES = {
       { id: "events-calendar", selector: ".events-calendar-cta", message: "The calendar is the place to check dates, fixtures, and important club milestones.", animation: "readyStance" },
     ],
   },
+  "/profile": {
+    label: "your Profile page",
+    protected: true,
+    intro: "This is your Profile page, where you can review your account details and manage account security.",
+    sections: [
+      { id: "profile-details", selector: ".profile-details", message: "Your account details show the name, email, phone number, and account type connected to your WRJA account.", animation: "thinking" },
+      { id: "profile-password", selector: ".profile-password-form", message: "Use this form to change your password. You’ll need your current password, and your new password must be at least 8 characters with a letter and a number.", animation: "pointRight" },
+      { id: "profile-deletion", selector: ".profile-deletion-card", message: "If you ever want to close your website account, you can send WRJA a deletion request here. The account stays active until WRJA reviews and processes it.", animation: "thinking" },
+    ],
+  },
   "/signup": {
     label: "the sign-up page",
     intro: "Create your WRJA account here. Once your account is ready, you’ll sign in and we’ll continue the tour in the members’ Events hub.",
@@ -89,6 +99,7 @@ export const TOUR_ROUTES = {
 export function normalizeTourPath(pathname) {
   if (pathname === "/" || pathname === "") return "/";
   if (pathname.startsWith("/events")) return "/events";
+  if (pathname.startsWith("/profile")) return "/profile";
   if (pathname === "/instructors" || pathname.startsWith("/instructors/")) return "/instructors";
   if (pathname.startsWith("/news")) return "/news";
   if (pathname.startsWith("/gallery")) return "/gallery";
