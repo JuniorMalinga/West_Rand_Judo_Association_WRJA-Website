@@ -14,13 +14,19 @@ The website covers:
 * A private admin console for the committee
 * Contact form with automatic confirmation emails
 * Live Mapbox maps
-* AI chatbot powered by Google Gemini
+* AI chatbot powered by Google Gemini, with local WRJA knowledge and offline fallback behaviour
 
 Built as the practical deliverable for the **INSY7315 Work-Integrated Learning** module.
 
 **Live site:** https://westrandjudoassociationwrja-website.vercel.app
 
 ## Current State
+
+## Current State
+
+The production application uses **Supabase**, not a local database. Supabase Auth manages accounts and sessions, Supabase Postgres stores application data, and Supabase Storage stores public media and private payment-proof files. The Express API handles privileged operations and integrates Gemini and SMTP on the server. Vercel hosts the frontend and API as one project.
+
+Some files under `backend/src/database/` are retained from an earlier SQLite implementation. They are legacy/reference files and are not the production persistence path. Do not run the legacy SQLite reset script against production data.
 
 The website is a working full-stack application. It uses real WRJA content, including instructor biographies, program descriptions, contact details and published news coverage of club athletes.
 
@@ -36,6 +42,15 @@ Currently:
 * The site is deployed on Vercel as one project: the React frontend and the Express API.
 
 ## Features
+
+## Features
+
+### Additional platform and security features
+
+* Password recovery through a numeric email code, including account-detail validation, code expiry, a live countdown, resend cooldowns, verification-attempt limits and rejection of reuse of the current password.
+* Server-side security controls including CSRF/origin checks, security headers, role enforcement, request validation, rate limiting and upload signature checks.
+* Admin support for school content and gallery management where enabled.
+* Chatbot knowledge refresh support where enabled, using JSON knowledge files in `backend/knowledge/`.
 
 ### Public visitors
 
@@ -122,7 +137,7 @@ From the root project folder:
 npm install
 ```
 
-The root `package.json` contains the dependencies for both the frontend and the backend, so one install is enough.
+The root install is the normal project setup. If working directly from the backend directory or maintaining its separate lockfile, also run `npm --prefix backend ci`.
 
 ### 2. Create the required environment file
 
@@ -238,6 +253,23 @@ wrja-website/
 The `backend/.env` file supplies both the backend and Vite frontend configuration.
 
 ## Run Locally
+
+## Run Locally
+
+### Backend only
+
+Run the API without starting Vite:
+
+```powershell
+npm --prefix backend run dev
+npm --prefix backend start
+```
+
+Check the local API health endpoint:
+
+```powershell
+curl http://localhost:5000/api/health
+```
 
 The project is configured to start the frontend and backend together.
 
@@ -468,6 +500,27 @@ backend/
 
 ## API Overview
 
+## API Overview
+
+### Password recovery
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| POST | `/api/auth/password-reset-request` | Request a recovery code. |
+| POST | `/api/auth/password-reset-verify` | Verify a recovery code. |
+| POST | `/api/auth/password-reset-complete` | Set a new password. |
+| POST | `/api/profile/change-password` | Change the current password while signed in. |
+
+### Additional public/member routes
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| GET | `/api/schools` | List school/club content. |
+| GET | `/api/gallery` | List gallery items. |
+| GET | `/api/payments/mine` | List the current member's payment uploads. |
+| GET | `/api/payments/:id/file` | Download an authorised proof-of-payment file. |
+| POST | `/api/chat/reset` | Reset assistant session state. |
+
 ### Public
 
 | Method | Route | Purpose |
@@ -588,6 +641,24 @@ The email is sent through SMTP using Nodemailer. The project is set up for Brevo
 5. Redeploy on Vercel. Variables only apply to new deployments.
 
 ### Testing
+
+## Testing
+
+Run the production frontend build and backend tests from the project root:
+
+```powershell
+npm run build
+npm --prefix backend test
+```
+
+For the standalone assistant package, if you are working on it:
+
+```powershell
+cd backend/integrations/wrja-assistant
+pnpm install
+pnpm check
+pnpm build
+```
 
 ```powershell
 node backend/scripts/test-mail.js your-own-email@gmail.com
@@ -721,7 +792,7 @@ The Mapbox script is loaded only after the page has rendered (`src/lib/loadMapbo
 Run the backend tests from the root folder:
 
 ```powershell
-npm --prefix server test
+npm --prefix backend test
 ```
 
 The tests cover login and role checks, access to payment files, input validation and upload checks.
@@ -742,6 +813,24 @@ Before handing in a change, also check these by hand on the live site:
 6. View the site at phone width using the browser's device mode.
 
 ## Troubleshooting
+
+## Troubleshooting
+
+### Frontend loads but API calls fail
+
+Confirm the backend is running on port 5000 and that `backend/.env` exists. Test `http://localhost:5000/api/health` directly and check the Vite proxy configuration.
+
+### Login or content requests return 500/503
+
+Check Supabase URL/key values, confirm the database migrations and profiles exist, and inspect the Supabase and backend logs. Confirm the service-role key was not replaced with the anon key.
+
+### Admin access is denied
+
+Confirm the account's `profiles.profile_role` is `administrator`, then sign out and sign in again. The server is authoritative.
+
+### Chatbot is unavailable
+
+The website can fall back to offline responses. Check `GEMINI_API_KEY`, model availability and API quota. Add fallback keys/models if necessary.
 
 | Problem | Likely cause and fix |
 | --- | --- |
@@ -769,33 +858,6 @@ Before handing in a change, also check these by hand on the live site:
 * Confirmation emails depend on the SMTP provider's free daily sending limit.
 * Online card payments are not built in. Members pay the club directly and upload proof of payment.
 
-## Next Steps
-
-### Notifications
-
-Email the association when a new contact message arrives, and email members when a payment proof is approved or rejected.
-
-### Registrations
-
-Let members register athletes for events inside the site, using the existing `event_registrations` table, instead of only using external links.
-
-### Payments
-
-Add an online payment option and automatic payment matching.
-
-### Gallery and Media
-
-Move the gallery to Supabase Storage so the committee can add and remove photos from the admin console.
-
-### Real Media
-
-Replace remaining placeholder media with:
-
-* Real instructor headshots
-* Real training photographs
-* Real competition photographs
-* Real event photographs
-* Additional WRJA club imagery
 
 ## Project Status
 
