@@ -1,6 +1,6 @@
 import { adminCrud, createRemoteCollection } from "../lib/collections";
 
-export const DEFAULT_COMPETITION_IMAGE = "/src/assets/images/Logo/wrja-logo.png";
+export const DEFAULT_COMPETITION_IMAGE = "/uploads/public/default-competition.jpeg";
 
 export const competitionsStore = createRemoteCollection("/api/competitions");
 export const competitionsAdmin = adminCrud("/api/admin/competitions", competitionsStore);

@@ -1,0 +1,136 @@
+.profile-content {
+  display: grid;
+  width: min(100% - 40px, 1000px);
+  gap: 24px;
+  margin: 0 auto;
+  padding: 56px 0 80px;
+}
+
+.profile-card {
+  padding: clamp(22px, 4vw, 36px);
+  border: 1px solid #e3e0d8;
+  border-radius: 10px;
+  background: var(--bg-light);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+.profile-card h2 {
+  margin-bottom: 16px;
+}
+
+.profile-card .eyebrow {
+  margin-bottom: 8px;
+  color: var(--accent-dark);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.profile-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+}
+
+.profile-details div {
+  min-width: 0;
+}
+
+.profile-details dt {
+  margin-bottom: 4px;
+  color: var(--text-dark-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.profile-details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-dark);
+}
+
+.profile-note {
+  max-width: 760px;
+  font-size: 14px;
+}
+
+.profile-password-form {
+  display: grid;
+  max-width: 520px;
+  gap: 14px;
+}
+
+.profile-password-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--text-dark);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.profile-password-form input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #b8b4aa;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--text-dark);
+}
+
+.profile-password-form input:focus-visible {
+  outline: 3px solid rgba(185, 32, 37, 0.25);
+  border-color: var(--accent-dark);
+}
+
+.profile-password-form .profile-note {
+  margin: 0;
+}
+
+.profile-deletion-card {
+  border-color: rgba(161, 39, 39, 0.35);
+}
+
+.profile-deletion-card .eyebrow {
+  color: #8f2929;
+}
+
+.profile-deletion-card .btn {
+  margin-top: 4px;
+  border-color: #8f2929;
+  color: #8f2929;
+}
+
+.profile-deletion-card .btn:hover {
+  background: #8f2929;
+  color: #fff;
+}
+
+.profile-error {
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  background: #fbdede;
+  color: #8f2929;
+}
+
+.profile-success {
+  margin: 14px 0 0;
+  color: #1e7a34;
+}
+
+.profile-loading {
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .profile-content {
+    width: min(100% - 32px, 1000px);
+    padding: 36px 0 56px;
+  }
+
+  .profile-details {
+    grid-template-columns: 1fr;
+  }
+}

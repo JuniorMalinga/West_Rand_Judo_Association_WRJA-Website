@@ -23,7 +23,7 @@ const hubCards = [
     slug: "calendar",
     eyebrow: "DATES & FIXTURES",
     title: "Calendar",
-    description: "View upcoming WRJA events, training milestones and important dates.",
+    description: "Browse past, current and upcoming WRJA events, training milestones and important dates.",
     action: "Open calendar",
   },
   {
@@ -63,7 +63,7 @@ function CategoryHeader({ title, description }) {
 function CalendarView() {
   return (
     <>
-      <CategoryHeader title="Calendar" description="Keep track of upcoming WRJA events and important dates." />
+      <CategoryHeader title="Calendar" description="Browse past, current and upcoming WRJA events and important dates." />
       <section className="events-page-layout events-category-layout">
         <UpcomingEventsList />
         <EventsCalendar />

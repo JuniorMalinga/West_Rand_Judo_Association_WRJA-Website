@@ -132,8 +132,8 @@ export default function AdminCompetitionsPanel({ schoolsOnly = false }) {
     <div className="admin-panel competition-admin-panel">
       <div className="admin-panel-header">
         <div>
-          <h2>{schoolsOnly ? "Schools" : "Competitions &amp; registration links"}</h2>
-          <p className="admin-table-subtext">{schoolsOnly ? "Manage school competitions, registration, payment and card images." : "Everything here appears on the Home, Events and Competition pages as soon as you save."}</p>
+          <h2>{schoolsOnly ? "Schools" : "Manage competitions"}</h2>
+          <p className="admin-table-subtext">{schoolsOnly ? "Manage school competitions, registration, payment and card images." : "Manage competition details, registration links, payment information and card images shown across the site."}</p>
         </div>
         <button className="btn btn-accent" onClick={openAdd}>+ Add {schoolsOnly ? "school entry" : "competition"}</button>
       </div>

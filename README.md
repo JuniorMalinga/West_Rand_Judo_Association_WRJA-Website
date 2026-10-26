@@ -182,6 +182,15 @@ Replace the placeholders with your own credentials. Never add a `VITE_` prefix t
 
 If the SMTP variables are missing, the site still works and messages are still saved. The confirmation email is skipped and a warning is logged.
 
+### Supabase Storage setup
+
+Run `backend/src/database/migrations/20261026_repair_upload_buckets.sql` in
+the Supabase SQL editor. It creates or repairs the public image bucket and the
+private payment-proof bucket, including their accepted file types and size
+limits. Upload and download operations are performed by the backend with its
+server-only service role key; payment file access is checked against the signed-in
+member or administrator before the backend reads a private file.
+
 ### Required Environment Files
 
 Your project should look like:

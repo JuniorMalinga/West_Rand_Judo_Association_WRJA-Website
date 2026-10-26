@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { createUserClient } from "../integrations/supabase.js";
+import { createAdminClient, createUserClient } from "../integrations/supabase.js";
 
 const BUCKET = "payment-proofs";
 const proofFields = "id, uploaded_by_profile_id, event_id, event_registration_id, payment_for, file_name, file_size, file_type, storage_path, review_status, uploaded_at, reviewed_at";
@@ -93,7 +93,8 @@ export async function addPayment({ accessToken, userId, fileName, preparedFile, 
 
   const storagePath = `${userId}/${randomUUID()}.${extensionFor(preparedFile.type)}`;
 
-  const { error: uploadError } = await client.storage.from(BUCKET)
+  const storageClient = createAdminClient();
+  const { error: uploadError } = await storageClient.storage.from(BUCKET)
     .upload(storagePath, preparedFile.buffer, {
       contentType: preparedFile.type,
       upsert: false,
@@ -117,7 +118,7 @@ export async function addPayment({ accessToken, userId, fileName, preparedFile, 
 
   if (error) {
     // Avoid leaving a private object behind when the metadata insert fails.
-    await client.storage.from(BUCKET).remove([storagePath]);
+    await storageClient.storage.from(BUCKET).remove([storagePath]);
     check(error);
   }
 
@@ -153,8 +154,8 @@ export async function getPaymentWithFile(id, accessToken) {
   return { ...mapped, storagePath: data.storage_path };
 }
 
-export async function downloadPaymentFile(storagePath, accessToken) {
-  const client = createUserClient(accessToken);
+export async function downloadPaymentFile(storagePath) {
+  const client = createAdminClient();
   const { data, error } = await client.storage.from(BUCKET).download(storagePath);
   check(error, "Payment proof download failed.");
   return Buffer.from(await data.arrayBuffer());
@@ -191,7 +192,7 @@ export async function deletePayment(id, accessToken) {
 
   // Metadata is already removed. If Storage cleanup fails, the object remains
   // private and can be cleaned later without exposing a database record.
-  const { error: storageError } = await client.storage.from(BUCKET).remove([data.storage_path]);
+  const { error: storageError } = await createAdminClient().storage.from(BUCKET).remove([data.storage_path]);
   if (storageError) console.warn("Payment proof storage cleanup failed:", storageError.message);
   return true;
 }

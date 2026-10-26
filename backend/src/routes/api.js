@@ -152,6 +152,56 @@ router.get("/news", async (req, res) => {
   res.json({ items: await newsRepo.listNews(req.accessToken) });
 });
 
+// =============================================================================
+// MEMBER PROFILE
+// =============================================================================
+router.post("/profile/change-password", requireAuth, rateLimit({
+  windowMs: HOUR,
+  max: 5,
+  key: (req) => `profile-password:${req.user.id}`,
+}), async (req, res) => {
+  const currentPassword = String(req.body?.currentPassword || "");
+  if (!currentPassword || currentPassword.length > 256) {
+    throw new HttpError(400, "Enter your current password.");
+  }
+  const newPassword = v.password(req.body?.newPassword);
+  if (newPassword === currentPassword) {
+    throw new HttpError(400, "Choose a password different from your current password.");
+  }
+
+  const { data, error } = await authClient().auth.signInWithPassword({
+    email: req.user.email,
+    password: currentPassword,
+  });
+  if (error || !data.session) throw new HttpError(401, "Your current password is incorrect.");
+
+  const userClient = createUserClient(data.session.access_token);
+  const { error: sessionError } = await userClient.auth.setSession({
+    access_token: data.session.access_token,
+    refresh_token: data.session.refresh_token,
+  });
+  if (sessionError) throw new HttpError(401, "Unable to verify your account session. Please sign in again.");
+
+  const { error: updateError } = await userClient.auth.updateUser({ password: newPassword });
+  if (updateError) throw new HttpError(400, updateError.message || "Unable to change your password.");
+  res.json({ success: true });
+});
+
+router.post(
+  "/profile/deletion-request",
+  requireAuth,
+  rateLimit({ windowMs: HOUR, max: 3, key: (req) => `profile-deletion:${req.user.id}` }),
+  async (req, res) => {
+    await contactMessagesRepo.addMessage({
+      name: `${req.user.firstName} ${req.user.lastName}`.trim(),
+      email: req.user.email,
+      message: "The signed-in member requests WRJA to review and process deletion of their website account. Please verify the request with the member before taking action.",
+      source: "Account deletion request",
+    }, req.accessToken, req.user.id);
+    res.status(201).json({ success: true });
+  }
+);
+
 router.get("/gallery", async (req, res) => {
   res.json({ items: await galleryRepo.listGallery(req.accessToken) });
 });
@@ -237,7 +287,7 @@ router.get("/payments/:id/file", requireAuth, async (req, res) => {
     throw new HttpError(404, "File not found.");
   }
 
-  const file = await paymentsRepo.downloadPaymentFile(payment.storagePath, req.accessToken);
+  const file = await paymentsRepo.downloadPaymentFile(payment.storagePath);
   res.setHeader("Content-Type", payment.fileType);
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Content-Security-Policy", "default-src 'none'; sandbox");
@@ -260,7 +310,7 @@ admin.get("/counts", async (req, res) => {
 // ---- Image uploads ----------------------------------------------------------
 admin.post("/uploads", rateLimit({ windowMs: HOUR, max: 200, key: (req) => `up:${req.user.id}` }), async (req, res) => {
   const image = preparePublicImage(req.body?.dataUrl);
-  const uploaded = await mediaRepo.uploadPublicImage(image, req.accessToken);
+  const uploaded = await mediaRepo.uploadPublicImage(image);
   res.status(201).json({ url: uploaded.url });
 });
 
@@ -271,7 +321,19 @@ const REGISTRATION_STATUSES = [
 ];
 const REGISTRATION_TYPES = ["external", "internal", "order"];
 
-function cleanCompetition(body) {
+function cleanManagedImage(value, accessToken, field = "Image") {
+  const image = v.text(value, { field, max: 2048 });
+  if (!image || image.startsWith("/uploads/public/")) return v.uploadedImage(image, field);
+
+  if (/^https?:\/\//i.test(image)) {
+    const storagePath = mediaRepo.storagePathFromPublicUrl(image, createUserClient(accessToken));
+    if (mediaRepo.isManagedAdminImagePath(storagePath)) return image;
+  }
+
+  return v.uploadedImage(image, field);
+}
+
+export function cleanCompetition(body, accessToken) {
   const paymentRequired = Boolean(body.paymentRequired);
   return {
     name: v.text(body.name, { field: "Name", max: 120, required: true }),
@@ -286,7 +348,7 @@ function cleanCompetition(body) {
     paymentRequired,
     paymentInstructions: paymentRequired ? v.text(body.paymentInstructions, { field: "Payment instructions", max: 2000 }) : "",
     paymentUrl: paymentRequired ? v.httpUrl(body.paymentUrl, "Payment URL") : "",
-    image: v.uploadedImage(body.image) || "/uploads/public/default-competition.jpeg",
+    image: cleanManagedImage(body.image, accessToken) || "/uploads/public/default-competition.jpeg",
     additionalInfo: v.text(body.additionalInfo, { field: "Additional information", max: 2000 }),
     displayOrder: v.integer(body.displayOrder, { field: "Display order", min: 1, max: 9999, fallback: 99 }),
   };
@@ -305,7 +367,7 @@ async function cleanupImages(paths, accessToken) {
         (await eventsRepo.isEventImageReferenced(p, accessToken)) ||
         (await newsRepo.isNewsImageReferenced(p, accessToken)) ||
         (await galleryRepo.isGalleryImageReferenced(p, accessToken));
-      if (!stillUsed) await mediaRepo.deletePublicMedia(p, accessToken);
+      if (!stillUsed) await mediaRepo.deletePublicMedia(p);
     } catch (error) {
       console.warn("Image cleanup skipped:", error.message);
     }
@@ -313,7 +375,7 @@ async function cleanupImages(paths, accessToken) {
 }
 
 admin.post("/competitions", async (req, res) => {
-  const data = cleanCompetition(req.body || {});
+  const data = cleanCompetition(req.body || {}, req.accessToken);
   const existing = await eventsRepo.competitionSlugs(req.accessToken);
   const baseSlug = slugify(data.name);
   const reservedSafeSlug = eventsRepo.isSchoolSlug(baseSlug) ? `competition-${baseSlug}` : baseSlug;
@@ -327,7 +389,7 @@ admin.put("/competitions/:id", async (req, res) => {
   if (eventsRepo.isSchoolSlug(req.params.id)) throw new HttpError(404, "Competition not found.");
   const current = await eventsRepo.getCompetition(req.params.id, req.accessToken);
   if (!current) throw new HttpError(404, "Competition not found.");
-  const item = await eventsRepo.saveCompetition({ ...cleanCompetition(req.body || {}), id: current.id, slug: current.slug }, { create: false, accessToken: req.accessToken });
+  const item = await eventsRepo.saveCompetition({ ...cleanCompetition(req.body || {}, req.accessToken), id: current.id, slug: current.slug }, { create: false, accessToken: req.accessToken });
   await cleanupImages([current.image], req.accessToken);
   res.json({ item });
 });
@@ -340,18 +402,18 @@ admin.delete("/competitions/:id", async (req, res) => {
   await cleanupImages([current.image], req.accessToken);
   res.json({ success: true });
 });
-export function cleanSchool(body = {}) {
+export function cleanSchool(body = {}, accessToken) {
   return {
     ...cleanCompetition({
       ...body,
       type: "Schools competition",
       image: body.image || "/uploads/public/default-school.jpeg",
-    }),
+    }, accessToken),
     type: "Schools competition",
   };
 }
 admin.post("/schools", async (req, res) => {
-  const data = cleanSchool(req.body || {});
+  const data = cleanSchool(req.body || {}, req.accessToken);
   const existing = await eventsRepo.competitionSlugs(req.accessToken);
   const nameSlug = slugify(data.name).replace(/^sa-schools(?:-|$)/, "") || "event";
   let slug = `sa-schools-${nameSlug}`;
@@ -362,7 +424,7 @@ admin.post("/schools", async (req, res) => {
 admin.put("/schools/:id", async (req, res) => {
   const current = await eventsRepo.getSchool(req.params.id, req.accessToken);
   if (!current) throw new HttpError(404, "School event not found.");
-  const item = await eventsRepo.saveSchool({ ...cleanSchool(req.body || {}), id: current.id, slug: current.slug }, {
+  const item = await eventsRepo.saveSchool({ ...cleanSchool(req.body || {}, req.accessToken), id: current.id, slug: current.slug }, {
     create: false,
     accessToken: req.accessToken,
   });
@@ -392,7 +454,6 @@ export function cleanEvent(body) {
     return /^https?:\/\//i.test(clean) ? v.httpUrl(clean, field) : v.uploadedImage(clean, field);
   };
   const qrCodeImage = imageReference(body.qrCodeImage, "QR code image");
-  if (!qrCodeImage) throw new HttpError(400, "A QR code image or image link is required.");
 
   return {
     name: v.text(body.name, { field: "Event name", max: 140, required: true }),
@@ -442,16 +503,7 @@ const formatNewsDate = (iso) =>
 function cleanNewsImage(value, accessToken) {
   const image = v.text(value, { field: "Image", max: 2048 });
   if (!image || image === "/src/assets/images/Logo/wrja-logo.png") return "";
-  if (image.startsWith("/uploads/public/")) return v.uploadedImage(image);
-
-  if (/^https?:\/\//i.test(image)) {
-    const storagePath = mediaRepo.storagePathFromPublicUrl(image, createUserClient(accessToken));
-    if (storagePath && /^admin\/\d{4}\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:jpe?g|png|webp|gif)$/i.test(storagePath)) {
-      return image;
-    }
-  }
-
-  return v.uploadedImage(image);
+  return cleanManagedImage(image, accessToken);
 }
 
 function cleanNews(body, accessToken) {

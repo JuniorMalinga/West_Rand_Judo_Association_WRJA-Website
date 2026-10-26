@@ -51,10 +51,6 @@ export default function AdminEventsPanel() {
     if (applicationUrl.hostname !== "docs.google.com" || !applicationUrl.pathname.startsWith("/spreadsheets/")) {
       return show("error", "Enter a Google Sheets spreadsheet link.");
     }
-    if (!String(formState.qrCodeImage || "").trim()) {
-      return show("error", "Upload a QR code image or enter an image link.");
-    }
-
     const adding = !formState.id;
     setSaving(true);
     try {

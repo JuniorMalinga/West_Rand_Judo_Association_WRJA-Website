@@ -64,7 +64,7 @@ app.use(securityHeaders);
 app.use(corsMiddleware);
 
 app.use("/api/admin/uploads", express.json({ limit: "8mb" }));
-app.use("/api/payments", express.json({ limit: "8mb" }));
+app.use("/api/payments", express.json({ limit: "9mb" }));
 app.use(express.json({ limit: "100kb" }));
 
 app.use((req, res, next) => {

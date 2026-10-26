@@ -41,6 +41,10 @@ export function PrivacyPage() {
           by signed-in members.
         </li>
         <li>
+          Enquiries and account-deletion requests submitted while signed in,
+          linked to the member account so WRJA can respond and review the request.
+        </li>
+        <li>
           Chat messages when you use the WRJA assistant. The conversation is
           kept in your browser session and messages are sent to Google Gemini
           to generate replies.
@@ -53,7 +57,8 @@ export function PrivacyPage() {
       <h2>How information is used and shared</h2>
       <p>
         WRJA uses this information to create and secure member accounts,
-        respond to enquiries, review payment evidence, provide requested
+        respond to enquiries and account requests, manage event information,
+        review payment evidence, provide requested
         features, and operate and protect the website. Information is shared
         with service providers only as needed for those purposes, including
         Supabase for authentication, database and file storage; the configured

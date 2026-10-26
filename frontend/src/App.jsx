@@ -28,6 +28,7 @@ const InstructorDetailPage = lazy(() => import("./pages/InstructorDetailPage"));
 const EventDetailPage = lazy(() => import("./pages/EventDetailPage"));
 const CompetitionPaymentPage = lazy(() => import("./pages/CompetitionPaymentPage"));
 const ProofOfPaymentPage = lazy(() => import("./pages/ProofOfPaymentPage"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const ChatWidget = lazy(() => import("./components/ChatWidget"));
 const PrivacyPage = lazy(() => import("./pages/PoliciesPage").then((module) => ({ default: module.PrivacyPage })));
 const TermsPage = lazy(() => import("./pages/PoliciesPage").then((module) => ({ default: module.TermsPage })));
@@ -118,6 +119,7 @@ function AppContent() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/proof-of-payment" element={guard(<ProofOfPaymentPage />)} />
+            <Route path="/profile" element={guard(<ProfilePage />)} />
             <Route path="/instructors/:slug" element={<InstructorDetailPage />} />
             <Route path="/admin" element={<RequireAdmin><AdminPage /></RequireAdmin>} />
           </Routes>

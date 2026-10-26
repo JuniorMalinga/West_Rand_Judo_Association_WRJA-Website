@@ -175,11 +175,17 @@ export default function NavigationBar() {
             )}
 
             {/* Events and member tools are gated behind login. */}
-            {user && !isAdmin && <Link to="/events">Events</Link>}
+            {user && !isAdmin && (
+              <>
+                <Link to="/events">Events</Link>
+              </>
+            )}
 
             {!isAdmin && <Link to="/news">News</Link>}
 
             {!isAdmin && <Link to="/contact">Contact</Link>}
+
+            {user && !isAdmin && <Link to="/profile">Profile</Link>}
 
             {isAdmin && <Link to="/admin">Admin panel</Link>}
           </nav>

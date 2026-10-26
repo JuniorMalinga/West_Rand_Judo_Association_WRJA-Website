@@ -10,6 +10,10 @@ const extensionFor = {
   "image/gif": "gif",
 };
 
+export function isManagedAdminImagePath(path) {
+  return /^admin\/\d{4}\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:jpe?g|png|webp|gif)$/i.test(String(path || ""));
+}
+
 function check(error, message = "Media request failed.") {
   if (error) throw new Error(`${message} ${error.message || ""}`.trim());
 }
@@ -27,8 +31,8 @@ export function publicMediaUrl(pathOrUrl, client = null) {
   return supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
 }
 
-export async function uploadPublicImage(preparedImage, accessToken) {
-  const client = createUserClient(accessToken);
+export async function uploadPublicImage(preparedImage) {
+  const client = createAdminClient();
   const extension = extensionFor[preparedImage.type];
   if (!extension) throw new Error("Unsupported public image type.");
 
@@ -58,8 +62,8 @@ export function storagePathFromPublicUrl(value, client) {
   return value.startsWith(prefix) ? decodeURIComponent(value.slice(prefix.length)) : null;
 }
 
-export async function deletePublicMedia(value, accessToken) {
-  const client = createUserClient(accessToken);
+export async function deletePublicMedia(value) {
+  const client = createAdminClient();
   const path = storagePathFromPublicUrl(value, client);
   if (!path) return false;
   const { error } = await client.storage.from(BUCKET).remove([path]);

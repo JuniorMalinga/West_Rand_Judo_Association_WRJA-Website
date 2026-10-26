@@ -19,6 +19,7 @@ import "./styles/faq.css";
 import "./styles/instructors.css";
 import "./styles/eventdetail.css";
 import "./styles/policies.css";
+import "./styles/profile.css";
 import "./styles/mobile.css";
 
 
