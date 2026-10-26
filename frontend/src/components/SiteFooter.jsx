@@ -94,11 +94,12 @@ export default function SiteFooter() {
           &copy; {new Date().getFullYear()} West Rand Judo Association. All
           rights reserved.
         </p>
-        <nav className="footer-legal-links" aria-label="Legal and site information">
+        <nav className="footer-legal-links" aria-label="Legal, support, and site information">
           <Link to="/privacy">Privacy</Link>
           <Link to="/terms">Terms</Link>
           <Link to="/accessibility">Accessibility</Link>
           <Link to="/security">Security</Link>
+          <Link to="/contact">Support</Link>
           <button type="button" onClick={openPrivacySettings}>Cookie settings</button>
         </nav>
       </div>
