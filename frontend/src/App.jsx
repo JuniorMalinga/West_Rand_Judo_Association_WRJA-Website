@@ -12,29 +12,86 @@ import WRJABuddy from "./wrja-buddy/WRJABuddy";
 import { DEFAULT_SPRITES } from "./wrja-buddy/spriteManifest";
 import { useBuddyTour } from "./wrja-buddy/useBuddyTour";
 
-const CompetitionDetailPage = lazy(() => import("./pages/CompetitionDetailPage"));
-const NewsDetailPage = lazy(() => import("./pages/NewsDetailPage"));
-const AboutPage = lazy(() => import("./pages/AboutPage"));
-const EventsPage = lazy(() => import("./pages/EventsPage"));
-const GalleryPage = lazy(() => import("./pages/GalleryPage"));
-const NewsPage = lazy(() => import("./pages/NewsPage"));
-const ContactPage = lazy(() => import("./pages/ContactPage"));
-const LoginPage = lazy(() => import("./pages/LoginPage"));
-const ForgotPasswordPage = lazy(() => import("./pages/PasswordRecoveryPages").then((module) => ({ default: module.ForgotPasswordPage })));
-const SignupPage = lazy(() => import("./pages/SignupPage"));
-const AdminPage = lazy(() => import("./pages/AdminPage"));
-const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
-const FAQPage = lazy(() => import("./pages/FAQPage"));
-const InstructorDetailPage = lazy(() => import("./pages/InstructorDetailPage"));
-const EventDetailPage = lazy(() => import("./pages/EventDetailPage"));
-const CompetitionPaymentPage = lazy(() => import("./pages/CompetitionPaymentPage"));
-const ProofOfPaymentPage = lazy(() => import("./pages/ProofOfPaymentPage"));
-const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const loadCompetitionDetailPage = () => import("./pages/CompetitionDetailPage");
+const loadNewsDetailPage = () => import("./pages/NewsDetailPage");
+const loadAboutPage = () => import("./pages/AboutPage");
+const loadEventsPage = () => import("./pages/EventsPage");
+const loadGalleryPage = () => import("./pages/GalleryPage");
+const loadNewsPage = () => import("./pages/NewsPage");
+const loadContactPage = () => import("./pages/ContactPage");
+const loadLoginPage = () => import("./pages/LoginPage");
+const loadPasswordRecoveryPages = () => import("./pages/PasswordRecoveryPages");
+const loadSignupPage = () => import("./pages/SignupPage");
+const loadAdminPage = () => import("./pages/AdminPage");
+const loadNotFoundPage = () => import("./pages/NotFoundPage");
+const loadFaqPage = () => import("./pages/FAQPage");
+const loadInstructorDetailPage = () => import("./pages/InstructorDetailPage");
+const loadEventDetailPage = () => import("./pages/EventDetailPage");
+const loadCompetitionPaymentPage = () => import("./pages/CompetitionPaymentPage");
+const loadProofOfPaymentPage = () => import("./pages/ProofOfPaymentPage");
+const loadProfilePage = () => import("./pages/ProfilePage");
+const loadPoliciesPage = () => import("./pages/PoliciesPage");
+
+const CompetitionDetailPage = lazy(loadCompetitionDetailPage);
+const NewsDetailPage = lazy(loadNewsDetailPage);
+const AboutPage = lazy(loadAboutPage);
+const EventsPage = lazy(loadEventsPage);
+const GalleryPage = lazy(loadGalleryPage);
+const NewsPage = lazy(loadNewsPage);
+const ContactPage = lazy(loadContactPage);
+const LoginPage = lazy(loadLoginPage);
+const ForgotPasswordPage = lazy(() => loadPasswordRecoveryPages().then((module) => ({ default: module.ForgotPasswordPage })));
+const SignupPage = lazy(loadSignupPage);
+const AdminPage = lazy(loadAdminPage);
+const NotFoundPage = lazy(loadNotFoundPage);
+const FAQPage = lazy(loadFaqPage);
+const InstructorDetailPage = lazy(loadInstructorDetailPage);
+const EventDetailPage = lazy(loadEventDetailPage);
+const CompetitionPaymentPage = lazy(loadCompetitionPaymentPage);
+const ProofOfPaymentPage = lazy(loadProofOfPaymentPage);
+const ProfilePage = lazy(loadProfilePage);
 const ChatWidget = lazy(() => import("./components/ChatWidget"));
-const PrivacyPage = lazy(() => import("./pages/PoliciesPage").then((module) => ({ default: module.PrivacyPage })));
-const TermsPage = lazy(() => import("./pages/PoliciesPage").then((module) => ({ default: module.TermsPage })));
-const AccessibilityPage = lazy(() => import("./pages/PoliciesPage").then((module) => ({ default: module.AccessibilityPage })));
-const SecurityPage = lazy(() => import("./pages/PoliciesPage").then((module) => ({ default: module.SecurityPage })));
+const PrivacyPage = lazy(() => loadPoliciesPage().then((module) => ({ default: module.PrivacyPage })));
+const TermsPage = lazy(() => loadPoliciesPage().then((module) => ({ default: module.TermsPage })));
+const AccessibilityPage = lazy(() => loadPoliciesPage().then((module) => ({ default: module.AccessibilityPage })));
+const SecurityPage = lazy(() => loadPoliciesPage().then((module) => ({ default: module.SecurityPage })));
+
+const routePreloaders = [
+  [/^\/about(?:\/|$)|^\/instructors$/, loadAboutPage],
+  [/^\/gallery(?:\/|$)/, loadGalleryPage],
+  [/^\/faq$/, loadFaqPage],
+  [/^\/instructors\/.+/, loadInstructorDetailPage],
+  [/^\/news$/, loadNewsPage],
+  [/^\/news\/.+/, loadNewsDetailPage],
+  [/^\/contact$/, loadContactPage],
+  [/^\/signup$/, loadSignupPage],
+  [/^\/login$/, loadLoginPage],
+  [/^\/forgot-password$/, loadPasswordRecoveryPages],
+  [/^\/events\/competitions\/[^/]+\/payment$/, loadCompetitionPaymentPage],
+  [/^\/events\/competitions\/[^/]+$/, loadCompetitionDetailPage],
+  [/^\/events\/(?:standard|calendar|competitions|schools|store)$/, loadEventsPage],
+  [/^\/events\/[^/]+$/, loadEventDetailPage],
+  [/^\/events(?:\/|$)/, loadEventsPage],
+  [/^\/profile$/, loadProfilePage],
+  [/^\/privacy$|^\/terms$|^\/accessibility$|^\/security$/, loadPoliciesPage],
+  [/^\/admin$/, loadAdminPage],
+  [/^\/proof-of-payment$/, loadProofOfPaymentPage],
+];
+
+const preloadedRoutes = new Map();
+
+function preloadRoute(pathname) {
+  const entry = routePreloaders.find(([pattern]) => pattern.test(pathname));
+  if (!entry || preloadedRoutes.has(entry[1])) return;
+
+  const [pattern, loadPage] = entry;
+  const request = loadPage();
+  preloadedRoutes.set(loadPage, request);
+  request.catch((error) => {
+    preloadedRoutes.delete(loadPage);
+    console.error(`Unable to preload route ${pattern}:`, error);
+  });
+}
 
 function PageLoading() {
   return (
@@ -85,13 +142,33 @@ function AppContent() {
   } = tour;
   const guard = (page) => <RequireAuth onUnauthenticated={pauseForAuthentication}>{page}</RequireAuth>;
 
+  useEffect(() => {
+    const preloadFromLink = (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const link = target.closest("a[href]");
+      if (!link) return;
+
+      const url = new URL(link.href, window.location.href);
+      if (url.origin === window.location.origin) preloadRoute(url.pathname);
+    };
+    document.addEventListener("pointerover", preloadFromLink, { passive: true });
+    document.addEventListener("pointerdown", preloadFromLink, { passive: true });
+    document.addEventListener("focusin", preloadFromLink);
+    return () => {
+      document.removeEventListener("pointerover", preloadFromLink);
+      document.removeEventListener("pointerdown", preloadFromLink);
+      document.removeEventListener("focusin", preloadFromLink);
+    };
+  }, []);
+
   return (
     <>
       <a className="skip-link" href="#main-content">Skip to main content</a>
       {pathname !== "/admin" && <NavigationBar />}
       <ScrollToTop />
       <Suspense fallback={<PageLoading />}>
-        <div id="main-content" tabIndex="-1">
+        <div key={pathname} id="main-content" className="page-transition" tabIndex="-1">
           <Routes>
             <Route path="*" element={<NotFoundPage />} />
             <Route path="/" element={<HomePage />} />

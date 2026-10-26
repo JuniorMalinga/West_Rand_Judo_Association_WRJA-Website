@@ -26,6 +26,54 @@
   opacity: 1;
 }
 
+.home-page-first-entrance .image-slider.home-hero-ready .image-slide-active img {
+  animation: home-hero-image-arrive 2s cubic-bezier(0.18, 0.72, 0.24, 1) both;
+}
+
+.home-page-first-entrance .image-slider.home-hero-ready .image-overlay {
+  animation: home-hero-overlay-arrive 900ms ease-out both;
+}
+
+.home-page-first-entrance .image-slider.home-hero-ready::after {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.13) 48%, transparent 66%);
+  content: "";
+  pointer-events: none;
+  animation: home-hero-light-sweep 1.25s 120ms ease-out both;
+}
+
+.home-page-first-entrance .image-slider.home-hero-ready .image-content > * {
+  animation: home-hero-content-arrive 850ms cubic-bezier(0.18, 0.72, 0.24, 1) both;
+}
+
+.home-page-first-entrance .image-slider.home-hero-ready .image-content > :nth-child(1) { animation-delay: 180ms; }
+.home-page-first-entrance .image-slider.home-hero-ready .image-content > :nth-child(2) { animation-delay: 360ms; }
+.home-page-first-entrance .image-slider.home-hero-ready .image-content > :nth-child(3) { animation-delay: 480ms; }
+.home-page-first-entrance .image-slider.home-hero-ready .image-content > :nth-child(4) { animation-delay: 600ms; }
+
+@keyframes home-hero-image-arrive {
+  from { opacity: 0.45; transform: scale(1.16); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes home-hero-overlay-arrive {
+  from { opacity: 0.2; }
+  to { opacity: 1; }
+}
+
+@keyframes home-hero-content-arrive {
+  from { opacity: 0; transform: translate3d(0, 36px, 0) scale(0.97); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes home-hero-light-sweep {
+  from { opacity: 0; transform: translate3d(-24%, 0, 0); }
+  35% { opacity: 1; }
+  to { opacity: 0; transform: translate3d(24%, 0, 0); }
+}
+
 .image-overlay {
   position: absolute;
   inset: 0;
@@ -82,6 +130,15 @@
   display: flex;
   gap: 16px;
   margin-top: 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-page-first-entrance .image-slider.home-hero-ready .image-slide-active img,
+  .home-page-first-entrance .image-slider.home-hero-ready .image-overlay,
+  .home-page-first-entrance .image-slider.home-hero-ready::after,
+  .home-page-first-entrance .image-slider.home-hero-ready .image-content > * {
+    animation: none;
+  }
 }
 
 /* ---------- Programs (home page cards) ---------- */

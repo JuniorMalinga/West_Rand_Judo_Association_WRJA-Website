@@ -84,6 +84,21 @@ section {
   outline: none;
 }
 
+.page-transition {
+  animation: page-arrive 200ms var(--ease) both;
+}
+
+@keyframes page-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* ---------- Buttons ---------- */
 .btn {
   display: inline-flex;
@@ -173,15 +188,30 @@ section {
 /* ---------- Scroll reveal animation ---------- */
 .reveal {
   opacity: 0;
-  transform: translateY(28px);
+  transform: translate3d(0, 20px, 0);
   transition:
-    opacity 0.7s var(--ease),
-    transform 0.7s var(--ease);
+    opacity 620ms cubic-bezier(0.2, 0.65, 0.3, 1),
+    transform 620ms cubic-bezier(0.2, 0.65, 0.3, 1);
+  transition-delay: var(--reveal-delay, 0ms);
 }
 
-.reveal-visible {
+.reveal[data-reveal="fade"] {
+  transform: none;
+}
+
+.reveal[data-reveal="soft"] {
+  transform: translate3d(0, 12px, 0) scale(0.99);
+}
+
+.reveal[data-reveal="pop"] {
+  transform: translate3d(0, 26px, 0) scale(0.955);
+  transition-duration: 720ms;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal.reveal-visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: translate3d(0, 0, 0) scale(1);
 }
 
 /* Shared bullet-list stagger animation */
@@ -213,6 +243,14 @@ section {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal-visible,
+  .program-row-list li {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
   *,
   *::before,
   *::after {
@@ -230,14 +268,22 @@ section {
   margin-bottom: 10px;
   color: var(--text-dark-muted);
   opacity: 0;
-  transform: translateX(-12px);
-  animation: listItemIn 0.5s var(--ease) forwards;
-  animation-play-state: paused;
+  transform: translate3d(0, 10px, 0);
+  transition:
+    opacity 460ms cubic-bezier(0.2, 0.65, 0.3, 1),
+    transform 460ms cubic-bezier(0.2, 0.65, 0.3, 1);
 }
 
 .reveal-visible .program-row-list li {
-  animation-play-state: running;
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
 }
+
+.reveal-visible .program-row-list li:nth-child(2) { transition-delay: 45ms; }
+.reveal-visible .program-row-list li:nth-child(3) { transition-delay: 90ms; }
+.reveal-visible .program-row-list li:nth-child(4) { transition-delay: 135ms; }
+.reveal-visible .program-row-list li:nth-child(5) { transition-delay: 180ms; }
+.reveal-visible .program-row-list li:nth-child(n + 6) { transition-delay: 220ms; }
 
 .program-row-list li::before {
   content: "";
@@ -248,13 +294,6 @@ section {
   height: 6px;
   border-radius: 50%;
   background: var(--accent);
-}
-
-@keyframes listItemIn {
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
 }
 
 /* ---------- Navigation bar ---------- */

@@ -13,7 +13,7 @@ export default function NewsSection() {
 
       <div className="news-grid">
         {newsPosts.map((item, index) => (
-          <Reveal key={item.id} delay={index * 100}>
+          <Reveal key={item.id} delay={index * 65} variant="pop">
             <article className="news-card">
               <img
                 src={item.image}

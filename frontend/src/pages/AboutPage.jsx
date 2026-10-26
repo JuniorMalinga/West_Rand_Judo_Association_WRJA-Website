@@ -51,7 +51,7 @@ export default function AboutPage() {
         <Reveal delay={100}>
           <ul className="program-row-list about-mission-list">
             {missionPoints.map((point, index) => (
-              <li key={index} style={{ transitionDelay: `${index * 80}ms` }}>{point}</li>
+              <li key={index} style={{ transitionDelay: `${Math.min(index * 55, 220)}ms` }}>{point}</li>
             ))}
           </ul>
         </Reveal>

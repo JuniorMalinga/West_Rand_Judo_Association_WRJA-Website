@@ -1,15 +1,15 @@
 import useScrollReveal from "../hooks/useScrollReveal";
 
-// Wraps any section and fades/slides it into view the first time it
-// scrolls into the viewport. delay (ms) staggers multiple children.
-export default function Reveal({ children, delay = 0, className = "" }) {
+export default function Reveal({ children, delay = 0, className = "", variant = "up" }) {
   const [ref, isVisible] = useScrollReveal();
+  const revealDelay = Math.min(Math.max(Number(delay) || 0, 0), 240);
 
   return (
     <div
       ref={ref}
-      className={`reveal ${isVisible ? "reveal-visible" : ""} ${className}`}
-      style={{ transitionDelay: `${delay}ms` }}
+      className={`reveal ${isVisible ? "reveal-visible" : ""} ${className}`.trim()}
+      data-reveal={variant}
+      style={{ "--reveal-delay": `${revealDelay}ms` }}
     >
       {children}
     </div>

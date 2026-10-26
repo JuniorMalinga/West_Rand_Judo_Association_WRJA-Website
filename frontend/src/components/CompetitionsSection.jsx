@@ -23,7 +23,7 @@ export default function CompetitionsSection() {
       </div>
       <div className="competitions-home-grid">
         {competitions.map((competition, index) => (
-          <Reveal key={competition.id} delay={index * 100}>
+          <Reveal key={competition.id} delay={index * 70} variant="pop">
             <CompetitionCard competition={competition} locked={!isLoggedIn} />
           </Reveal>
         ))}

@@ -7,7 +7,7 @@ export default function ProgramsSection() {
     <section className="programs">
       <div className="programs-grid">
         {programs.map((program, index) => (
-          <Reveal key={program.slug} delay={index * 120}>
+          <Reveal key={program.slug} delay={index * 70} variant="pop">
             <Link
               to={`/programs/${program.slug}`}
               className="program-card"

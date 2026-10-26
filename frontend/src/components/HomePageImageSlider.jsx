@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom"; 
 
 import judo1 from "../assets/images/Landing/Home Cover 1.jpg";
@@ -15,6 +15,13 @@ export default function ImageSlider() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [loaded, setLoaded] = useState(() => new Set([0]));
   const [isMobile, setIsMobile] = useState(() => window.matchMedia("(max-width: 900px)").matches);
+  const [heroReady, setHeroReady] = useState(false);
+  const heroImageRef = useRef(null);
+
+  useEffect(() => {
+    const image = heroImageRef.current;
+    if (image?.complete && image.naturalWidth > 0) setHeroReady(true);
+  }, []);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 900px)");
@@ -47,7 +54,7 @@ export default function ImageSlider() {
   }, [activeIndex, isMobile]);
 
   return (
-    <section className="image-slider">
+    <section className={`image-slider ${heroReady ? "home-hero-ready" : ""}`}>
       <div className="image-slides">
         {slides.map((slide, index) => (
           <div
@@ -56,11 +63,14 @@ export default function ImageSlider() {
           >
             {loaded.has(index) && (
               <img
+                ref={index === 0 ? heroImageRef : undefined}
                 src={slide.image}
                 alt=""
                 loading={index === activeIndex ? "eager" : "lazy"}
                 fetchpriority={index === 0 ? "high" : "auto"}
                 decoding="async"
+                onLoad={index === 0 ? () => setHeroReady(true) : undefined}
+                onError={index === 0 ? () => setHeroReady(true) : undefined}
               />
             )}
           </div>

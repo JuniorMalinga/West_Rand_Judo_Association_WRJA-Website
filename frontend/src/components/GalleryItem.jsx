@@ -6,7 +6,7 @@ import Reveal from "./Reveal";
 // browse across every photo, not just the current page.
 export default function GalleryItem({ item, index, absoluteIndex, onOpen }) {
   return (
-    <Reveal delay={index * 40}>
+    <Reveal delay={index * 45} variant="pop">
       <button
         type="button"
         className="gallery-item"

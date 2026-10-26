@@ -64,6 +64,7 @@ export default function FeaturesSection() {
               key={feature.title}
               delay={index * 80}
               className={`feature-item feature-item-${index + 1}`}
+              variant="pop"
             >
               <div className="feature-heading">
                 <div className="feature-icon" aria-hidden="true">

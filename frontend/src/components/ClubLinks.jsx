@@ -39,7 +39,7 @@ export default function ClubLinks() {
 
       <div className="club-links-grid">
         {clubs.map((club, index) => (
-          <Reveal key={club.name} delay={index * 120} className="club-card">
+          <Reveal key={club.name} delay={index * 65} className="club-card" variant="pop">
             <h3>{club.name}</h3>
             <div className="club-card-links">
               {club.links.map((link) => (
