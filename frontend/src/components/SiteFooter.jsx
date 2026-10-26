@@ -5,6 +5,7 @@ import { toTelHref } from "../lib/format";
 import { useCollectionState } from "../hooks/useCollection";
 import { galleryStore } from "../data/gallery";
 import { openPrivacySettings } from "../lib/privacyPreferences";
+import Reveal from "./Reveal";
 
 export default function SiteFooter() {
   const { items } = useCollectionState(galleryStore);
@@ -12,7 +13,7 @@ export default function SiteFooter() {
   return (
     <footer className="site-footer">
       <div className="footer-grid">
-        <div className="footer-about">
+        <Reveal className="footer-about">
           <div className="footer-logo">
             <span className="nav-logo-badge">
               <img
@@ -41,9 +42,9 @@ export default function SiteFooter() {
               FB
             </a>
           </div>
-        </div>
+        </Reveal>
 
-        <div className="footer-contacts">
+        <Reveal className="footer-contacts" delay={70}>
           <h3>Contacts</h3>
 
           <p>West Rand Judo Association NPC</p>
@@ -70,9 +71,9 @@ export default function SiteFooter() {
           <p>
             <Link to="/contact" className="footer-contact-link">Send us a message &rarr;</Link>
           </p>
-        </div>
+        </Reveal>
 
-        <div className="footer-gallery">
+        <Reveal className="footer-gallery" delay={140}>
           <h3>Gallery</h3>
 
           <div className="footer-gallery-grid">
@@ -86,7 +87,7 @@ export default function SiteFooter() {
               />
             ))}
           </div>
-        </div>
+        </Reveal>
       </div>
 
       <div className="footer-bottom">

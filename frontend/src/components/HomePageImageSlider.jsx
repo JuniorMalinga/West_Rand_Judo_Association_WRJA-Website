@@ -24,6 +24,13 @@ export default function ImageSlider() {
   }, []);
 
   useEffect(() => {
+    const firstEntrance = document.querySelector(".home-page-first-entrance");
+    if (!heroReady || !firstEntrance) return undefined;
+    document.body.classList.add("home-first-entrance-ready");
+    return () => document.body.classList.remove("home-first-entrance-ready");
+  }, [heroReady]);
+
+  useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 900px)");
     const updateMobileState = (event) => setIsMobile(event.matches);
     mediaQuery.addEventListener("change", updateMobileState);

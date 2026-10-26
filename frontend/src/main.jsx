@@ -34,6 +34,16 @@ async function bootstrap() {
   try {
     const { default: App } = await import("./App.jsx");
 
+    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const syncScrollRevealPreference = () => {
+      document.documentElement.classList.toggle(
+        "scroll-reveals-enabled",
+        typeof window.IntersectionObserver === "function" && !motionPreference.matches,
+      );
+    };
+    syncScrollRevealPreference();
+    motionPreference.addEventListener?.("change", syncScrollRevealPreference);
+
     root.render(
       <React.StrictMode>
         <App />

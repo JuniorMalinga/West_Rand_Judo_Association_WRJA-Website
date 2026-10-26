@@ -6,7 +6,7 @@ export default function NewsSection() {
   const newsPosts = useCollection(newsStore).slice(0, 4);
   return (
     <section className="news">
-      <Reveal className="news-header">
+      <Reveal className="news-header" variant="clip">
         <h2>Recent news</h2>
         <p>Announcements, results, and club highlights</p>
       </Reveal>

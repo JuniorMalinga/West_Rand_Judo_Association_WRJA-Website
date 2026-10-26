@@ -50,7 +50,7 @@ export default function FeaturesSection() {
   return (
     <section className="features">
       <div className="features-content">
-        <Reveal className="features-header">
+        <Reveal className="features-header" variant="clip">
           <h2>
             Our <span className="text-accent">features</span>
           </h2>

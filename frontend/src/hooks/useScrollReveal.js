@@ -6,35 +6,41 @@ let revealObserver = null;
 // Reuse one observer for all reveal wrappers rather than listening to every scroll event.
 function shouldRevealImmediately() {
   if (typeof window === "undefined") return true;
-  return !("IntersectionObserver" in window)
+  return typeof window.IntersectionObserver !== "function"
     || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 function observeReveal(node, onReveal) {
-  if (!revealObserver) {
-    revealObserver = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        const reveal = revealSubscriptions.get(entry.target);
-        revealSubscriptions.delete(entry.target);
-        revealObserver?.unobserve(entry.target);
-        reveal?.();
-      });
-    }, { threshold: 0.01, rootMargin: "0px 0px -8% 0px" });
-  }
-
-  const observer = revealObserver;
-  revealSubscriptions.set(node, onReveal);
-  observer.observe(node);
-
-  return () => {
-    revealSubscriptions.delete(node);
-    observer.unobserve(node);
-    if (revealSubscriptions.size === 0 && revealObserver === observer) {
-      observer.disconnect();
-      revealObserver = null;
+  try {
+    if (!revealObserver) {
+      revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const reveal = revealSubscriptions.get(entry.target);
+          revealSubscriptions.delete(entry.target);
+          revealObserver?.unobserve(entry.target);
+          reveal?.();
+        });
+      }, { threshold: 0.01, rootMargin: "0px 0px -8% 0px" });
     }
-  };
+
+    const observer = revealObserver;
+    revealSubscriptions.set(node, onReveal);
+    observer.observe(node);
+
+    return () => {
+      revealSubscriptions.delete(node);
+      observer.unobserve(node);
+      if (revealSubscriptions.size === 0 && revealObserver === observer) {
+        observer.disconnect();
+        revealObserver = null;
+      }
+    };
+  } catch (error) {
+    console.error("Scroll reveal observer could not start; showing content without animation.", error);
+    onReveal();
+    return () => {};
+  }
 }
 
 export default function useScrollReveal() {
@@ -46,7 +52,7 @@ export default function useScrollReveal() {
     if (!node) return;
 
     const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (!("IntersectionObserver" in window) || motionPreference.matches) {
+    if (typeof window.IntersectionObserver !== "function" || motionPreference.matches) {
       setIsVisible(true);
       return undefined;
     }

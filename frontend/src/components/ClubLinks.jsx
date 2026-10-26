@@ -29,7 +29,7 @@ const clubs = [
 export default function ClubLinks() {
   return (
     <section className="club-links">
-      <Reveal className="club-links-header">
+      <Reveal className="club-links-header" variant="clip">
         <h2>Follow our clubs</h2>
         <p>
           Stay connected with our affiliated clubs for the latest news, competition

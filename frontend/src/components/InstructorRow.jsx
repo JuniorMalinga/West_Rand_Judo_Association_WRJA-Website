@@ -4,7 +4,7 @@ import Reveal from "./Reveal";
 // visual language as ProgramRow so the site stays consistent.
 export default function InstructorRow({ instructor, reverse }) {
   return (
-    <Reveal className={`instructor-row ${reverse ? "program-row-reverse" : ""}`}>
+    <Reveal className={`instructor-row ${reverse ? "program-row-reverse" : ""}`} variant="image">
       <img src={instructor.image} alt={instructor.name} className="instructor-image" loading="lazy" decoding="async" style={{ objectPosition: instructor.imagePosition || "center" }} />
 
       <div className="instructor-content">

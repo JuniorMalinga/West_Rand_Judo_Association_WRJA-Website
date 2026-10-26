@@ -34,7 +34,7 @@ export default function AboutPage() {
           full mission list, full instructor bios, and affiliated club
           links, sourced from WRJA_WEB_DETAILS.docx. */}
       <section className="about-mission">
-        <Reveal className="about-mission-header">
+        <Reveal className="about-mission-header" variant="clip">
           <div className="about-mission-heading">
             <p className="about-mission-eyebrow">WHAT GUIDES US</p>
             <h2>Our mission</h2>

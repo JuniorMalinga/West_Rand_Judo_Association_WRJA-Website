@@ -12,7 +12,7 @@ export default function CompetitionsSection() {
 
   return (
     <section className="competitions-home-section">
-      <div className="section-heading">
+      <Reveal className="section-heading" variant="clip">
         <p className="eyebrow">WHAT'S NEXT</p>
         <h2>Step onto the <span className="text-accent">competition mat.</span></h2>
         <p>
@@ -20,7 +20,7 @@ export default function CompetitionsSection() {
             ? "View competition details, registration links and WRJA payment requirements."
             : "Log in to view competition details, registration links and WRJA payment requirements."}
         </p>
-      </div>
+      </Reveal>
       <div className="competitions-home-grid">
         {competitions.map((competition, index) => (
           <Reveal key={competition.id} delay={index * 70} variant="pop">
@@ -28,12 +28,14 @@ export default function CompetitionsSection() {
           </Reveal>
         ))}
       </div>
-      <Link
-        className="btn btn-accent competitions-home-cta"
-        to={isLoggedIn ? "/events/competitions" : "/login"}
-      >
-        {isLoggedIn ? "View all competitions" : "Login to view competitions"}
-      </Link>
+      <Reveal delay={100}>
+        <Link
+          className="btn btn-accent competitions-home-cta"
+          to={isLoggedIn ? "/events/competitions" : "/login"}
+        >
+          {isLoggedIn ? "View all competitions" : "Login to view competitions"}
+        </Link>
+      </Reveal>
     </section>
   );
 }

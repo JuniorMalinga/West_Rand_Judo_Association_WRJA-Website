@@ -4,7 +4,7 @@ import instructors from "../data/instructors";
 export default function TrainersSection() {
   return (
     <section className="trainers">
-      <Reveal className="trainers-header">
+      <Reveal className="trainers-header" variant="clip">
         <h2>Our instructors</h2>
         <p>Experienced, qualified coaches guiding every belt level</p>
       </Reveal>

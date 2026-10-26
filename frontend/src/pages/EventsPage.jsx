@@ -185,7 +185,7 @@ export default function EventsPage({ section }) {
     <div className="events-page">
       <PageHeader title="Events" />
       <section className="events-hub-intro">
-        <Reveal>
+        <Reveal variant="clip">
           <p className="eyebrow">YOUR WRJA EVENT HUB</p>
           <h1>Everything happening <span className="text-accent">around the mat.</span></h1>
           <p>Explore the calendar, competitions, school pathways and official WRJA kit from one clear starting point.</p>

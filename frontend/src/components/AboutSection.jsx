@@ -4,7 +4,7 @@ import WRJACommittee from "../assets/images/team/image 79.jpg";
 export default function AboutSection() {
   return (
     <section id="about" className="about">
-      <Reveal className="about-image-wrap">
+      <Reveal className="about-image-wrap" variant="image">
         <img
           src={WRJACommittee}
           alt="Placeholder of a judo athlete"
@@ -14,7 +14,7 @@ export default function AboutSection() {
         />
       </Reveal>
 
-      <Reveal delay={150} className="about-content">
+      <Reveal delay={150} className="about-content" variant="clip">
         <span className="about-quote-mark">&ldquo;</span>
         <h2>About West Rand Judo Association</h2>
         <p className="about-lead">Building character on and off the mat</p>
@@ -37,4 +37,3 @@ export default function AboutSection() {
     </section>
   );
 }
-
