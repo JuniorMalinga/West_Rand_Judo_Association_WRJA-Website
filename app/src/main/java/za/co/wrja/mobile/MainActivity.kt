@@ -377,6 +377,7 @@ internal fun LoginScreen(
         mutableStateOf(initialEmail)
     }
     var rememberMe by rememberSaveable { mutableStateOf(false) }
+    var showPasswordReset by remember { mutableStateOf(false) }
     var password by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -387,6 +388,14 @@ internal fun LoginScreen(
     val missingPasswordError = localized("Enter your password.", "Voer jou wagwoord in.", "Faka iphasiwedi yakho.")
     val connectionError = localized("Could not connect. Check your connection.", "Kon nie koppel nie. Gaan jou verbinding na.", "Ayikwazanga ukuxhuma. Hlola uxhumano lwakho.")
     val loginFailedError = localized("Login failed.", "Aanmelding het misluk.", "Ukungena kwehlulekile.")
+
+    if (showPasswordReset) {
+        PasswordResetDialog(initialEmail = email, onDismiss = {
+            showPasswordReset = false
+            password = ""
+            error = null
+        })
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(OffWhite),
@@ -481,7 +490,9 @@ internal fun LoginScreen(
                                 )
                             }
                     }
-                    Text(tr("forgot_password"), Modifier.fillMaxWidth().padding(top = 4.dp), color = GoldDark, fontSize = 13.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
+                    TextButton(onClick = { showPasswordReset = true }, enabled = !busy, modifier = Modifier.align(Alignment.End)) {
+                        Text(tr("forgot_password"), color = GoldDark, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    }
 
                     notice?.let {
                         Text(
