@@ -805,15 +805,7 @@ internal fun LoginScreen(
 }
 
 @Composable private fun ContactForm() {
-    var name by remember { mutableStateOf("") }; var email by remember { mutableStateOf("") }; var message by remember { mutableStateOf("") }
-    WrjaContentCard(Modifier.fillMaxWidth().wrjaReveal()) {
-        Text(localized("SEND US A MESSAGE", "STUUR ONS 'N BOODSKAP", "SITHUMELE UMLAYEZO"), color = Gold, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.ExtraBold)
-        Spacer(Modifier.height(6.dp)); Text(localized("We’ll make sure your message reaches the right WRJA team.", "Ons sal seker maak jou boodskap bereik die regte WRJA-span.", "Sizoqinisekisa ukuthi umlayezo wakho ufika ethimbeni elilungile le-WRJA."), color = Muted, style = MaterialTheme.typography.bodySmall)
-        Spacer(Modifier.height(18.dp)); OutlinedTextField(name, { name = it }, label = { Text(localized("Your name", "Jou naam", "Igama lakho")) }, modifier = Modifier.fillMaxWidth())
-        Spacer(Modifier.height(10.dp)); OutlinedTextField(email, { email = it }, label = { Text(tr("email")) }, modifier = Modifier.fillMaxWidth())
-        Spacer(Modifier.height(10.dp)); OutlinedTextField(message, { message = it }, label = { Text(localized("Message", "Boodskap", "Umlayezo")) }, minLines = 3, modifier = Modifier.fillMaxWidth())
-        Spacer(Modifier.height(16.dp)); Button({}, Modifier.fillMaxWidth().height(50.dp), colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Charcoal)) { Text(localized("SEND MESSAGE", "STUUR BOODSKAP", "THUMELA UMLAYEZO"), fontWeight = FontWeight.Bold) }
-    }
+    ContactEnquiryForm()
 }
 
 @Composable private fun AboutDetail() {
