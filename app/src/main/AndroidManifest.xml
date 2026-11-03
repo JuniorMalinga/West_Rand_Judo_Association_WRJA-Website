@@ -1,15 +1,26 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.USE_FINGERPRINT" />
 
     <application
-        android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:name=".WrjaApplication"
+        android:allowBackup="false"
+        android:icon="@mipmap/wrja_launcher"
+        android:roundIcon="@mipmap/wrja_launcher"
         android:label="WRJA"
         android:theme="@style/Theme.WRJA">
+
+        <service android:name=".WrjaMessagingService" android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/ic_wrja_mark" />
+        <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="wrja_updates" />
 
         <activity
             android:name=".MainActivity"

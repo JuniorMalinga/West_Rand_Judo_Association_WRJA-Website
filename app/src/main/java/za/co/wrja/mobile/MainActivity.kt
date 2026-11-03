@@ -668,6 +668,7 @@ internal fun LoginScreen(
                     }
                     Spacer(Modifier.height(16.dp))
                     HorizontalDivider(color = Color(0xFF343434), modifier = Modifier.padding(horizontal = 16.dp))
+                    PushNotificationSettings()
                     Text(tr("log_out").uppercase(), Modifier.fillMaxWidth().clickable { logout() }.padding(22.dp), color = Gold, fontWeight = FontWeight.Bold)
                 }
             }

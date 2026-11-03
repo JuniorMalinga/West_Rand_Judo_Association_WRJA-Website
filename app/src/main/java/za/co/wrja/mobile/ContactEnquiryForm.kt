@@ -10,6 +10,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
@@ -22,6 +25,7 @@ fun ContactEnquiryForm() {
     var sending by remember { mutableStateOf(false) }
     var outcome by rememberSaveable { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current.applicationContext
     val invalidName = localized("Enter your name (2–100 characters).", "Voer jou naam in (2–100 karakters).", "Faka igama lakho (izinhlamvu ezi-2–100).")
     val invalidEmail = localized("Enter a valid email address.", "Voer 'n geldige e-posadres in.", "Faka ikheli le-imeyili elivumelekile.")
     val invalidPhone = localized("Enter a valid phone number, or leave it blank.", "Voer 'n geldige telefoonnommer in, of laat dit leeg.", "Faka inombolo yocingo evumelekile noma uyishiye ingenalutho.")
@@ -54,6 +58,7 @@ fun ContactEnquiryForm() {
                     "rate" -> retryLater
                     "failed" -> failed
                     "uncertain" -> uncertain
+                    "queued" -> localized("Saved on this device. Your enquiry will send automatically when internet is available. Check the outbox below for delivery status.", "Op hierdie toestel gestoor. Jou navraag sal outomaties stuur wanneer internet beskikbaar is. Sien die uitboks hieronder vir afleweringstatus.", "Kugcinwe kule divayisi. Umbuzo wakho uzothunyelwa ngokuzenzakalela uma i-inthanethi itholakala. Hlola isimo ngezansi.")
                     else -> validation.orEmpty()
                 }, color = if (code == "email" || code == "saved") WrjaGold else MaterialTheme.colorScheme.error)
             }
@@ -67,9 +72,12 @@ fun ContactEnquiryForm() {
                         outcome = null
                         scope.launch {
                             try {
-                                val emailSent = WebsiteContactApi.submit(name, email, phone, message)
+                                val id = withContext(Dispatchers.IO) {
+                                    ContactOutbox(context).use { it.add(name, email, phone, message) }
+                                }
+                                ContactOutbox.schedule(context, id)
                                 message = ""
-                                outcome = if (emailSent) "email" else "saved"
+                                outcome = "queued"
                             } catch (cancelled: CancellationException) {
                                 throw cancelled
                             } catch (rejected: ContactRejectedException) {
@@ -86,6 +94,7 @@ fun ContactEnquiryForm() {
                 if (sending) CircularProgressIndicator(Modifier.size(20.dp), color = Color.Black, strokeWidth = 2.dp)
                 else Text(localized("SEND MESSAGE", "STUUR BOODSKAP", "THUMELA UMLAYEZO"), fontWeight = FontWeight.Bold)
             }
+            ContactOutboxStatus()
         }
     }
 }

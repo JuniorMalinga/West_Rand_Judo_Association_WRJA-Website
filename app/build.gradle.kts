@@ -4,6 +4,11 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+// A valid Firebase project file enables live push; absence never breaks a local build.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 android {
     namespace = "za.co.wrja.mobile"
     compileSdk = 35
@@ -14,6 +19,7 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     compileOptions {
@@ -27,6 +33,10 @@ android {
 }
 
 dependencies {
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    implementation("androidx.work:work-runtime-ktx:2.10.1")
+    implementation("com.google.firebase:firebase-messaging:24.1.2")
     implementation("com.kizitonwose.calendar:compose:2.6.0")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.2")
     implementation(platform("androidx.compose:compose-bom:2024.12.01"))

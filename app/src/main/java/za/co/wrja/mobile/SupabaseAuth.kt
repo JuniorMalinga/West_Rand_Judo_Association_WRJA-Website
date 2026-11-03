@@ -55,10 +55,20 @@ object SupabaseAuth {
 
         val savedToken = withContext(Dispatchers.IO) {
             try {
-                file.openRead().bufferedReader(Charsets.UTF_8).use {
-                    it.readText().trim().ifBlank { null }
+                val stored = file.openRead().bufferedReader(Charsets.UTF_8).use { it.readText().trim() }
+                when {
+                    stored.isBlank() -> null
+                    stored.startsWith("v1:") -> SessionCipher.decrypt(stored)
+                    else -> {
+                        // Upgrade the previous plaintext format atomically on this device.
+                        val encrypted = SessionCipher.encrypt(stored)
+                        val output = file.startWrite()
+                        try { output.write(encrypted.toByteArray(Charsets.UTF_8)); file.finishWrite(output) }
+                        catch (failure: Exception) { file.failWrite(output); throw failure }
+                        stored
+                    }
                 }
-            } catch (_: IOException) {
+            } catch (_: Exception) {
                 null
             }
         }
@@ -88,7 +98,7 @@ object SupabaseAuth {
 
             try {
                 // Empty content removes the remembered token.
-                output.write(value.orEmpty().toByteArray(Charsets.UTF_8))
+                output.write(value?.let(SessionCipher::encrypt).orEmpty().toByteArray(Charsets.UTF_8))
                 file.finishWrite(output)
             } catch (failure: Exception) {
                 file.failWrite(output)
