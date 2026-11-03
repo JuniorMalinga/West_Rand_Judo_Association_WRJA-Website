@@ -78,6 +78,7 @@ fun PushNotificationSettings() {
     var enabled by remember { mutableStateOf(preferences.getBoolean("enabled", false)) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf(false) }
+    var testTokenCopied by remember { mutableStateOf(false) }
     val configured = remember { FirebaseApp.getApps(context).isNotEmpty() }
     fun subscribe() {
         if (!configured) return
@@ -107,6 +108,24 @@ fun PushNotificationSettings() {
             } else subscribe()
         }) {
             Text(if (busy) localized("Please wait…", "Wag asseblief…", "Linda…") else if (enabled) localized("Disable notifications", "Deaktiveer kennisgewings", "Vala izaziso") else localized("Enable notifications", "Aktiveer kennisgewings", "Vula izaziso"))
+        }
+        // Explicit user action only; never log the device registration token or
+        // expose it in release builds. This is not an FCM server credential.
+        if (BuildConfig.DEBUG && configured && enabled) {
+            TextButton(enabled = !busy, onClick = {
+                busy = true
+                error = false
+                testTokenCopied = false
+                FirebaseMessaging.getInstance().token.addOnCompleteListener { result ->
+                    busy = false
+                    if (result.isSuccessful) {
+                        val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        clipboard.setPrimaryClip(android.content.ClipData.newPlainText("FCM test device token", result.result))
+                        testTokenCopied = true
+                    } else error = true
+                }
+            }) { Text(localized("Copy test device token", "Kopieer toetstoestel-token", "Kopisha ithokheni yedivayisi yokuhlola")) }
+            if (testTokenCopied) Text(localized("Copied. Paste into Firebase Console's test-message device field. Do not share publicly.", "Gekopieer. Plak in Firebase Console se toetsboodskap-toestelveld. Moenie openbaar deel nie.", "Kukopishiwe. Namathisela enkambini yedivayisi yomlayezo wokuhlola ku-Firebase Console. Ungabelani ngayo esidlangalaleni."), style = MaterialTheme.typography.bodySmall)
         }
     }
 }

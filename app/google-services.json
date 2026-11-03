@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "596233588801",
+    "project_id": "wrja-project",
+    "storage_bucket": "wrja-project.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:596233588801:android:269afd56c67f6f7af6f6c0",
+        "android_client_info": {
+          "package_name": "za.co.wrja.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQceu6a7jefOgOZMFXFc1t0cS5JJDH2Wo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
