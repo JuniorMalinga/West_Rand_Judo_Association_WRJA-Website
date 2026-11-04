@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import AdminLoadingButton from "./AdminLoadingButton";
 import { useCollectionState } from "../hooks/useCollection";
 import useNotice from "../hooks/useNotice";
 import { deleteMessage, isUnread, markAllMessagesRead, messagesStore, setMessageStatus } from "../data/messages";
@@ -10,6 +11,7 @@ export default function AdminContactsPanel() {
   const [openId, setOpenId] = useState(null);
   const [confirmMessage, setConfirmMessage] = useState(null);
   const [deletingMessageId, setDeletingMessageId] = useState(null);
+  const [busyAction, setBusyAction] = useState(null);
   const confirmDialogRef = useRef(null);
   const { notice, show } = useNotice();
 
@@ -23,16 +25,20 @@ export default function AdminContactsPanel() {
   const unread = messages.filter(isUnread).length;
   const visible = filter === "unread" ? messages.filter(isUnread) : messages;
 
-  const run = async (action, successText) => {
+  const run = async (action, successText, actionId) => {
+    if (busyAction) return;
+    setBusyAction(actionId);
     try {
       await action();
       if (successText) show("success", successText);
     } catch (error) {
       show("error", error.message);
+    } finally {
+      setBusyAction(null);
     }
   };
 
-  const setStatus = (id, status) => run(() => setMessageStatus(id, status));
+  const setStatus = (id, status) => run(() => setMessageStatus(id, status), null, `status-${id}`);
 
   const toggleOpen = (message) => {
     const opening = openId !== message.id;
@@ -41,19 +47,24 @@ export default function AdminContactsPanel() {
   };
 
   const handleDelete = async () => {
-    if (!confirmMessage) return;
+    if (!confirmMessage || busyAction) return;
 
     const messageToDelete = confirmMessage;
-    setConfirmMessage(null);
     setDeletingMessageId(messageToDelete.id);
+    setBusyAction(`delete-${messageToDelete.id}`);
 
     try {
       if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
         await new Promise((resolve) => window.setTimeout(resolve, 420));
       }
-      await run(() => deleteMessage(messageToDelete.id), "Message deleted.");
+      await deleteMessage(messageToDelete.id);
+      setConfirmMessage(null);
+      show("success", "Message deleted.");
+    } catch (error) {
+      show("error", error.message);
     } finally {
       setDeletingMessageId(null);
+      setBusyAction(null);
     }
   };
 
@@ -71,9 +82,9 @@ export default function AdminContactsPanel() {
           <p className="admin-table-subtext">Enquiries from the Contact page, event pages, instructor profiles and store orders.</p>
         </div>
         {unread > 0 && (
-          <button className="btn btn-outline-dark" onClick={() => run(markAllMessagesRead, "All messages marked as read.")}>
+          <AdminLoadingButton className="btn btn-outline-dark" onClick={() => run(markAllMessagesRead, "All messages marked as read.", "mark-all-read")} loading={busyAction === "mark-all-read"} disabled={Boolean(busyAction)} loadingText="Marking read…">
             Mark all read
-          </button>
+          </AdminLoadingButton>
         )}
       </div>
 
@@ -117,7 +128,7 @@ export default function AdminContactsPanel() {
                 <div className="admin-message-actions">
                   <a className="btn btn-accent" href={replyHref(message)}>Reply by email</a>
                   {message.phone && <a className="btn btn-outline-dark" href={toTelHref(message.phone)}>Call</a>}
-                  <button className="admin-link-button" onClick={() => setStatus(message.id, fresh ? "read" : "new")}>{fresh ? "Mark as read" : "Mark as unread"}</button>
+                  <AdminLoadingButton className="admin-link-button" onClick={() => setStatus(message.id, fresh ? "read" : "new")} loading={busyAction === `status-${message.id}`} disabled={Boolean(busyAction)} loadingText={fresh ? "Marking read…" : "Marking unread…"}>{fresh ? "Mark as read" : "Mark as unread"}</AdminLoadingButton>
                   <button className="admin-link-button danger" onClick={() => setConfirmMessage(message)} disabled={Boolean(deletingMessageId)}>Delete</button>
                 </div>
               )}
@@ -137,8 +148,8 @@ export default function AdminContactsPanel() {
             <h2>Delete this message?</h2>
             <p>The message from {confirmMessage.name} will be permanently deleted.</p>
             <div className="admin-confirm-actions">
-              <button type="button" className="btn btn-outline-dark" onClick={() => setConfirmMessage(null)}>Cancel</button>
-              <button type="button" className="btn admin-confirm-delete" onClick={handleDelete}>Delete message</button>
+              <button type="button" className="btn btn-outline-dark" onClick={() => setConfirmMessage(null)} disabled={Boolean(deletingMessageId)}>Cancel</button>
+              <AdminLoadingButton className="btn admin-confirm-delete" onClick={handleDelete} loading={Boolean(deletingMessageId)} disabled={Boolean(busyAction) && !deletingMessageId} loadingText="Deleting message…">Delete message</AdminLoadingButton>
             </div>
           </div>
         )}

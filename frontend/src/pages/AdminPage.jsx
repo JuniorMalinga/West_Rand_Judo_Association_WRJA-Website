@@ -9,6 +9,7 @@ import AdminCompetitionsPanel from "../components/AdminCompetitionsPanel";
 import AdminSchoolsPanel from "../components/AdminSchoolsPanel";
 import AdminPaymentsPanel from "../components/AdminPaymentsPanel";
 import AdminGalleryPanel from "../components/AdminGalleryPanel";
+import AdminLoadingButton from "../components/AdminLoadingButton";
 import { useAuth } from "../context/AuthContext";
 import useAdminCounts from "../hooks/useAdminCounts";
 import { competitionsStore } from "../data/competitions";
@@ -60,9 +61,8 @@ export default function AdminPage() {
     const requestedTab = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search).get("tab");
     return tabs.some((tab) => tab.slug === requestedTab) ? requestedTab : "overview";
   });
-  const [notice, setNotice] = useState("");
-  const [refreshKey, setRefreshKey] = useState(0);
-  const { counts, refresh: refreshCounts, connectionStatus } = useAdminCounts(isAdmin);
+  const [signingOut, setSigningOut] = useState(false);
+  const { counts, connectionStatus } = useAdminCounts(isAdmin);
 
   useEffect(() => {
     const handleTabRequest = (event) => setActiveTab(event.detail || "overview");
@@ -84,13 +84,14 @@ export default function AdminPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Reload every list from the server, then remount the panel.
-  const refresh = () => {
-    adminStores.forEach((store) => { void store.refresh(); });
-    setRefreshKey((key) => key + 1);
-    refreshCounts();
-    setNotice("Data refreshed");
-    window.setTimeout(() => setNotice(""), 2400);
+  const handleSignOut = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      await signOut();
+    } finally {
+      setSigningOut(false);
+    }
   };
 
   const ActivePanel = panels[activeTab];
@@ -110,7 +111,7 @@ export default function AdminPage() {
         </nav>
         <div className="admin-sidebar-footer">
           <div className="admin-profile"><span>{displayName.slice(0, 1).toUpperCase()}</span><div><b>{displayName}</b><small>Administrator</small></div></div>
-          <button className="admin-signout" onClick={signOut}>Sign out <span>↗</span></button>
+          <AdminLoadingButton className="admin-signout" onClick={handleSignOut} loading={signingOut} loadingText="Signing out…">Sign out <span>↗</span></AdminLoadingButton>
         </div>
       </aside>
       <main className="admin-main">
@@ -121,13 +122,11 @@ export default function AdminPage() {
               <i />
               {connectionStatus === "online" ? "Database online" : connectionStatus === "offline" ? "Database offline" : "Checking database…"}
             </span>
-            <button className="admin-refresh" onClick={refresh}>Refresh data</button>
           </div>
         </header>
-        {notice && <div className="admin-toast" role="status">{notice}</div>}
         {activeTab === "overview"
-          ? <AdminOverviewPanel key={refreshKey} counts={counts} connectionStatus={connectionStatus} onNavigate={goTo} />
-          : <section className="admin-panel-wrap"><ActivePanel key={`${activeTab}-${refreshKey}`} /></section>}
+          ? <AdminOverviewPanel counts={counts} connectionStatus={connectionStatus} onNavigate={goTo} />
+          : <section className="admin-panel-wrap"><ActivePanel key={activeTab} /></section>}
       </main>
     </div>
   );

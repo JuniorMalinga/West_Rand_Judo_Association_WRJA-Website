@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import ImageUploadField from "./ImageUploadField";
+import AdminLoadingButton from "./AdminLoadingButton";
 import { useCollectionState } from "../hooks/useCollection";
 import useNotice from "../hooks/useNotice";
 import { DEFAULT_EVENT_IMAGE, eventsAdmin, eventsStore } from "../data/events";
@@ -68,7 +69,6 @@ export default function AdminEventsPanel() {
   const handleDelete = async () => {
     if (!confirmEvent) return;
     const eventToDelete = confirmEvent;
-    setConfirmEvent(null);
     setDeletingEventId(eventToDelete.id);
 
     try {
@@ -76,6 +76,7 @@ export default function AdminEventsPanel() {
         await new Promise((resolve) => window.setTimeout(resolve, 420));
       }
       await eventsAdmin.remove(eventToDelete.id);
+      setConfirmEvent(null);
       show("success", "Event deleted.");
     } catch (error) {
       show("error", error.message);
@@ -141,8 +142,8 @@ export default function AdminEventsPanel() {
           </label>
 
           <div className="admin-form-actions">
-            <button type="submit" className="btn btn-accent" disabled={saving}>{saving ? "Saving…" : formState.id ? "Save changes" : "Add event"}</button>
-            <button type="button" className="btn btn-outline-dark" onClick={closeForm}>Cancel</button>
+            <AdminLoadingButton type="submit" className="btn btn-accent" loading={saving} loadingText="Saving…">{formState.id ? "Save changes" : "Add event"}</AdminLoadingButton>
+            <button type="button" className="btn btn-outline-dark" onClick={closeForm} disabled={saving}>Cancel</button>
           </div>
         </form>
       )}
@@ -182,8 +183,8 @@ export default function AdminEventsPanel() {
             <h2>Delete this event?</h2>
             <p>“{confirmEvent.name}” will be removed from the calendar and public event pages.</p>
             <div className="admin-confirm-actions">
-              <button type="button" className="btn btn-outline-dark" onClick={() => setConfirmEvent(null)}>Cancel</button>
-              <button type="button" className="btn admin-confirm-delete" onClick={handleDelete}>Delete event</button>
+              <button type="button" className="btn btn-outline-dark" onClick={() => setConfirmEvent(null)} disabled={Boolean(deletingEventId)}>Cancel</button>
+              <AdminLoadingButton className="btn admin-confirm-delete" onClick={handleDelete} loading={Boolean(deletingEventId)} loadingText="Deleting event…">Delete event</AdminLoadingButton>
             </div>
           </div>
         )}

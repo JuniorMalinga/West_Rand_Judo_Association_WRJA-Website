@@ -5,14 +5,14 @@
 
 import { api, notifyAdminChanged } from "./api";
 
-const COLLECTION_REFRESH_INTERVAL = 5000;
+const COLLECTION_SYNC_INTERVAL = 1000;
 
 export function createRemoteCollection(path) {
   const listeners = new Set();
   let snapshot = { items: [], loaded: false, loading: false, error: null };
   let inflight = null;
   let sequence = 0;
-  let refreshTimer = null;
+  let syncTimer = null;
   let stopWatching = null;
 
   const emit = (patch) => {
@@ -48,20 +48,20 @@ export function createRemoteCollection(path) {
           if (document.visibilityState === "visible" && !inflight) store.refresh();
         };
         const onAdminChanged = (event) => {
-          if (event.detail?.path === path && !event.detail?.crossTab) return;
-          if (!inflight) store.refresh();
+          if (event.detail?.path !== path || !event.detail?.crossTab || inflight) return;
+          store.refresh();
         };
         window.addEventListener("wrja:admin-changed", onAdminChanged);
         window.addEventListener("focus", refreshIfVisible);
         document.addEventListener("visibilitychange", refreshIfVisible);
-        refreshTimer = window.setInterval(refreshIfVisible, COLLECTION_REFRESH_INTERVAL);
+        syncTimer = window.setInterval(refreshIfVisible, COLLECTION_SYNC_INTERVAL);
         if (snapshot.loaded) refreshIfVisible();
         stopWatching = () => {
           window.removeEventListener("wrja:admin-changed", onAdminChanged);
           window.removeEventListener("focus", refreshIfVisible);
           document.removeEventListener("visibilitychange", refreshIfVisible);
-          window.clearInterval(refreshTimer);
-          refreshTimer = null;
+          window.clearInterval(syncTimer);
+          syncTimer = null;
         };
       }
       return () => {

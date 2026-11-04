@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import ImageUploadField from "./ImageUploadField";
+import AdminLoadingButton from "./AdminLoadingButton";
 import { useCollectionState } from "../hooks/useCollection";
 import useNotice from "../hooks/useNotice";
 import { adminGalleryStore, galleryAdmin } from "../data/gallery";
@@ -90,7 +91,7 @@ export default function AdminGalleryPanel() {
       const result = await galleryAdmin.remove(item.id);
       setDeleteTarget(null);
       show("success", result.orderUpdated === false
-        ? "Image and gallery entry deleted. Display order could not be refreshed; use Refresh data."
+        ? "Image and gallery entry deleted. The remaining display order may need adjustment."
         : "Image file and gallery entry permanently deleted.");
     } catch (error) {
       setDeleteError(error.message || "The image could not be completely deleted. Check the gallery and Storage before retrying.");
@@ -140,8 +141,8 @@ export default function AdminGalleryPanel() {
             <small className="admin-field-hint">Describe the photo for visitors using screen readers.</small>
           </label>
           <div className="admin-form-actions">
-            <button type="submit" className="btn btn-accent" disabled={saving}>{saving ? "Saving…" : formState.id ? "Save changes" : "Add to gallery"}</button>
-            <button type="button" className="btn btn-outline-dark" onClick={closeForm}>Cancel</button>
+            <AdminLoadingButton type="submit" className="btn btn-accent" loading={saving} loadingText="Saving…">{formState.id ? "Save changes" : "Add to gallery"}</AdminLoadingButton>
+            <button type="button" className="btn btn-outline-dark" onClick={closeForm} disabled={saving}>Cancel</button>
           </div>
         </form>
       )}
@@ -205,9 +206,7 @@ export default function AdminGalleryPanel() {
             {deleteError && <p className="admin-notice admin-notice-error admin-confirm-error" role="alert">{deleteError}</p>}
             <div className="admin-confirm-actions">
               <button ref={cancelDeleteRef} type="button" className="btn btn-outline-dark" onClick={() => setDeleteTarget(null)} disabled={Boolean(deletingId)}>Cancel</button>
-              <button type="button" className="btn admin-confirm-delete" onClick={confirmDelete} disabled={Boolean(deletingId)}>
-                {deletingId === deleteTarget.id ? "Deleting…" : "Delete Permanently"}
-              </button>
+              <AdminLoadingButton className="btn admin-confirm-delete" onClick={confirmDelete} loading={deletingId === deleteTarget.id} loadingText="Deleting…">Delete Permanently</AdminLoadingButton>
             </div>
           </div>
         )}

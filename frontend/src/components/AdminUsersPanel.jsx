@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import AdminLoadingButton from "./AdminLoadingButton";
 import { useAuth } from "../context/AuthContext";
 import { useCollectionState } from "../hooks/useCollection";
 import useNotice from "../hooks/useNotice";
@@ -80,7 +81,6 @@ export default function AdminUsersPanel() {
     }
 
     const userToDelete = confirmAction.user;
-    setConfirmAction(null);
     setDeletingUserId(userToDelete.id);
     setSaving(true);
     try {
@@ -88,6 +88,7 @@ export default function AdminUsersPanel() {
         await new Promise((resolve) => window.setTimeout(resolve, 800));
       }
       await usersAdmin.remove(userToDelete.id);
+      setConfirmAction(null);
       show("success", "User deleted.");
     } catch (error) {
       show("error", error.message);
@@ -136,8 +137,8 @@ export default function AdminUsersPanel() {
           </div>
           {formError && <p className="admin-notice admin-notice-error">{formError}</p>}
           <div className="admin-form-actions">
-            <button type="submit" className="btn btn-accent" disabled={saving}>{saving ? "Saving…" : formState.id ? "Save changes" : "Add user"}</button>
-            <button type="button" className="btn btn-outline-dark" onClick={closeForm}>Cancel</button>
+            <AdminLoadingButton type="submit" className="btn btn-accent" loading={saving} loadingText="Saving…">{formState.id ? "Save changes" : "Add user"}</AdminLoadingButton>
+            <button type="button" className="btn btn-outline-dark" onClick={closeForm} disabled={saving}>Cancel</button>
           </div>
         </form>
       )}
@@ -185,14 +186,14 @@ export default function AdminUsersPanel() {
             </p>
             <div className="admin-confirm-actions">
               <button type="button" className="btn btn-outline-dark" onClick={() => setConfirmAction(null)} disabled={saving}>Cancel</button>
-              <button
-                type="button"
+              <AdminLoadingButton
                 className={`btn ${confirmAction.type === "delete" ? "admin-confirm-delete" : "btn-accent"}`}
                 onClick={handleConfirmAction}
-                disabled={saving}
+                loading={saving}
+                loadingText={confirmAction.type === "delete" ? "Deleting user…" : "Saving…"}
               >
-                {saving ? "Working…" : confirmAction.type === "delete" ? "Delete user" : "Save changes"}
-              </button>
+                {confirmAction.type === "delete" ? "Delete user" : "Save changes"}
+              </AdminLoadingButton>
             </div>
           </div>
         )}

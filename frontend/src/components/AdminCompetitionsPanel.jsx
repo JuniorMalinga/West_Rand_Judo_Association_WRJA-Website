@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import ImageUploadField from "./ImageUploadField";
+import AdminLoadingButton from "./AdminLoadingButton";
 import { useCollectionState } from "../hooks/useCollection";
 import useNotice from "../hooks/useNotice";
 import { competitionsAdmin, competitionsStore, DEFAULT_COMPETITION_IMAGE, getCompetitionStatus } from "../data/competitions";
@@ -112,7 +113,6 @@ export default function AdminCompetitionsPanel({ schoolsOnly = false }) {
   const handleDelete = async () => {
     if (!confirmCompetition) return;
     const competitionToDelete = confirmCompetition;
-    setConfirmCompetition(null);
     setDeletingCompetitionId(competitionToDelete.id);
 
     try {
@@ -120,6 +120,7 @@ export default function AdminCompetitionsPanel({ schoolsOnly = false }) {
         await new Promise((resolve) => window.setTimeout(resolve, 420));
       }
       await adminApi.remove(competitionToDelete.id);
+      setConfirmCompetition(null);
       show("success", `${schoolsOnly ? "School entry" : "Competition"} deleted.`);
     } catch (error) {
       show("error", error.message);
@@ -195,8 +196,8 @@ export default function AdminCompetitionsPanel({ schoolsOnly = false }) {
           )}
           <label>Additional information<textarea rows="2" value={formState.additionalInfo} onChange={(e) => update("additionalInfo", e.target.value)} /></label>
           <div className="admin-form-actions">
-            <button type="submit" className="btn btn-accent" disabled={saving}>{saving ? "Saving…" : isNew ? `Add ${itemLabel}` : "Save changes"}</button>
-            <button type="button" className="btn btn-outline-dark" onClick={closeForm}>Cancel</button>
+            <AdminLoadingButton type="submit" className="btn btn-accent" loading={saving} loadingText="Saving…">{isNew ? `Add ${itemLabel}` : "Save changes"}</AdminLoadingButton>
+            <button type="button" className="btn btn-outline-dark" onClick={closeForm} disabled={saving}>Cancel</button>
           </div>
         </form>
       )}
@@ -241,8 +242,8 @@ export default function AdminCompetitionsPanel({ schoolsOnly = false }) {
               {confirmCompetition.slug === "tracksuit-ordering" && " The Store page uses this entry for tracksuit ordering."}
             </p>
             <div className="admin-confirm-actions">
-              <button type="button" className="btn btn-outline-dark" onClick={() => setConfirmCompetition(null)}>Cancel</button>
-              <button type="button" className="btn admin-confirm-delete" onClick={handleDelete}>Delete {itemLabel}</button>
+              <button type="button" className="btn btn-outline-dark" onClick={() => setConfirmCompetition(null)} disabled={Boolean(deletingCompetitionId)}>Cancel</button>
+              <AdminLoadingButton className="btn admin-confirm-delete" onClick={handleDelete} loading={Boolean(deletingCompetitionId)} loadingText={`Deleting ${itemLabel}…`}>Delete {itemLabel}</AdminLoadingButton>
             </div>
           </div>
         )}

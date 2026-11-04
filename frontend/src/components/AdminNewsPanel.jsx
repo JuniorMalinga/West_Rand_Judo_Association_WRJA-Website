@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import ImageUploadField from "./ImageUploadField";
+import AdminLoadingButton from "./AdminLoadingButton";
 import { useCollectionState } from "../hooks/useCollection";
 import useNotice from "../hooks/useNotice";
 import { DEFAULT_NEWS_IMAGE, newsAdmin, newsStore } from "../data/newsPosts";
@@ -13,6 +14,7 @@ export default function AdminNewsPanel() {
   const [saving, setSaving] = useState(false);
   const [formState, setFormState] = useState(null);
   const [confirmPost, setConfirmPost] = useState(null);
+  const [deletingPostId, setDeletingPostId] = useState(null);
   const confirmDialogRef = useRef(null);
   const { notice, show, clear } = useNotice();
 
@@ -54,12 +56,15 @@ export default function AdminNewsPanel() {
   const handleDelete = async () => {
     if (!confirmPost) return;
     const postToDelete = confirmPost;
-    setConfirmPost(null);
+    setDeletingPostId(postToDelete.id);
     try {
       await newsAdmin.remove(postToDelete.id);
+      setConfirmPost(null);
       show("success", "Post deleted.");
     } catch (error) {
       show("error", error.message);
+    } finally {
+      setDeletingPostId(null);
     }
   };
 
@@ -104,8 +109,8 @@ export default function AdminNewsPanel() {
             <label>Source URL<input type="url" value={formState.url} onChange={(e) => update("url", e.target.value)} placeholder="https://..." /></label>
           </div>
           <div className="admin-form-actions">
-            <button type="submit" className="btn btn-accent" disabled={saving}>{saving ? "Saving…" : formState.id ? "Save changes" : "Publish post"}</button>
-            <button type="button" className="btn btn-outline-dark" onClick={closeForm}>Cancel</button>
+            <AdminLoadingButton type="submit" className="btn btn-accent" loading={saving} loadingText="Saving…">{formState.id ? "Save changes" : "Publish post"}</AdminLoadingButton>
+            <button type="button" className="btn btn-outline-dark" onClick={closeForm} disabled={saving}>Cancel</button>
           </div>
         </form>
       )}
@@ -142,8 +147,8 @@ export default function AdminNewsPanel() {
             <h2 id="news-delete-title">Delete this post?</h2>
             <p id="news-delete-description">“{confirmPost.title}” will be removed from the News page and home page.</p>
             <div className="admin-confirm-actions">
-              <button type="button" className="btn btn-outline-dark" onClick={() => setConfirmPost(null)}>Cancel</button>
-              <button type="button" className="btn admin-confirm-delete" onClick={handleDelete}>Delete post</button>
+              <button type="button" className="btn btn-outline-dark" onClick={() => setConfirmPost(null)} disabled={Boolean(deletingPostId)}>Cancel</button>
+              <AdminLoadingButton className="btn admin-confirm-delete" onClick={handleDelete} loading={Boolean(deletingPostId)} loadingText="Deleting post…">Delete post</AdminLoadingButton>
             </div>
           </div>
         )}

@@ -44,9 +44,6 @@
 @media (prefers-reduced-motion: reduce) {
   .admin-live-pill-online i { animation: none; }
 }
-.admin-refresh { padding: 9px 12px; border: 1px solid #d4d0c5; border-radius: 7px; background: transparent; color: var(--text-dark-muted); font: inherit; font-size: 11px; cursor: pointer; }
-.admin-refresh:hover { border-color: var(--accent); color: var(--text-dark); }
-.admin-toast { max-width: 1220px; margin: -13px auto 20px; padding: 11px 14px; border-radius: 7px; background: #e4f4e5; color: #25733a; font-size: 12px; }
 .admin-overview, .admin-panel-wrap { max-width: 1220px; margin: 0 auto; }
 .admin-welcome-card { display: flex; align-items: center; justify-content: space-between; gap: 25px; min-height: 190px; padding: 35px 40px; overflow: hidden; border-radius: 13px; background: radial-gradient(circle at 80% 0%, rgba(201,162,39,.3), transparent 28%), linear-gradient(120deg, #1d1d1d, #29251b); color: #fff; box-shadow: 0 20px 45px rgba(26,25,21,.14); }
 .admin-welcome-card h2 { margin: 7px 0 9px; color: #fff; font-size: clamp(24px, 3vw, 36px); }
@@ -113,6 +110,10 @@
 .admin-confirm-error { margin: 14px 0 0; }
 .admin-confirm-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
 .admin-confirm-actions .btn { padding: 9px 15px; font-size: 13px; }
+.admin-action-spinner { display: inline-block; width: 13px; height: 13px; flex: 0 0 13px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: admin-action-spin .7s linear infinite; vertical-align: -2px; }
+.btn .admin-action-spinner, .admin-table-actions .admin-action-spinner { margin-right: 7px; }
+@keyframes admin-action-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .admin-action-spinner { animation-duration: 1.8s; } }
 .admin-confirm-delete { border: 1px solid #a12727; background: #a12727; color: #fff; }
 .admin-confirm-delete:hover:not(:disabled) { border-color: #811e1e; background: #811e1e; }
 

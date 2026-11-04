@@ -1,4 +1,5 @@
 import { useState } from "react";
+import AdminLoadingButton, { AdminActionSpinner } from "./AdminLoadingButton";
 import { useCollectionState } from "../hooks/useCollection";
 import useNotice from "../hooks/useNotice";
 import { deletePayment, PAYMENT_STATUSES, paymentFileUrl, paymentsStore, pendingPayments, setPaymentStatus } from "../data/payments";
@@ -9,25 +10,30 @@ const statusClass = (status) => `admin-badge admin-badge-${status === "Approved"
 export default function AdminPaymentsPanel() {
   const { items: payments, loaded, error: loadError } = useCollectionState(paymentsStore);
   const [filter, setFilter] = useState("pending");
+  const [busyAction, setBusyAction] = useState(null);
   const { notice, show } = useNotice();
 
   const pending = pendingPayments(payments).length;
   const visible = filter === "pending" ? payments.filter((p) => p.status === "Submitted for review") : payments;
 
-  const run = async (action, text) => {
+  const run = async (actionId, action, text) => {
+    if (busyAction) return;
+    setBusyAction(actionId);
     try {
       await action();
       if (text) show("success", text);
     } catch (error) {
       show("error", error.message);
+    } finally {
+      setBusyAction(null);
     }
   };
 
-  const setStatus = (id, status) => run(() => setPaymentStatus(id, status), `Marked as ${status.toLowerCase()}.`);
+  const setStatus = (id, status) => run(`status-${id}`, () => setPaymentStatus(id, status), `Marked as ${status.toLowerCase()}.`);
 
   const handleDelete = (payment) => {
     if (window.confirm(`Delete the proof of payment from ${payment.userName}?`)) {
-      run(() => deletePayment(payment.id), "Submission deleted.");
+      run(`delete-${payment.id}`, () => deletePayment(payment.id), "Submission deleted.");
     }
   };
 
@@ -73,11 +79,15 @@ export default function AdminPaymentsPanel() {
                   <td>{formatDateTime(payment.uploadedAt)}</td>
                   <td>
                     <span className={statusClass(payment.status)}>{payment.status}</span>
-                    <select className="admin-inline-select" value={payment.status} onChange={(e) => setStatus(payment.id, e.target.value)} aria-label="Change status">
+                    <select className="admin-inline-select" value={payment.status} onChange={(e) => setStatus(payment.id, e.target.value)} aria-label="Change status" disabled={Boolean(busyAction)}>
                       {PAYMENT_STATUSES.map((status) => <option key={status}>{status}</option>)}
                     </select>
+                    {busyAction === `status-${payment.id}` && <span role="status" aria-label="Updating payment status"><AdminActionSpinner /></span>}
                   </td>
-                  <td className="admin-table-actions"><button onClick={() => setStatus(payment.id, "Approved")} disabled={payment.status === "Approved"}>Approve</button><button className="danger" onClick={() => handleDelete(payment)}>Delete</button></td>
+                  <td className="admin-table-actions">
+                    <AdminLoadingButton onClick={() => setStatus(payment.id, "Approved")} loading={busyAction === `status-${payment.id}`} loadingText="Approving…" disabled={Boolean(busyAction) || payment.status === "Approved"}>Approve</AdminLoadingButton>
+                    <AdminLoadingButton className="danger" onClick={() => handleDelete(payment)} loading={busyAction === `delete-${payment.id}`} loadingText="Deleting…" disabled={Boolean(busyAction)}>Delete</AdminLoadingButton>
+                  </td>
                 </tr>
               ))}
             </tbody>
