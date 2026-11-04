@@ -99,9 +99,8 @@ private fun localChatReply(question: String, language: AppLanguage): String {
         listOf("where", "location", "address", "waar", "ligging", "kuphi", "ikheli").any(query::contains) -> "location"
         listOf("coach", "instructor", "sensei", "afrigter", "umqeqeshi").any(query::contains) -> "coaches"
         listOf("parent", "guardian", "ouers", "umzali").any(query::contains) -> "parents"
-        listOf("cancel", "change booking", "reschedule", "kanselleer", "skuif", "khansela").any(query::contains) -> "booking_change"
         listOf("program", "programme", "uhlelo").any(query::contains) -> "programme"
-        listOf("trial", "proef", "isivivinyo", "book", "bespreek", "bhukha").any(query::contains) -> "trial"
+        mentionsRetiredTrainingFlow(query) || listOf("get started", "begin ek", "ngingaqala").any(query::contains) -> "getting_started"
         listOf("event", "geleentheid", "umcimbi", "competition", "grading").any(query::contains) -> "events"
         listOf("contact", "kontak", "xhumana", "club", "klub").any(query::contains) -> "contact"
         listOf("time", "schedule", "class", "when", "tyd", "klas", "isikhathi").any(query::contains) -> "schedule"
@@ -119,75 +118,72 @@ private fun localChatReply(question: String, language: AppLanguage): String {
     return when (language) {
         AppLanguage.ENGLISH -> when (topic) {
             "what_is_judo" -> "Judo is a Japanese martial art and Olympic sport. It teaches safe throws, pins, movement, fitness, discipline and respect through controlled partner practice."
-            "gi" -> "A gi (or judogi) is the strong jacket and trousers worn for judo. You do not need one for a first trial; wear comfortable training clothes and ask your club about a gi later."
+            "gi" -> "A gi (or judogi) is the strong jacket and trousers worn for judo. You do not need one for a first class; wear comfortable training clothes and ask your club about a gi later."
             "compete" -> "Competition is optional. Athletes build confidence through regular coaching and club activities first; your coach will advise when you are ready and explain entry requirements."
             "technique" -> "Beginners learn posture, balance, safe falling and controlled holds before progressing to throws and more advanced techniques. Training is adapted to age and experience."
             "location" -> "WRJA clubs train in the West Rand area. Open the Contact page for the current Golden Score Judo and KJK Judo venue details."
             "coaches" -> "WRJA is supported by qualified instructors and facilitators. See the About page for instructor profiles and club information."
             "parents" -> "Parents and guardians can create and manage an account for a child. Coaches can explain class routines, safety expectations and the best starting group."
-            "booking_change" -> "To change or cancel a trial request, contact the club through the Contact page so the training team can assist you."
             "programme" -> "WRJA offers Kids, Adult and Women’s Judo programmes. Choose Kids Judo for young beginners, or Adult/Women’s Judo for older beginners and continuing athletes. Open the Programs page to compare them."
-            "trial" -> "You can request a free trial from the Book page. Choose a programme and a preferred session, then submit your request. A club will confirm the available training time."
+            "getting_started" -> "Use the Contact page to ask WRJA about joining a class or trying judo. The club can confirm availability and explain how to get started."
             "events" -> "Upcoming gradings, competitions and training activities appear on the Events page. Check the page regularly for confirmed dates and details."
             "contact" -> "You can reach the WRJA team from the Contact page, where you can send a message or view the club contact details."
-            "schedule" -> "Training times differ by club and programme. Request a free trial from the Book page or use Contact to ask your preferred club for its current timetable."
+            "schedule" -> "Training times differ by club and programme. Use Contact to ask your preferred club for its current timetable."
             "fees" -> "Fees can differ by club and programme. Please use the Contact page to request the current membership and training fee information."
-            "ages" -> "Kids Judo is designed for young athletes, while Adult and Women’s Judo welcome older beginners and experienced judoka. A free trial is the best way to find the right group."
-            "uniform" -> "Wear comfortable training clothes for a first trial. Your club will explain when a judo gi/uniform is needed and how to obtain one."
+            "ages" -> "Kids Judo is designed for young athletes, while Adult and Women’s Judo welcome older beginners and experienced judoka. Contact WRJA to find the right group."
+            "uniform" -> "Wear comfortable training clothes for a first class. Your club will explain when a judo gi/uniform is needed and how to obtain one."
             "belts" -> "Belt progress is earned through regular training, skill development and gradings. Your coach will guide you on readiness for the next grade."
             "safety" -> "Safety comes first: coaches teach safe falling, controlled practice and respectful partner work. Tell your coach about any injury or health concern before training."
-            "membership" -> "You can start by creating an account and booking a free trial. The club can then guide you through the membership and registration steps."
+            "membership" -> "Contact WRJA for help with membership, registration, and choosing a class."
             "newsletter" -> "The app does not offer newsletter signup. Enable club notifications in the menu or contact WRJA about email updates."
-            "greeting" -> "Hello! Ask me about programmes, a free trial, events, or how to contact a club."
-            else -> "I can help with programmes, trials, schedules, fees, ages, uniforms, belts, safety, membership, events, newsletters and club contacts."
+            "greeting" -> "Hello! Ask me about programmes, getting started, events, or how to contact a club."
+            else -> "I can help with programmes, getting started, schedules, fees, ages, uniforms, belts, safety, membership, events, newsletters and club contacts."
         }
         AppLanguage.AFRIKAANS -> when (topic) {
             "what_is_judo" -> "Judo is ’n Japannese gevegskuns en Olimpiese sport. Dit leer veilige gooie, penne, fiksheid, dissipline en respek deur beheerde vennootoefening."
-            "gi" -> "’n Gi of judogi is die sterk baadjie en broek wat vir judo gedra word. Jy het nie een vir ’n eerste proefsessie nodig nie."
+            "gi" -> "’n Gi of judogi is die sterk baadjie en broek wat vir judo gedra word. Jy het nie een vir ’n eerste klas nodig nie."
             "compete" -> "Kompetisie is opsioneel. Atlete bou eers vertroue deur gereelde afrigting; jou afrigter sal verduidelik wanneer jy gereed is."
             "technique" -> "Beginners leer houding, balans, veilige valtegnieke en beheerde houe voor meer gevorderde gooie."
             "location" -> "WRJA-klubs oefen in die Wes-Rand. Sien die Kontak-bladsy vir huidige Golden Score Judo- en KJK Judo-venuebesonderhede."
             "coaches" -> "WRJA word deur gekwalifiseerde instrukteurs en fasiliteerders ondersteun. Sien die Oor Ons-bladsy vir profiele."
             "parents" -> "Ouers en voogde kan ’n kind se rekening bestuur. Afrigters kan klasroetines, veiligheid en die regte begingroep verduidelik."
-            "booking_change" -> "Gebruik die Kontak-bladsy om ’n proefsessie te verander of te kanselleer sodat die klub kan help."
             "programme" -> "WRJA bied Kinder-, Volwasse- en Vrouejudo-programme. Kies Kinderjudo vir jong beginners, of Volwasse-/Vrouejudo vir ouer beginners en voortgaande atlete. Besoek die Programme-bladsy vir meer."
-            "trial" -> "Jy kan ’n gratis proefsessie vanaf die Bespreek-bladsy aanvra. Kies ’n program en voorkeursessie en dien jou versoek in. ’n Klub sal die beskikbare tyd bevestig."
+            "getting_started" -> "Gebruik die Kontak-bladsy om WRJA te vra hoe jy met judo kan begin. Die klub kan beskikbaarheid bevestig."
             "events" -> "Komende graderings, kompetisies en oefenaktiwiteite verskyn op die Geleenthede-bladsy. Kyk gereeld vir bevestigde datums en besonderhede."
             "contact" -> "Jy kan die WRJA-span vanaf die Kontak-bladsy bereik, waar jy ’n boodskap kan stuur of klubkontakbesonderhede kan sien."
-            "schedule" -> "Oefentye verskil volgens klub en program. Versoek ’n gratis proefsessie op die Bespreek-bladsy of gebruik Kontak om die huidige rooster te vra."
+            "schedule" -> "Oefentye verskil volgens klub en program. Gebruik Kontak om jou klub se huidige rooster te vra."
             "fees" -> "Fooie kan volgens klub en program verskil. Gebruik asseblief die Kontak-bladsy vir huidige lidmaatskap- en oefenfooie."
-            "ages" -> "Kinderjudo is vir jong atlete; Volwasse- en Vrouejudo verwelkom ouer beginners en ervare judoka. ’n Gratis proefsessie help om die regte groep te vind."
-            "uniform" -> "Dra gemaklike oefenklere vir ’n eerste proefsessie. Jou klub sal verduidelik wanneer ’n judogi benodig word."
+            "ages" -> "Kinderjudo is vir jong atlete; Volwasse- en Vrouejudo verwelkom ouer beginners en ervare judoka. Kontak WRJA om die regte groep te vind."
+            "uniform" -> "Dra gemaklike oefenklere vir ’n eerste klas. Jou klub sal verduidelik wanneer ’n judogi benodig word."
             "belts" -> "Gordelvordering word deur gereelde oefening, vaardigheidsontwikkeling en graderings verdien. Jou afrigter sal jou gereedheid lei."
             "safety" -> "Veiligheid kom eerste: afrigters leer veilige valtegnieke en beheerde oefening. Vertel jou afrigter van enige besering of gesondheidskwessie."
-            "membership" -> "Begin deur ’n rekening te skep en ’n gratis proefsessie te bespreek. Die klub sal jou dan met lidmaatskap en registrasie help."
+            "membership" -> "Kontak WRJA vir hulp met lidmaatskap, registrasie en die keuse van ’n klas."
             "newsletter" -> "Die app bied nie nuusbriefintekening nie. Aktiveer klubkennisgewings in die kieslys of kontak WRJA oor e-posnuus."
-            "greeting" -> "Hallo! Vra my oor programme, ’n gratis proefsessie, geleenthede of klubkontakte."
-            else -> "Ek kan help met programme, proefsessies, roosters, fooie, ouderdomme, uniforms, gordels, veiligheid, lidmaatskap, geleenthede, nuusbriewe en klubkontakte."
+            "greeting" -> "Hallo! Vra my oor programme, hoe om te begin, geleenthede of klubkontakte."
+            else -> "Ek kan help met programme, hoe om te begin, roosters, fooie, ouderdomme, uniforms, gordels, veiligheid, lidmaatskap, geleenthede, nuusbriewe en klubkontakte."
         }
         AppLanguage.ISIZULU -> when (topic) {
             "what_is_judo" -> "I-judo ubuciko bokulwa baseJapane nomdlalo wama-Olympic. Ifundisa ukuphonsa ngokuphepha, ukubamba, ukuqina, ukuziphatha nenhlonipho."
-            "gi" -> "I-gi noma i-judogi yijakhethi nebhulukwe eliqinile lokuqeqesha i-judo. Awuyidingi esivivinyweni sokuqala."
+            "gi" -> "I-gi noma i-judogi yijakhethi nebhulukwe eliqinile lokuqeqesha i-judo. Buza iklabhu yakho ukuthi uyidinga nini."
             "compete" -> "Ukuncintisana akuphoqelekile. Abadlali baqala bakhe ukuzethemba ngokuqeqeshwa; umqeqeshi uzokutshela lapho usukulungele khona."
             "technique" -> "Abaqalayo bafunda ukuma, ukulinganisela, ukuwa ngokuphepha nokubamba okulawulwayo ngaphambi kwamasu athuthukile."
             "location" -> "Amaklabhu akwa-WRJA aqeqesha endaweni yase-West Rand. Bheka ikhasi elithi Xhumana ukuze uthole imininingwane yendawo."
             "coaches" -> "I-WRJA isekelwa abafundisi nabaqeqeshi abafanelekile. Bheka ikhasi elithi Mayelana Nathi ukuze ubone amaphrofayela."
             "parents" -> "Abazali noma ababheki bangaphatha i-akhawunti yengane. Abaqeqeshi bangachaza isimiso sekilasi nokuphepha."
-            "booking_change" -> "Sebenzisa ikhasi elithi Xhumana ukuze ushintshe noma ukhansele isicelo sesivivinyo."
             "programme" -> "I-WRJA inezinhlelo ze-Kids Judo, Adult Judo ne-Women’s Judo. Vula ikhasi lezinhlelo ukuze uqhathanise ukuthi yiluphi uhlelo olufanele wena."
-            "trial" -> "Ungacela isivivinyo samahhala ekhasini elithi Bhukha. Khetha uhlelo nesikhathi osithandayo, bese uthumela isicelo sakho. Iklabhu izoqinisekisa isikhathi esikhona."
+            "getting_started" -> "Sebenzisa ikhasi elithi Xhumana ukuze ubuze i-WRJA ukuthi ungaqala kanjani nge-judo. Iklabhu ingakuqinisekisa ukuthi yiziphi izikhathi ezitholakalayo."
             "events" -> "Amagrading, imincintiswano nemisebenzi yokuqeqesha ezayo kuvela ekhasini lemicimbi. Hlola njalo ukuze uthole izinsuku eziqinisekisiwe."
             "contact" -> "Ungathinta ithimba lakwa-WRJA ekhasini elithi Xhumana, lapho ungathumela khona umlayezo noma ubone imininingwane yeklabhu."
-            "schedule" -> "Izikhathi zokuqeqesha ziyahluka ngeklabhu nangohlelo. Cela isivivinyo samahhala ekhasini elithi Bhukha noma usebenzise u-Xhumana ubuze uhlelo lwamanje."
+            "schedule" -> "Izikhathi zokuqeqesha ziyahluka ngeklabhu nangohlelo. Sebenzisa u-Xhumana ukuze ubuze iklabhu ngeshejuli yayo yamanje."
             "fees" -> "Izimali ziyahlukahluka ngeklabhu nangohlelo. Sicela usebenzise ikhasi elithi Xhumana ukuze ucele imininingwane yezimali zamanje."
-            "ages" -> "I-Kids Judo eyabantwana; i-Adult ne-Women’s Judo yamukela abaqalayo abadala nama-judoka anolwazi. Isivivinyo samahhala sikusiza uthole iqembu elifanele."
-            "uniform" -> "Gqoka izingubo zokuzivocavoca ezikhululekile esivivinyweni sokuqala. Iklabhu yakho izochaza ukuthi i-judogi idingeka nini."
+            "ages" -> "I-Kids Judo eyabantwana; i-Adult ne-Women’s Judo yamukela abaqalayo abadala nama-judoka anolwazi. Xhumana ne-WRJA ukuze uthole iqembu elifanele."
+            "uniform" -> "Gqoka izingubo zokuzivocavoca ezikhululekile ekilasini lokuqala. Iklabhu yakho izochaza ukuthi i-judogi idingeka nini."
             "belts" -> "Ukuqhubeka kwebhande kutholwa ngokuqeqeshwa njalo, ukuthuthukisa amakhono nama-grading. Umqeqeshi wakho uzokuqondisa."
             "safety" -> "Ukuphepha kuqala: abaqeqeshi bafundisa ukuwa ngokuphepha nokuzijwayeza okulawulwayo. Tshela umqeqeshi nganoma yikuphi ukulimala noma ukukhathazeka ngempilo."
-            "membership" -> "Qala ngokwakha i-akhawunti bese ubhukha isivivinyo samahhala. Iklabhu izokusiza ngezinyathelo zobulungu nokubhalisa."
+            "membership" -> "Xhumana ne-WRJA ukuze uthole usizo ngobulungu, ukubhalisa nokukhetha ikilasi."
             "newsletter" -> "Uhlelo alunakho ukubhalisela incwadi yezindaba. Vula izaziso zeklabhu kumenyu noma uthinte i-WRJA ngezindaba ze-imeyili."
-            "greeting" -> "Sawubona! Ngibuze ngezinhlelo, isivivinyo samahhala, imicimbi noma indlela yokuxhumana neklabhu."
-            else -> "Ngingasiza ngezinhlelo, izivivinyo, izikhathi, izimali, iminyaka, umfaniswano, amabhande, ukuphepha, ubulungu, imicimbi, izindaba nokuxhumana neklabhu."
+            "greeting" -> "Sawubona! Ngibuze ngezinhlelo, ukuthi ungaqala kanjani, imicimbi noma indlela yokuxhumana neklabhu."
+            else -> "Ngingasiza ngezinhlelo, ukuqala nge-judo, izikhathi, izimali, iminyaka, umfaniswano, amabhande, ukuphepha, ubulungu, imicimbi, izindaba nokuxhumana neklabhu."
         }
     }
 }
@@ -677,6 +673,13 @@ internal fun LoginScreen(
 ) {
     var page by rememberSaveable { mutableStateOf(initial) }
     var history by rememberSaveable { mutableStateOf(arrayListOf<String>()) }
+    LaunchedEffect(Unit) {
+        if (page == "book") {
+            page = "contact"
+            update(page)
+        }
+        if ("book" in history) history = ArrayList(history.filterNot { it == "book" })
+    }
     val screenState = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
     val chat = remember { ChatConversation() }
     val drawer = rememberDrawerState(DrawerValue.Closed)
@@ -711,7 +714,7 @@ internal fun LoginScreen(
             update(page)
         }
     }
-    val pages = listOf("home" to tr("home"), "my profile" to tr("my_profile"), "about" to tr("about"), "events" to tr("events"), "programs" to tr("programs"), "book" to tr("book"), "news" to tr("news"), "gallery" to tr("gallery"), "faq" to tr("faq"), "contact" to tr("contact"), "chat assistant" to tr("chat_assistant"))
+    val pages = listOf("home" to tr("home"), "my profile" to tr("my_profile"), "about" to tr("about"), "events" to tr("events"), "programs" to tr("programs"), "news" to tr("news"), "gallery" to tr("gallery"), "faq" to tr("faq"), "contact" to tr("contact"), "chat assistant" to tr("chat_assistant"))
     ModalNavigationDrawer(
         drawerState = drawer,
         drawerContent = {
@@ -720,7 +723,7 @@ internal fun LoginScreen(
                     Row(Modifier.padding(horizontal = 22.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
                         Surface(color = Color(0xFF242424), shape = RoundedCornerShape(16.dp)) { Box(Modifier.padding(8.dp)) { Logo() } }
                         Spacer(Modifier.width(12.dp))
-                        Column { Text("WEST RAND", color = Color.White, fontWeight = FontWeight.Black, fontSize = 14.sp); Text("JUDO ASSOCIATION", color = Gold, fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 1.sp) }
+                        Column(Modifier.weight(1f)) { Text("WEST RAND", color = Color.White, fontWeight = FontWeight.Black, fontSize = 14.sp); Text("JUDO ASSOCIATION", color = Gold, fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 1.sp) }
                     }
                     HorizontalDivider(color = Color(0xFF343434), modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                     pages.forEach { (route, label) ->
@@ -793,19 +796,18 @@ internal fun LoginScreen(
         "about" to localized("Building character on and off the mat. We develop confident, disciplined and respectful individuals through judo.", "Bou karakter op en van die mat af. Ons ontwikkel selfversekerde, gedissiplineerde en respekvolle mense deur judo.", "Sakha isimilo ngaphakathi nangaphandle komata. Sithuthukisa abantu abazethembayo, abanesimilo nabahloniphekile nge-judo."),
         "events" to localized("Club gradings, competitions and training activities.", "Klubgraderings, kompetisies en oefenaktiwiteite.", "Ukukleliswa kweklabhu, imincintiswano nemisebenzi yokuqeqesha."),
         "programs" to localized("Judo programmes for children and adults at every level.", "Judo-programme vir kinders en volwassenes op elke vlak.", "Izinhlelo ze-judo zezingane nabantu abadala kuwo wonke amazinga."),
-        "book" to localized("Choose your programme and preferred training session.", "Kies jou program en voorkeur-oefensessie.", "Khetha uhlelo lwakho neseshini yokuqeqesha oyithandayo."),
         "news" to localized("Competition results and achievements from WRJA athletes.", "Kompetisie-uitslae en prestasies van WRJA-atlete.", "Imiphumela yemincintiswano nezimpumelelo zabasubathi be-WRJA."),
         "gallery" to localized("Training, competition and community moments.", "Opleiding-, kompetisie- en gemeenskaps-oomblikke.", "Izikhathi zokuqeqesha, imincintiswano nezomphakathi."),
         "faq" to localized("Answers to common questions from new judoka, parents and returning athletes.", "Antwoorde op algemene vrae van nuwe judoka, ouers en terugkerende atlete.", "Izimpendulo zemibuzo evamile evela kuma-judoka amasha, abazali nabasubathi ababuyayo."),
         "contact" to localized("Send us a message or contact our training venues.", "Stuur vir ons 'n boodskap of kontak ons oefenplekke.", "Sithumele umlayezo noma uxhumane nezindawo zethu zokuqeqesha."),
         "chat assistant" to localized("Your WRJA guide for training, programmes, events and club information.", "Jou WRJA-gids vir opleiding, programme, geleenthede en klub-inligting.", "Umhlahlandlela wakho wakwa-WRJA wokuqeqesha, izinhlelo, imicimbi nolwazi lweklabhu.")
     )
-    val title = when (page) { "home" -> tr("home"); "my profile" -> tr("my_profile"); "about" -> tr("about"); "events" -> tr("events"); "programs" -> tr("programs"); "book" -> tr("book"); "news" -> tr("news"); "gallery" -> tr("gallery"); "faq" -> tr("faq"); "contact" -> tr("contact"); "chat assistant" -> tr("chat_assistant"); else -> page.replaceFirstChar { it.uppercase() } }
+    val title = when (page) { "home" -> tr("home"); "my profile" -> tr("my_profile"); "about" -> tr("about"); "events" -> tr("events"); "programs" -> tr("programs"); "news" -> tr("news"); "gallery" -> tr("gallery"); "faq" -> tr("faq"); "contact" -> tr("contact"); "chat assistant" -> tr("chat_assistant"); else -> page.replaceFirstChar { it.uppercase() } }
     BoxWithConstraints(modifier.fillMaxSize().background(Charcoal), contentAlignment = Alignment.TopCenter) {
     val gutter = pageGutter(maxWidth)
     val contentMax = when (page) {
         "gallery" -> 1000.dp
-        "book", "my profile", "contact" -> 680.dp
+        "my profile", "contact" -> 680.dp
         else -> 820.dp
     }
     val contentWidth = (minOf(maxWidth, contentMax) - gutter * 2).coerceAtLeast(0.dp)
@@ -841,7 +843,7 @@ internal fun LoginScreen(
             Column(Modifier.widthIn(max = contentMax).fillMaxWidth().padding(horizontal = gutter, vertical = 24.dp)) {
                 Text(if (page == "chat assistant") tr("chat_help") else descriptions[page] ?: "", color = Ink, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, lineHeight = 27.sp, modifier = Modifier.wrjaReveal())
                 Spacer(Modifier.height(22.dp))
-                when (page) { "my profile" -> SupabaseMemberProfile(); "book" -> BookScreen(); "contact" -> { ContactEnquiryForm(enquiry); Spacer(Modifier.height(30.dp)); WebsiteContact() }; "chat assistant" -> ChatAssistantScreen(chat, chatScope); else -> ContentCards(page, onNavigate) }
+                when (page) { "my profile" -> SupabaseMemberProfile(); "contact" -> { ContactEnquiryForm(enquiry); Spacer(Modifier.height(30.dp)); WebsiteContact() }; "chat assistant" -> ChatAssistantScreen(chat, chatScope); else -> ContentCards(page, onNavigate) }
             }
             }
         }
@@ -853,10 +855,6 @@ internal fun LoginScreen(
 
     if (page == "home") {
         WebsiteHome()
-        Spacer(Modifier.height(16.dp))
-        Button(onClick = { onNavigate("book") }) {
-            Text(localized("Request a free trial", "Versoek 'n gratis proefsessie", "Cela isivivinyo samahhala"))
-        }
         return
     }
     if (page == "programs") {
@@ -946,9 +944,10 @@ internal fun LoginScreen(
         coroutineScope.launch {
             try {
                 val result = WebsiteChatApi.send(question, chat.onlineExchanges.toList())
-                chat.onlineExchanges.addLast(WebsiteChatExchange(question, result.answer))
+                val answer = if (mentionsRetiredTrainingFlow(result.answer)) localChatReply("get started", language) else result.answer
+                chat.onlineExchanges.addLast(WebsiteChatExchange(question, answer))
                 if (chat.onlineExchanges.size > 12) chat.onlineExchanges.removeFirst()
-                messages += ChatMessageUi(result.answer, true)
+                messages += ChatMessageUi(answer, true)
             } catch (cancelled: kotlinx.coroutines.CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
@@ -964,9 +963,9 @@ internal fun LoginScreen(
 
     Card(Modifier.fillMaxWidth().wrjaReveal(), colors = CardDefaults.cardColors(containerColor = Charcoal2), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF3C3C3C)), elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)) {
         Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(44.dp).background(Gold), contentAlignment = Alignment.Center) { Text("WR", color = Ink, fontWeight = FontWeight.Black, fontSize = 14.sp) }
+            Box(Modifier.sizeIn(minWidth = 44.dp, minHeight = 44.dp).background(Gold).padding(6.dp), contentAlignment = Alignment.Center) { Text("WR", color = Ink, fontWeight = FontWeight.Black, fontSize = 14.sp) }
             Spacer(Modifier.width(12.dp))
-            Column {
+            Column(Modifier.weight(1f)) {
                 Text(tr("wrja_assistant"), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 Text(tr("online_when_connected"), color = Gold, fontSize = 12.sp)
             }
@@ -986,8 +985,8 @@ internal fun LoginScreen(
     Spacer(Modifier.height(12.dp))
     Text(tr("suggested_questions"), color = GoldDark, fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 0.7.sp)
     Spacer(Modifier.height(8.dp))
-    listOf(tr("question_programme"), tr("question_trial"), tr("question_events")).forEach { suggestion ->
-        AssistChip(onClick = { sendQuestion(suggestion) }, enabled = !isSending, label = { Text(suggestion, fontSize = 12.sp) }, colors = AssistChipDefaults.assistChipColors(containerColor = OffWhite, labelColor = Ink), modifier = Modifier.padding(end = 6.dp, bottom = 6.dp))
+    listOf(tr("question_programme"), tr("question_getting_started"), tr("question_events")).forEach { suggestion ->
+        AssistChip(onClick = { sendQuestion(suggestion) }, enabled = !isSending, label = { Text(suggestion, Modifier.padding(vertical = 6.dp), fontSize = 12.sp) }, colors = AssistChipDefaults.assistChipColors(containerColor = OffWhite, labelColor = Ink), modifier = Modifier.padding(end = 6.dp, bottom = 6.dp))
     }
     Spacer(Modifier.height(14.dp))
     Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Charcoal2), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF3C3C3C)), elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)) {

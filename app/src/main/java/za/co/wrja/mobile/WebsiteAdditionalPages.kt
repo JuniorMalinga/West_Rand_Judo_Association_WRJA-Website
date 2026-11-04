@@ -9,6 +9,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -48,7 +51,7 @@ private fun WebsiteEventCategoryHeader(
     description: String,
     onBack: () -> Unit
 ) {
-    TextButton(onClick = onBack, contentPadding = androidx.compose.foundation.layout.PaddingValues()) {
+    TextButton(onClick = onBack, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)) {
         Text(localized("← Back to Events hub", "← Terug na geleentheidsentrum", "← Buyela esikhungweni semicimbi"), color = WrjaGold, fontWeight = FontWeight.Bold)
     }
     Spacer(Modifier.height(10.dp))
@@ -117,13 +120,14 @@ fun WebsiteSchoolsEvents(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun WebsiteStore(
     onBack: () -> Unit,
     onTracksuitClick: () -> Unit,
     onPosterEnquiryClick: () -> Unit
 ) {
-    TextButton(onClick = onBack, contentPadding = androidx.compose.foundation.layout.PaddingValues()) {
+    TextButton(onClick = onBack, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)) {
         Text(localized("← Events hub", "← Geleentheidsentrum", "← Isikhungo semicimbi"), color = WrjaGold, fontWeight = FontWeight.Bold)
     }
     Spacer(Modifier.height(10.dp))
@@ -146,7 +150,7 @@ fun WebsiteStore(
             Spacer(Modifier.height(8.dp))
             Text(localized("Official WRJA apparel and club prints for athletes, coaches, families and supporters.", "Amptelike WRJA-klere en klubdrukwerk vir atlete, afrigters, gesinne en ondersteuners.", "Izingubo ezisemthethweni ze-WRJA nokuphrintwa kweklabhu kwabasubathi, abaqeqeshi, imindeni nabasekeli."), color = WrjaMuted)
             Spacer(Modifier.height(14.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 StoreChip("Official WRJA")
                 StoreChip("JSA collection")
                 StoreChip("Made to order")
@@ -154,8 +158,8 @@ fun WebsiteStore(
         }
     }
     Spacer(Modifier.height(24.dp))
-    Row(verticalAlignment = Alignment.Bottom) {
-        Column(Modifier.weight(1f)) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column {
             Text(localized("THE WRJA COLLECTION", "DIE WRJA-VERSAMELING", "IQOQO LE-WRJA"), color = WrjaGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
             Spacer(Modifier.height(4.dp))
             Text(localized("Club essentials", "Klubbenodigdhede", "Okubalulekile kweklabhu"), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
@@ -233,7 +237,7 @@ private val websiteFaqs = listOf(
     WebsiteFaq("Will my child learn to fight?", "Judo is not about fighting or hurting people. Children learn discipline, control, respect, confidence and self-defence principles in a controlled environment."),
     WebsiteFaq("What does Judo teach children?", "Judo develops much more than physical skills. Children learn discipline, respect, confidence, focus and concentration, perseverance, balance and coordination, teamwork and self-control."),
     WebsiteFaq("Does my child have to compete?", "No. Competition is an option. Some children enjoy competing, while others participate simply for fitness, confidence, discipline and fun."),
-    WebsiteFaq("What should my child wear to their first class?", "For a trial class, comfortable sports clothing is usually suitable. Once they continue with Judo, they will need a Judo gi (Judo uniform)."),
+    WebsiteFaq("What should my child wear to their first class?", "Comfortable sports clothing is usually suitable for the first class. Ask your club when your child will need a judogi (judo uniform)."),
     WebsiteFaq("What is a Judo gi?", "A Judo gi is the traditional uniform worn during training and competition. It is designed to withstand gripping, throwing and grappling."),
     WebsiteFaq("Will Judo help my child with confidence?", "Yes! Children are encouraged to try new techniques, overcome challenges and learn from mistakes. This can help develop confidence and resilience both on and off the mat."),
     WebsiteFaq("What happens if my child is shy or nervous?", "That is completely normal! Our coaches work with children at their own pace and encourage them without forcing them into situations they are not ready for."),
@@ -288,7 +292,7 @@ private fun WebsiteFaq.localizedAnswer(): String = when (question) {
     "Will my child learn to fight?" -> localized(answer, "Judo gaan nie oor seermaak nie; dit leer dissipline, beheer, respek, selfvertroue en beginsels van selfverdediging.", "I-Judo ayimayelana nokulimaza; ifundisa isimilo, ukulawula, inhlonipho, ukuzethemba nezimiso zokuzivikela.")
     "What does Judo teach children?" -> localized(answer, "Benewens fisieke vaardighede leer kinders dissipline, respek, fokus, deursettingsvermoë, spanwerk en selfbeheer.", "Ngaphandle kwamakhono omzimba, izingane zifunda isimilo, inhlonipho, ukugxila, ukubekezela, ukusebenzisana nokuzilawula.")
     "Does my child have to compete?" -> localized(answer, "Nee. Kompetisie is opsioneel; baie kinders oefen vir fiksheid, selfvertroue, dissipline en pret.", "Cha. Ukuncintisana kuyazikhethela; izingane eziningi ziqeqesha ukuze ziqine, zizethembe, zibe nesimilo futhi zijabule.")
-    "What should my child wear to their first class?" -> localized(answer, "Vir 'n proefsessie is gemaklike sportklere gewoonlik geskik; later sal 'n Judo-gi benodig word.", "Esifundweni sokuzama, izingubo zemidlalo ezikhululekile zivame ukufaneleka; kamuva kuzodingeka i-Judo gi.")
+    "What should my child wear to their first class?" -> localized(answer, "Gemaklike sportklere is gewoonlik geskik vir die eerste klas. Vra jou klub wanneer jou kind 'n judogi nodig sal hê.", "Izingubo zemidlalo ezikhululekile zivame ukufaneleka ekilasini lokuqala. Buza iklabhu ukuthi ingane yakho izoyidinga nini i-judogi.")
     "What is a Judo gi?" -> localized(answer, "'n Judo-gi is die tradisionele uniform vir opleiding en kompetisie, gemaak vir greep, werpe en grondwerk.", "I-Judo gi iyunifomu yendabuko yokuqeqesha nemincintiswano, eyenzelwe ukubanjwa, ukuphonswa nokubambana.")
     "Will Judo help my child with confidence?" -> localized(answer, "Ja. Nuwe tegnieke en uitdagings help kinders om selfvertroue en veerkragtigheid op en van die mat af te bou.", "Yebo. Amasu amasha nezinselelo zisiza izingane zakhe ukuzethemba nokubekezela ngaphakathi nangaphandle komata.")
     "What happens if my child is shy or nervous?" -> localized(answer, "Dit is normaal. Afrigters werk teen elke kind se eie tempo sonder om hulle in ongereed situasies te dwing.", "Lokho kujwayelekile. Abaqeqeshi basebenza ngesivinini sengane ngayinye ngaphandle kokuyiphoqa ezimeni engakazilungeli.")

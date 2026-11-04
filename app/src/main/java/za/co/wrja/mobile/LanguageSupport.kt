@@ -36,7 +36,6 @@ private val translations = mapOf(
     "about" to arrayOf("About", "Oor Ons", "Mayelana Nathi"),
     "events" to arrayOf("Events", "Geleenthede", "Imicimbi"),
     "programs" to arrayOf("Programs", "Programme", "Izinhlelo"),
-    "book" to arrayOf("Book", "Bespreek", "Bhukha"),
     "news" to arrayOf("News", "Nuus", "Izindaba"),
     "gallery" to arrayOf("Gallery", "Galery", "Igalari"),
     "faq" to arrayOf("FAQ", "Gereelde vrae", "Imibuzo Evame Ukubuzwa"),
@@ -60,7 +59,7 @@ private val translations = mapOf(
     "chat_help" to arrayOf("I can help you find a programme, prepare for an event, or point you to the right club contact.", "Ek kan jou help om 'n program te vind, vir 'n geleentheid voor te berei, of jou na die regte klubkontak te verwys.", "Ngingakusiza uthole uhlelo, ulungiselele umcimbi, noma ngikuqondise koxhumana naye ofanele weklabhu."),
     "suggested_questions" to arrayOf("SUGGESTED QUESTIONS", "VOORGESTELDE VRAE", "IMIBUZO EPHAKANYISIWE"),
     "question_programme" to arrayOf("Which programme is right for me?", "Watter program is reg vir my?", "Iluphi uhlelo olungifanele?"),
-    "question_trial" to arrayOf("How do I book a free trial?", "Hoe bespreek ek 'n gratis proefsessie?", "Ngisibhukha kanjani isivivinyo samahhala?"),
+    "question_getting_started" to arrayOf("How do I get started with judo?", "Hoe begin ek met judo?", "Ngingaqala kanjani nge-judo?"),
     "question_events" to arrayOf("What events are coming up?", "Watter geleenthede kom op?", "Yimiphi imicimbi ezayo?"),
     "ask_assistant" to arrayOf("Ask the WRJA Assistant…", "Vra die WRJA-assistent…", "Buza umsizi wakwa-WRJA…"),
     "chat_preview" to arrayOf("Connected to the secure WRJA Assistant. If you are offline, the app can still provide helpful local guidance.", "Gekoppel aan die veilige WRJA-assistent. As jy vanlyn is, kan die app steeds nuttige plaaslike leiding bied.", "Ixhunywe kumsizi ovikelekile wakwa-WRJA. Uma ungaxhunyiwe ku-inthanethi, uhlelo lokusebenza lusenganikeza usizo lwasendaweni.")
@@ -93,14 +92,12 @@ internal object InputLimits {
     const val NAME = 60
     const val CONTACT_NAME = 100
     const val RESET_NAME = 120
-    const val BOOKING_NAME = 150
     const val EMAIL = 254
     const val PHONE = 30
     const val PHONE_DIGITS = 15
     const val PASSWORD = 128
     const val LOGIN_PASSWORD = 1024
     const val CONTACT_MESSAGE = 3000
-    const val BOOKING_NOTES = 2000
     const val CHAT_MESSAGE = 2000
     const val WEIGHT_CATEGORY = 60
 }

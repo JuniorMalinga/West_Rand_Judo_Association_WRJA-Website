@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -60,6 +61,16 @@ internal fun WrjaContentCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 7.dp, pressedElevation = 2.dp),
         content = content
     )
+}
+
+/** Keeps text clear of rounded corners while allowing images to remain edge-to-edge. */
+@Composable
+internal fun WrjaCardCopy(
+    compact: Boolean = false,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val inset = if (compact) 12.dp else 18.dp
+    Column(Modifier.fillMaxWidth().padding(inset), content = content)
 }
 
 @Composable

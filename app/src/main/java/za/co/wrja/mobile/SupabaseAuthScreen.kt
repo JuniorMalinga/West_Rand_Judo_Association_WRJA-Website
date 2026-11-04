@@ -194,14 +194,14 @@ fun SupabaseAuthScreen(
                     selected = role == "athlete",
                     onClick = { role = "athlete" },
                     enabled = !busy,
-                    label = { Text(localized("Athlete", "Atleet", "Umsubathi")) }
+                    label = { Text(localized("Athlete", "Atleet", "Umsubathi"), Modifier.padding(vertical = 5.dp)) }
                 )
 
                 FilterChip(
                     selected = role == "guardian",
                     onClick = { role = "guardian" },
                     enabled = !busy,
-                    label = { Text(localized("Parent / Guardian", "Ouer / Voog", "Umzali / Umnakekeli")) }
+                    label = { Text(localized("Parent / Guardian", "Ouer / Voog", "Umzali / Umnakekeli"), Modifier.padding(vertical = 5.dp)) }
                 )
             }
         }

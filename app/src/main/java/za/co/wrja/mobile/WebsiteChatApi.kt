@@ -13,6 +13,15 @@ internal data class WebsiteChatReply(val answer: String, val mode: String)
 internal data class WebsiteChatExchange(val question: String, val answer: String)
 internal class WebsiteChatHttpFailure(val status: Int) : IOException("Chat request failed (HTTP $status).")
 
+// The website assistant can change independently of the app. Do not present
+// instructions for this retired flow as if it were still available.
+private val retiredTrainingFlow = Regex(
+    """\b(?:trials?|trialling|trialing|bookings?|book\s+(?:a|an|your|my|the)\s+(?:free\s+)?(?:class|session|lesson)|proef(?:sessie|les|klas)\w*|bespreek|bespreking\w*|[a-z]*bhukh[a-z]*|[a-z]*sivivin[a-z]*|[a-z]*zivivin[a-z]*)\b""",
+    RegexOption.IGNORE_CASE
+)
+
+internal fun mentionsRetiredTrainingFlow(text: String): Boolean = retiredTrainingFlow.containsMatchIn(text)
+
 /** Uses the website's stateless assistant API; no credentials or account fields are sent. */
 internal object WebsiteChatApi {
     private const val Endpoint = "https://westrandjudoassociation.vercel.app/api/chat"

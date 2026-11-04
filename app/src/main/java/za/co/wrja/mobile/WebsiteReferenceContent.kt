@@ -59,7 +59,7 @@ private fun WebsiteImageCard(
             )
             Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0x9E000000)))))
         }
-        Column(Modifier.padding(18.dp), content = content)
+        WrjaCardCopy(content = content)
     }
 }
 
@@ -149,14 +149,16 @@ private data class WebsiteClub(val name: String, val summary: String, val links:
 @Composable private fun HomeFeature(image: Int, title: String, copy: String, modifier: Modifier) {
     WrjaContentCard(modifier) {
         Image(painterResource(image), title, Modifier.fillMaxWidth().height(122.dp).clip(MaterialTheme.shapes.medium), contentScale = ContentScale.Crop)
-        Spacer(Modifier.height(12.dp)); Text(title, color = WrjaGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
-        Spacer(Modifier.height(5.dp)); Text(copy, style = MaterialTheme.typography.bodySmall, color = WrjaMuted)
+        WrjaCardCopy(compact = true) {
+            Text(title, color = WrjaGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
+            Spacer(Modifier.height(5.dp)); Text(copy, style = MaterialTheme.typography.bodySmall, color = WrjaMuted)
+        }
     }
 }
 
 @Composable private fun HomeBenefit(title: String, copy: String, modifier: Modifier) {
     WrjaContentCard(modifier) {
-        Column(Modifier.padding(14.dp)) {
+        WrjaCardCopy(compact = true) {
             Text("WRJA", color = WrjaGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
             Spacer(Modifier.height(6.dp)); Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(6.dp)); Text(copy, color = WrjaMuted, style = MaterialTheme.typography.bodySmall)
@@ -189,7 +191,7 @@ private data class WebsiteClub(val name: String, val summary: String, val links:
             FilterChip(
                 selected = category == label,
                 onClick = { category = label; selectedPhotoIndex = null },
-                label = { Text(label, style = MaterialTheme.typography.labelMedium) },
+                label = { Text(label, Modifier.padding(vertical = 5.dp), style = MaterialTheme.typography.labelMedium) },
                 colors = FilterChipDefaults.filterChipColors(containerColor = WrjaCard, labelColor = WrjaMuted, selectedContainerColor = WrjaGold, selectedLabelColor = Color(0xFF090909))
             )
         }
@@ -214,7 +216,9 @@ private data class WebsiteClub(val name: String, val summary: String, val links:
                             alignment = Alignment.TopCenter
                         )
                     }
-                    Text(photo.caption, Modifier.padding(top = 10.dp), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
+                    WrjaCardCopy(compact = true) {
+                        Text(photo.caption, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
+                    }
                 }
             }
             repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
@@ -320,7 +324,7 @@ private data class WebsiteClub(val name: String, val summary: String, val links:
     )
     clubs.forEachIndexed { index, club ->
         WrjaContentCard(Modifier.fillMaxWidth().padding(top = 12.dp).wrjaReveal(index)) {
-            Column(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 16.dp)) {
+            WrjaCardCopy {
                 Text(club.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(4.dp)); Text(club.summary, color = WrjaMuted, style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(10.dp)); Text(localized("FIND US ON SOCIAL MEDIA", "VIND ONS OP SOSIALE MEDIA", "SITHOLE EZINKUNDLENI ZOKUXHUMANA"), color = WrjaGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
@@ -328,7 +332,7 @@ private data class WebsiteClub(val name: String, val summary: String, val links:
                     TextButton(
                         onClick = { openPublicWebsite(context, link.address) },
                         modifier = Modifier.fillMaxWidth(),
-                        contentPadding = PaddingValues(vertical = 4.dp)
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
                     ) {
                         Text("↗  ${link.label}", modifier = Modifier.fillMaxWidth(), color = WrjaGold, style = MaterialTheme.typography.bodySmall, textAlign = androidx.compose.ui.text.style.TextAlign.Start)
                     }
@@ -406,6 +410,7 @@ fun WebsiteEventsHub(
         ClubContact("West Rand Judo Association", "3 Octavia, 49 Otto Street, Krugersdorp North", "Office for NPC administration only — not a training venue")
     ).forEachIndexed { index, club ->
         WrjaContentCard(Modifier.fillMaxWidth().padding(top = 12.dp).wrjaReveal(index)) {
+            WrjaCardCopy {
             Text(club.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
             Text(club.address, color = Color(0xFFF5F5F5), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
@@ -419,9 +424,10 @@ fun WebsiteEventsHub(
                         "https://www.google.com/maps/search/?api=1&query=${Uri.encode(club.address)}"
                     )
                 },
-                contentPadding = PaddingValues(vertical = 2.dp)
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
             ) {
                 Text(localized("OPEN IN MAPS  ↗", "MAAK IN KAARTE OOP  ↗", "VULA KUMAMEPHU  ↗"), color = WrjaGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
+            }
             }
         }
     }

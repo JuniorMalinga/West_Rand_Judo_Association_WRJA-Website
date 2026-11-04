@@ -13,6 +13,14 @@ import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
 class AdvancedFeaturesTest {
+    @Test fun retiredTrainingFlowLanguageIsRecognizedWithoutBlockingEventRegistration() {
+        assertTrue(mentionsRetiredTrainingFlow("Request a FREE trial."))
+        assertTrue(mentionsRetiredTrainingFlow("Book a class through the app."))
+        assertTrue(mentionsRetiredTrainingFlow("Versoek 'n proefsessie."))
+        assertTrue(mentionsRetiredTrainingFlow("Ungabhukha isivivinyo samahhala."))
+        assertFalse(mentionsRetiredTrainingFlow("Register for a competition or contact the club."))
+    }
+
     @Test fun layoutsUseAvailableWidthAndRespectLargerText() {
         assertEquals(12.dp, pageGutter(320.dp))
         assertEquals(20.dp, pageGutter(411.dp))
