@@ -8,6 +8,7 @@
 
 # Build files
 **/build/
+node_modules/
 
 # Local configuration
 local.properties

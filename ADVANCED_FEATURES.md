@@ -8,7 +8,7 @@
 | Offline + sync using SQLite/Room | Contact enquiry SQLite outbox + network-constrained persistent WorkManager jobs | Test airplane mode, process restart, reconnect, and successful admin inbox delivery. |
 | FCM live notifications | FirebaseMessagingService, channel, runtime permission, topic opt-in/out and multilingual data messages; Android configured for `wrja-project`; user confirmed Firebase Console test delivery | Notifications are sent manually from Firebase Console. No website changes are required. |
 | Two official SA languages | English, Afrikaans and isiZulu; persisted login/drawer selection and Compose text | Human language review is advisable; user-generated and server-authored content remains in its original language. |
-| Production assets | Bundled WRJA photos; custom black/gold vector launcher mark with adaptive, monochrome and legacy variants | Check launcher masking and image presentation on the target phone. |
+| Production assets | Bundled WRJA photos and the association's full-colour emblem for the launcher and Android 12+ startup splash | Check launcher masking and image presentation on the target phone. |
 
 Supabase remains the database/authentication provider. Firebase is used **only** for Cloud Messaging; no Firebase Database or Firestore dependency is introduced.
 
