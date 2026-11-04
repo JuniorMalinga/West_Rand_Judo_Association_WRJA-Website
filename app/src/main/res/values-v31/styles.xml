@@ -1,0 +1,5 @@
+<resources>
+    <style name="Theme.WRJA" parent="Theme.WRJA.Base">
+        <item name="android:windowSplashScreenBackground">#090909</item>
+    </style>
+</resources>
