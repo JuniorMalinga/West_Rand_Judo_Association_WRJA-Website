@@ -11,7 +11,7 @@ export default function AdminPaymentsPanel() {
   const [filter, setFilter] = useState("pending");
   const { notice, show } = useNotice();
 
-  const pending = pendingPayments(payments);
+  const pending = pendingPayments(payments).length;
   const visible = filter === "pending" ? payments.filter((p) => p.status === "Submitted for review") : payments;
 
   const run = async (action, text) => {
