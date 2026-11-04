@@ -109,8 +109,7 @@ private suspend fun fetchPrograms(): List<JudoProgram> =
             }
 
             val response = connection.inputStream
-                .bufferedReader()
-                .use { it.readText() }
+                .readBoundedText()
 
             val rows = JSONArray(response)
 
@@ -138,38 +137,33 @@ fun SupabasePrograms() {
     }
 
     var loading by remember { mutableStateOf(true) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var refreshFailed by remember { mutableStateOf(false) }
     var refreshCount by remember { mutableStateOf(0) }
 
     LaunchedEffect(refreshCount) {
         loading = true
-        error = null
+        refreshFailed = false
 
         try {
             programs = fetchPrograms()
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (failure: Exception) {
-            programs = websitePrograms
-            error = null
+            reportFailure("Refresh programs", failure)
+            if (programs.isEmpty()) programs = websitePrograms
+            refreshFailed = true
         } finally {
             loading = false
         }
     }
 
     Column(modifier = Modifier.fillMaxWidth()) {
+        if (refreshFailed) Text(localized("Could not refresh programs. Showing available programs.", "Kon nie programme verfris nie. Beskikbare programme word gewys.", "Izinhlelo azivuselelwanga. Kuboniswa izinhlelo ezitholakalayo."), color = MaterialTheme.colorScheme.error)
         when {
             loading -> {
                 CircularProgressIndicator()
                 Spacer(modifier = Modifier.height(12.dp))
                 Text("Loading programs…")
-            }
-
-            error != null -> {
-                Text(
-                    text = error ?: "Unable to load programs.",
-                    color = MaterialTheme.colorScheme.error
-                )
             }
 
             programs.isEmpty() -> {
@@ -220,7 +214,7 @@ fun SupabasePrograms() {
 
         if (!loading) {
             TextButton(onClick = { refreshCount++ }) {
-                Text(if (error == null) "Refresh" else "Retry")
+                Text(if (refreshFailed) localized("Retry", "Probeer weer", "Zama futhi") else localized("Refresh", "Verfris", "Vuselela"))
             }
         }
     }

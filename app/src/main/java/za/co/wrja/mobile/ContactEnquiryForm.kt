@@ -17,29 +17,47 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 @Composable
-fun ContactEnquiryForm() {
+fun ContactEnquiryForm(initialMessage: String = "") {
+    val owner = SupabaseAuth.accountId
+    var verificationAttempt by remember { mutableStateOf(0) }
+    var verifying by remember { mutableStateOf(owner == null) }
+    LaunchedEffect(owner, verificationAttempt) {
+        if (owner == null) {
+            verifying = true
+            try { SupabaseAuth.accessToken() }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (failure: Exception) { reportFailure("Restore enquiry account", failure) }
+            finally { verifying = false }
+        }
+    }
+    if (owner == null) {
+        if (verifying) {
+            CircularProgressIndicator()
+        } else {
+            Text(localized("Could not verify your account. Check your connection and try again, or sign out and sign back in.", "Kon nie jou rekening bevestig nie. Gaan jou verbinding na en probeer weer, of meld af en weer aan.", "I-akhawunti yakho ayiqinisekiswanga. Hlola uxhumano bese uzama futhi, noma uphume uphinde ungene."), color = MaterialTheme.colorScheme.error)
+            TextButton(onClick = { verificationAttempt++ }) { Text(localized("Retry", "Probeer weer", "Zama futhi")) }
+        }
+        return
+    }
     var name by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
     var phone by rememberSaveable { mutableStateOf("") }
-    var message by rememberSaveable { mutableStateOf("") }
+    var message by rememberSaveable(initialMessage) { mutableStateOf(initialMessage) }
     var sending by remember { mutableStateOf(false) }
     var outcome by rememberSaveable { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current.applicationContext
-    val invalidName = localized("Enter your name (2–100 characters).", "Voer jou naam in (2–100 karakters).", "Faka igama lakho (izinhlamvu ezi-2–100).")
+    val invalidName = localized("Enter your name (up to 100 characters).", "Voer jou naam in (hoogstens 100 karakters).", "Faka igama lakho (izinhlamvu ezingadluli kweziyi-100).")
     val invalidEmail = localized("Enter a valid email address.", "Voer 'n geldige e-posadres in.", "Faka ikheli le-imeyili elivumelekile.")
     val invalidPhone = localized("Enter a valid phone number, or leave it blank.", "Voer 'n geldige telefoonnommer in, of laat dit leeg.", "Faka inombolo yocingo evumelekile noma uyishiye ingenalutho.")
     val invalidMessage = localized("Your message must contain 5–3,000 characters.", "Jou boodskap moet 5–3 000 karakters bevat.", "Umlayezo wakho kufanele ube nezinhlamvu ezi-5–3 000.")
-    val savedWithEmail = localized("Your message has been sent to WRJA. A confirmation email has been sent to your email address.", "Jou boodskap is aan WRJA gestuur. 'n Bevestigings-e-pos is na jou e-posadres gestuur.", "Umlayezo wakho uthunyelwe ku-WRJA. I-imeyili yokuqinisekisa ithunyelwe ekhelini lakho.")
-    val savedOnly = localized("WRJA has received your message. The confirmation email could not be sent; you do not need to submit again.", "WRJA het jou boodskap ontvang. Die bevestigings-e-pos kon nie gestuur word nie; jy hoef nie weer in te dien nie.", "I-WRJA iwutholile umlayezo wakho. I-imeyili yokuqinisekisa ayithunyelwanga; awudingi ukuthumela futhi.")
-    val retryLater = localized("Too many messages. Please wait before trying again.", "Te veel boodskappe. Wag asseblief voordat jy weer probeer.", "Imilayezo miningi kakhulu. Linda ngaphambi kokuzama futhi.")
-    val failed = localized("Your message was not accepted. Please check the details and try again later.", "Jou boodskap is nie aanvaar nie. Gaan die besonderhede na en probeer later weer.", "Umlayezo wakho awamukelwanga. Hlola imininingwane bese uzama kamuva.")
-    val uncertain = localized("We could not confirm delivery. Your text is kept below. Check your connection and confirmation email before retrying, to avoid duplicate messages.", "Ons kon aflewering nie bevestig nie. Jou teks is hieronder behou. Gaan jou verbinding en bevestigings-e-pos na voordat jy weer probeer om duplikate te vermy.", "Asikwazanga ukuqinisekisa ukuthunyelwa. Umbhalo wakho ugcinwe ngezansi. Hlola uxhumano ne-imeyili yokuqinisekisa ngaphambi kokuzama futhi ukuze ugweme ukuphinda umlayezo.")
+    val notSaved = localized("Could not save your enquiry on this device. Your message is still in the form.", "Kon nie jou navraag op hierdie toestel stoor nie. Jou boodskap is steeds in die vorm.", "Umbuzo wakho awugcinwanga kule divayisi. Umlayezo wakho usesefomini.")
+    val notScheduled = localized("Your enquiry was saved, but syncing could not start. Use Retry sync in the outbox; do not submit it again.", "Jou navraag is gestoor, maar sinkronisering kon nie begin nie. Probeer sinkronisering in die uitboks; moenie weer indien nie.", "Umbuzo wakho ugciniwe, kodwa ukuvumelanisa akuqalanga. Zama ukuvumelanisa ebhokisini lemibuzo; ungaphindi uthumele.")
     val validation = when {
-        name.trim().length !in 2..100 || !isValidPersonName(name) -> invalidName
-        !isValidEmailAddress(email) || email.trim().length > 254 -> invalidEmail
+        !isValidPersonName(name, InputLimits.CONTACT_NAME) -> invalidName
+        !isValidEmailAddress(email) -> invalidEmail
         phone.isNotBlank() && !isValidPhoneNumber(phone) -> invalidPhone
-        message.trim().length !in 5..3000 -> invalidMessage
+        message.trim().length !in 5..InputLimits.CONTACT_MESSAGE || '\u0000' in message -> invalidMessage
         else -> null
     }
 
@@ -47,20 +65,17 @@ fun ContactEnquiryForm() {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(localized("SEND US A MESSAGE", "STUUR ONS 'N BOODSKAP", "SITHUMELE UMLAYEZO"), color = WrjaGold, fontWeight = FontWeight.ExtraBold)
             Text(localized("Send an enquiry to the WRJA administration team. We will reply using your email address.", "Stuur 'n navraag aan die WRJA-administrasiespan. Ons sal via jou e-posadres antwoord.", "Thumela umbuzo ethimbeni labaphathi be-WRJA. Sizophendula sisebenzisa ikheli lakho le-imeyili."), color = WrjaMuted)
-            OutlinedTextField(name, { name = sanitizePersonName(it); outcome = null }, label = { Text(localized("Your name", "Jou naam", "Igama lakho")) }, enabled = !sending, singleLine = true, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(email, { email = it; outcome = null }, label = { Text(tr("email")) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email), enabled = !sending, singleLine = true, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(phone, { phone = sanitizePhoneNumber(it); outcome = null }, label = { Text(localized("Phone number (optional)", "Telefoonnommer (opsioneel)", "Inombolo yocingo (ngokuzithandela)")) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), enabled = !sending, singleLine = true, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(message, { message = it; outcome = null }, label = { Text(localized("Message", "Boodskap", "Umlayezo")) }, minLines = 4, enabled = !sending, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(name, { name = editPersonName(name, it, InputLimits.CONTACT_NAME); outcome = null }, label = { Text(localized("Your name", "Jou naam", "Igama lakho")) }, enabled = !sending, singleLine = true, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(email, { email = boundedInput(email, it, InputLimits.EMAIL); outcome = null }, label = { Text(tr("email")) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email), enabled = !sending, singleLine = true, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(phone, { phone = editPhoneNumber(phone, it); outcome = null }, label = { Text(localized("Phone number (optional)", "Telefoonnommer (opsioneel)", "Inombolo yocingo (ngokuzithandela)")) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), enabled = !sending, singleLine = true, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(message, { message = boundedInput(message, it.replace("\u0000", ""), InputLimits.CONTACT_MESSAGE); outcome = null }, label = { Text(localized("Message", "Boodskap", "Umlayezo")) }, minLines = 4, enabled = !sending, modifier = Modifier.fillMaxWidth())
             outcome?.let { code ->
                 Text(when (code) {
-                    "email" -> savedWithEmail
-                    "saved" -> savedOnly
-                    "rate" -> retryLater
-                    "failed" -> failed
-                    "uncertain" -> uncertain
+                    "notSaved" -> notSaved
+                    "notScheduled" -> notScheduled
                     "queued" -> localized("Saved on this device. Your enquiry will send automatically when internet is available. Check the outbox below for delivery status.", "Op hierdie toestel gestoor. Jou navraag sal outomaties stuur wanneer internet beskikbaar is. Sien die uitboks hieronder vir afleweringstatus.", "Kugcinwe kule divayisi. Umbuzo wakho uzothunyelwa ngokuzenzakalela uma i-inthanethi itholakala. Hlola isimo ngezansi.")
                     else -> validation.orEmpty()
-                }, color = if (code == "email" || code == "saved") WrjaGold else MaterialTheme.colorScheme.error)
+                }, color = if (code == "queued") WrjaGold else MaterialTheme.colorScheme.error)
             }
             Button(
                 enabled = !sending,
@@ -72,18 +87,20 @@ fun ContactEnquiryForm() {
                         outcome = null
                         scope.launch {
                             try {
-                                val id = withContext(Dispatchers.IO) {
-                                    ContactOutbox(context).use { it.add(name, email, phone, message) }
+                                val id = recoverOperation("Save enquiry", { null }) {
+                                    withContext(Dispatchers.IO) {
+                                        ContactOutbox(context).use { it.add(owner, name, email, phone, message) }
+                                    }
                                 }
-                                ContactOutbox.schedule(context, id)
-                                message = ""
-                                outcome = "queued"
-                            } catch (cancelled: CancellationException) {
-                                throw cancelled
-                            } catch (rejected: ContactRejectedException) {
-                                outcome = if (rejected.status == 429) "rate" else "failed"
-                            } catch (_: Exception) {
-                                outcome = "uncertain"
+                                if (id == null) {
+                                    outcome = "notSaved"
+                                } else {
+                                    message = ""
+                                    outcome = recoverOperation("Schedule enquiry", { "notScheduled" }) {
+                                        ContactOutbox.schedule(context, id)
+                                        "queued"
+                                    }
+                                }
                             } finally {
                                 sending = false
                             }
@@ -94,7 +111,7 @@ fun ContactEnquiryForm() {
                 if (sending) CircularProgressIndicator(Modifier.size(20.dp), color = Color.Black, strokeWidth = 2.dp)
                 else Text(localized("SEND MESSAGE", "STUUR BOODSKAP", "THUMELA UMLAYEZO"), fontWeight = FontWeight.Bold)
             }
-            ContactOutboxStatus()
+            androidx.compose.runtime.key(owner) { ContactOutboxStatus(owner) }
         }
     }
 }

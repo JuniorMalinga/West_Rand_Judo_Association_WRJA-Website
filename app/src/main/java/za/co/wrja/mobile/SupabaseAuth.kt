@@ -19,10 +19,10 @@ import android.util.AtomicFile
 import kotlinx.coroutines.NonCancellable
 import java.io.File
 import java.io.IOException
-private class AuthRequestException(
+internal class AuthRequestException(
     val status: Int,
-    message: String
-) : Exception(message)
+    val code: String
+) : Exception()
 
 internal data class AuthTokens(
     val accessToken: String,
@@ -31,6 +31,8 @@ internal data class AuthTokens(
 )
 
 object SupabaseAuth {
+    var accountId by mutableStateOf<String?>(null)
+        private set
     var isLoggedIn by mutableStateOf(false)
         private set
 
@@ -55,7 +57,7 @@ object SupabaseAuth {
 
         val savedToken = withContext(Dispatchers.IO) {
             try {
-                val stored = file.openRead().bufferedReader(Charsets.UTF_8).use { it.readText().trim() }
+                val stored = file.openRead().readBoundedText(64 * 1024).trim()
                 when {
                     stored.isBlank() -> null
                     stored.startsWith("v1:") -> SessionCipher.decrypt(stored)
@@ -68,17 +70,23 @@ object SupabaseAuth {
                         stored
                     }
                 }
-            } catch (_: Exception) {
+            } catch (_: java.io.FileNotFoundException) {
+                null
+            } catch (failure: Exception) {
+                reportFailure("Read remembered sign-in", failure)
                 null
             }
         }
 
         if (savedToken != null) {
+            val remembered = runCatching { JSONObject(savedToken) }.getOrNull()
+            val refresh = remembered?.optString("refresh") ?: savedToken
+            accountId = remembered?.optString("account")?.takeIf { it.isNotBlank() }
             // The existing accessToken() function will refresh this session
             // when the app next requests authenticated data.
             tokens = AuthTokens(
                 accessToken = "",
-                refreshToken = savedToken,
+                refreshToken = refresh,
                 expiresAtMillis = 0
             )
             rememberSession = true
@@ -112,6 +120,8 @@ object SupabaseAuth {
         password: String,
         rememberMe: Boolean = false
     ) = mutex.withLock {
+        require(isValidEmailAddress(email)) { "Enter a valid email address." }
+        require(password.isNotBlank() && password.length <= InputLimits.LOGIN_PASSWORD) { "Enter your password." }
         val response = request(
             path = "token?grant_type=password",
             body = JSONObject()
@@ -141,6 +151,10 @@ object SupabaseAuth {
         dateOfBirth: String?,
         acceptedTerms: Boolean
     ): Boolean = mutex.withLock {
+        require(isValidPersonName(firstName) && isValidPersonName(lastName)) { "Enter valid first and last names." }
+        require(isValidEmailAddress(email)) { "Enter a valid email address." }
+        require(phone.isBlank() || isValidPhoneNumber(phone)) { "Enter a valid phone number, or leave it blank." }
+        require(isValidRegistrationPassword(password)) { "Use 8–128 characters with a letter and a number." }
         require(role == "athlete" || role == "guardian") {
             "Choose athlete or guardian."
         }
@@ -243,26 +257,28 @@ object SupabaseAuth {
         refreshIfNeeded()
     }
 
-    suspend fun logout() = mutex.withLock {
-        if (tokens == null) {
+    suspend fun logout() {
+        val token = mutex.withLock {
+            val previous = tokens?.accessToken
             clearSession()
-            return@withLock
+            previous
         }
-
-        val token = refreshIfNeeded()
-
-        request(
-            path = "logout?scope=local",
-            body = null,
-            bearerToken = token
-        )
-
-        clearSession()
+        // Local sign-out must not depend on internet access or token renewal.
+        if (!token.isNullOrBlank()) {
+            try {
+                request(path = "logout?scope=local", body = null, bearerToken = token)
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                // The remembered token and local session are already cleared.
+                reportFailure("Revoke signed-out session", failure)
+            }
+        }
     }
 
     private suspend fun refreshIfNeeded(): String {
         val current = tokens
-            ?: throw IllegalStateException("Please log in again.")
+            ?: throw UserFacingFailure("Please log in again.")
 
         if (
             System.currentTimeMillis() <
@@ -282,7 +298,7 @@ object SupabaseAuth {
         } catch (failure: AuthRequestException) {
             if (failure.status in listOf(400, 401, 403)) {
                 clearSession()
-                throw IllegalStateException(
+                throw UserFacingFailure(
                     "Your session has expired. Please log in again."
                 )
             }
@@ -291,7 +307,7 @@ object SupabaseAuth {
         }
 
         return tokens?.accessToken
-            ?: throw IllegalStateException("Please log in again.")
+            ?: throw UserFacingFailure("Please log in again.")
     }
 
     private suspend fun saveSession(
@@ -300,6 +316,12 @@ object SupabaseAuth {
     ) {
         val access = response.optString("access_token")
         val refresh = response.optString("refresh_token")
+        val owner = response.optJSONObject("user")?.optString("id")?.takeIf { it.isNotBlank() }
+            ?: runCatching {
+                val claims = android.util.Base64.decode(access.split('.')[1], android.util.Base64.URL_SAFE)
+                JSONObject(String(claims, Charsets.UTF_8)).getString("sub")
+            }.getOrNull()
+        val verifiedOwner = java.util.UUID.fromString(checkNotNull(owner) { "Session account is unavailable." }).toString()
 
         check(access.isNotBlank() && refresh.isNotBlank()) {
             "Supabase did not return a valid login session."
@@ -313,9 +335,10 @@ object SupabaseAuth {
         )
 
         withContext(NonCancellable) {
-            storeRefreshToken(if (remember) refresh else null)
+            storeRefreshToken(if (remember) JSONObject().put("refresh", refresh).put("account", verifiedOwner).toString() else null)
 
             tokens = nextTokens
+            accountId = verifiedOwner
             rememberSession = remember
             hasRememberedSession = remember
             isLoggedIn = true
@@ -327,6 +350,7 @@ object SupabaseAuth {
             storeRefreshToken(null)
 
             tokens = null
+            accountId = null
             rememberSession = false
             hasRememberedSession = false
             isLoggedIn = false
@@ -381,8 +405,7 @@ object SupabaseAuth {
             }
 
             val text = stream
-                ?.bufferedReader()
-                ?.use { it.readText() }
+                ?.readBoundedText(256 * 1024)
                 .orEmpty()
 
             val json = runCatching {
@@ -392,42 +415,7 @@ object SupabaseAuth {
             }
 
             if (status !in 200..299) {
-                val code = json.optString("error_code")
-
-                val message = when (code) {
-                    "invalid_credentials" ->
-                        "Incorrect email or password."
-
-                    "email_not_confirmed" ->
-                        "Confirm your email before logging in."
-
-                    "user_already_exists", "email_exists" ->
-                        "An account already exists. Try logging in."
-
-                    "signup_disabled" ->
-                        "New account registration is disabled."
-
-                    "weak_password" ->
-                        "Choose a stronger password."
-
-                    "over_email_send_rate_limit",
-                    "over_request_rate_limit" ->
-                        "Too many attempts. Please wait before trying again."
-
-                    "unexpected_failure" ->
-                        "Supabase could not complete the request. " +
-                                "Check the project's Auth logs."
-
-                    else -> json.optString("msg").ifBlank {
-                        json.optString("message").ifBlank {
-                            json.optString("error_description").ifBlank {
-                                "Authentication failed (HTTP $status)."
-                            }
-                        }
-                    }
-                }
-
-                throw AuthRequestException(status, message)
+                throw AuthRequestException(status, json.optString("error_code"))
             }
 
             json

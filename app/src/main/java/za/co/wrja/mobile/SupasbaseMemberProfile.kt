@@ -9,7 +9,6 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import org.json.JSONObject
-import java.io.IOException
 
 @Composable
 fun SupabaseMemberProfile() {
@@ -22,14 +21,8 @@ fun SupabaseMemberProfile() {
 
     val scope = rememberCoroutineScope()
 
-    fun displayError(failure: Exception): String {
-        return if (failure is IOException) {
-            "Connection interrupted. Refresh to check the latest " +
-                    "saved details before trying again."
-        } else {
-            failure.message ?: "Unable to complete the request."
-        }
-    }
+    val loadFailure = loadFailureMessage()
+    val saveFailure = localized("Could not confirm that your changes were saved. Refresh your profile before retrying.", "Kon nie bevestig dat jou veranderinge gestoor is nie. Verfris jou profiel voordat jy weer probeer.", "Ukuqinisekisa ukugcinwa kwezinguquko kwehlulekile. Vuselela iphrofayela yakho ngaphambi kokuzama futhi.")
 
     fun save(action: suspend () -> Unit) {
         if (saving) return
@@ -45,7 +38,7 @@ fun SupabaseMemberProfile() {
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
-                error = displayError(failure)
+                error = actionFailure("Save profile", failure, saveFailure)
             } finally {
                 saving = false
             }
@@ -62,7 +55,7 @@ fun SupabaseMemberProfile() {
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (failure: Exception) {
-            error = displayError(failure)
+            error = actionFailure("Load profile", failure, loadFailure)
         } finally {
             loading = false
         }
@@ -272,12 +265,26 @@ private fun MemberEditForm(
     var weight by remember(recordVersion) {
         mutableStateOf(record.memberText("weight_category"))
     }
+    var attemptedSave by remember(recordVersion) { mutableStateOf(false) }
+    val invalidFirst = !isValidPersonName(firstName)
+    val invalidLast = !isValidPersonName(lastName)
+    val invalidThird = if (athleteForm) !isValidBirthDate(thirdField.trim())
+        else thirdField.isNotBlank() && !isValidPhoneNumber(thirdField)
+    val invalidWeight = athleteForm && (weight.length > InputLimits.WEIGHT_CATEGORY || weight.any(Char::isISOControl))
+    val validationError = when {
+        invalidFirst || invalidLast -> localized("Enter valid first and last names (up to 60 characters each).", "Voer geldige voor- en vanne in (hoogstens 60 karakters elk).", "Faka igama nesibongo esivumelekile (izinhlamvu ezingafika ku-60 ngakunye).")
+        invalidThird && athleteForm -> localized("Enter a valid past or current date as YYYY-MM-DD.", "Voer 'n geldige datum in as JJJJ-MM-DD wat nie in die toekoms is nie.", "Faka usuku oluvumelekile olungelona olwesikhathi esizayo ngendlela ethi YYYY-MM-DD.")
+        invalidThird -> localized("Enter a valid phone number (7–15 digits, up to 30 characters), or leave it blank.", "Voer 'n geldige telefoonnommer in (7–15 syfers, hoogstens 30 karakters), of laat dit leeg.", "Faka inombolo evumelekile (amadijithi angu-7–15, izinhlamvu ezingafika ku-30), noma uyishiye ingenalutho.")
+        invalidWeight -> localized("Use up to 60 characters for the weight category.", "Gebruik hoogstens 60 karakters vir die gewigskategorie.", "Sebenzisa izinhlamvu ezingafika ku-60 zesigaba sesisindo.")
+        else -> null
+    }
 
     Column {
         OutlinedTextField(
             value = firstName,
-            onValueChange = { firstName = sanitizePersonName(it) },
+            onValueChange = { firstName = editPersonName(firstName, it) },
             label = { Text(localized("First name", "Voornaam", "Igama lokuqala")) },
+            isError = attemptedSave && invalidFirst,
             singleLine = true,
             enabled = !busy,
             modifier = Modifier.fillMaxWidth()
@@ -287,8 +294,9 @@ private fun MemberEditForm(
 
         OutlinedTextField(
             value = lastName,
-            onValueChange = { lastName = sanitizePersonName(it) },
+            onValueChange = { lastName = editPersonName(lastName, it) },
             label = { Text(localized("Last name", "Van", "Isibongo")) },
+            isError = attemptedSave && invalidLast,
             singleLine = true,
             enabled = !busy,
             modifier = Modifier.fillMaxWidth()
@@ -298,7 +306,11 @@ private fun MemberEditForm(
 
         OutlinedTextField(
             value = thirdField,
-            onValueChange = { thirdField = if (athleteForm) it else sanitizePhoneNumber(it) },
+            onValueChange = { thirdField = if (athleteForm) editBirthDate(thirdField, it) else editPhoneNumber(thirdField, it) },
+            isError = attemptedSave && invalidThird,
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                keyboardType = if (athleteForm) androidx.compose.ui.text.input.KeyboardType.Text else androidx.compose.ui.text.input.KeyboardType.Phone
+            ),
             label = {
                 Text(
                     if (athleteForm) {
@@ -318,8 +330,9 @@ private fun MemberEditForm(
 
             OutlinedTextField(
                 value = weight,
-                onValueChange = { weight = it },
+                onValueChange = { weight = boundedInput(weight, it, InputLimits.WEIGHT_CATEGORY) },
                 label = { Text(localized("Weight category", "Gewigskategorie", "Isigaba sesisindo")) },
+                isError = attemptedSave && invalidWeight,
                 singleLine = true,
                 enabled = !busy,
                 modifier = Modifier.fillMaxWidth()
@@ -328,10 +341,14 @@ private fun MemberEditForm(
 
         Spacer(Modifier.height(12.dp))
 
+        if (attemptedSave && validationError != null) {
+            Text(validationError, color = MaterialTheme.colorScheme.error)
+        }
         Button(
             enabled = !busy,
             onClick = {
-                onSave(firstName, lastName, thirdField, weight)
+                attemptedSave = true
+                if (validationError == null) onSave(firstName, lastName, thirdField, weight)
             }
         ) {
             Text(

@@ -85,8 +85,7 @@ private suspend fun fetchAboutEntries(
         }
 
         val response = connection.inputStream
-            .bufferedReader()
-            .use { it.readText() }
+            .readBoundedText()
 
         val rows = JSONArray(response)
 
@@ -204,6 +203,7 @@ private fun AboutDataSection(
     var error by remember(table) { mutableStateOf<String?>(null) }
     var refreshCount by remember(table) { mutableStateOf(0) }
 
+    val loadFailure = loadFailureMessage()
     LaunchedEffect(table, refreshCount) {
         loading = true
         error = null
@@ -213,11 +213,7 @@ private fun AboutDataSection(
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (failure: Exception) {
-            error = if (failure is IllegalStateException) {
-                failure.message ?: "Unable to load $table."
-            } else {
-                "Could not connect. Check your internet connection and retry."
-            }
+            error = actionFailure("Load about content", failure, loadFailure)
         } finally {
             loading = false
         }
@@ -320,7 +316,7 @@ private fun BuiltInInstructors() {
         Card(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
             Column {
                 Image(
-                    painter = painterResource(instructor.photoResId!!),
+                    painter = painterResource(instructor.photoResId ?: R.drawable.wrja_logo),
                     contentDescription = "Portrait of ${instructor.title}",
                     modifier = Modifier.fillMaxWidth().height(240.dp).padding(8.dp),
                     contentScale = ContentScale.Fit

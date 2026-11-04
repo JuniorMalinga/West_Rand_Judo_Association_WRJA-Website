@@ -110,8 +110,11 @@ internal object SupabaseMembers {
         lastName: String,
         phone: String
     ): JSONObject {
-        require(firstName.isNotBlank() && lastName.isNotBlank()) {
-            "Enter your first and last names."
+        require(isValidPersonName(firstName) && isValidPersonName(lastName)) {
+            "Enter valid first and last names."
+        }
+        require(phone.isBlank() || isValidPhoneNumber(phone)) {
+            "Enter a valid phone number, or leave it blank."
         }
 
         val id = UUID.fromString(userId).toString()
@@ -139,8 +142,11 @@ internal object SupabaseMembers {
         dateOfBirth: String,
         weightCategory: String
     ): JSONObject {
-        require(firstName.isNotBlank() && lastName.isNotBlank()) {
-            "Enter the athlete's first and last names."
+        require(isValidPersonName(firstName) && isValidPersonName(lastName)) {
+            "Enter valid first and last names for the athlete."
+        }
+        require(weightCategory.length <= InputLimits.WEIGHT_CATEGORY && weightCategory.none(Char::isISOControl)) {
+            "Enter a weight category of up to 60 characters."
         }
 
         val dateText = dateOfBirth.trim()
@@ -156,8 +162,7 @@ internal object SupabaseMembers {
         }.getOrNull()
 
         require(
-            parsedDate != null &&
-                    parsedDate.time <= System.currentTimeMillis()
+            parsedDate != null && isValidBirthDate(dateText)
         ) {
             "Enter a valid date of birth that is not in the future."
         }
@@ -258,8 +263,7 @@ internal object SupabaseMembers {
                 }
 
                 val response = stream
-                    ?.bufferedReader()
-                    ?.use { it.readText() }
+                    ?.readBoundedText()
                     .orEmpty()
 
                 if (status !in 200..299) {

@@ -24,6 +24,9 @@ internal data class EftProofFile(
 
 internal object EftProofFiles {
     private const val MIB = 1024 * 1024
+    private inline fun checkFile(valid: Boolean, message: () -> String) {
+        if (!valid) throw UserFacingFailure(message())
+    }
 
     suspend fun read(context: Context, uri: Uri): EftProofFile = withContext(Dispatchers.IO) {
         val resolver = context.contentResolver
@@ -41,14 +44,14 @@ internal object EftProofFiles {
             while (true) {
                 val count = input.read(buffer)
                 if (count < 0) break
-                require(output.size() + count <= 20 * MIB) {
+                checkFile(output.size() + count <= 20 * MIB) {
                     "Choose a file smaller than 20 MB. PDFs must be under 4 MB."
                 }
                 output.write(buffer, 0, count)
             }
             output.toByteArray()
-        } ?: error("The selected file could not be opened. Please choose it again.")
-        require(bytes.isNotEmpty()) { "The selected file is empty." }
+        } ?: throw UserFacingFailure("The selected file could not be opened. Please choose it again.")
+        checkFile(bytes.isNotEmpty()) { "The selected file is empty." }
 
         val isPdf = bytes.take(5).toByteArray().contentEquals("%PDF-".toByteArray())
         val isJpeg = bytes.size >= 3 && bytes[0] == 0xff.toByte() &&
@@ -56,21 +59,21 @@ internal object EftProofFiles {
         val isPng = bytes.size >= 8 && bytes.copyOfRange(0, 8).contentEquals(
             byteArrayOf(0x89.toByte(), 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)
         )
-        require(isPdf || isJpeg || isPng) { "Choose a PDF, JPG or PNG file." }
+        checkFile(isPdf || isJpeg || isPng) { "Choose a PDF, JPG or PNG file." }
         val id = UUID.randomUUID().toString()
         if (isPdf) {
-            require(bytes.size <= 4 * MIB) { "That PDF is over 4 MB. Choose a smaller PDF." }
+            checkFile(bytes.size <= 4 * MIB) { "That PDF is over 4 MB. Choose a smaller PDF." }
             EftProofFile(id, safeName.substringBeforeLast('.') + ".pdf", "application/pdf", "pdf", bytes)
         } else {
             val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
-            require(options.outWidth > 0 && options.outHeight > 0) { "This image could not be decoded." }
+            checkFile(options.outWidth > 0 && options.outHeight > 0) { "This image could not be decoded." }
             // Sample first, so a huge photograph cannot allocate a full-size bitmap.
             var sample = 1
             while (max(options.outWidth, options.outHeight) / sample > 3200) sample *= 2
             val source = BitmapFactory.decodeByteArray(bytes, 0, bytes.size,
                 BitmapFactory.Options().apply { inSampleSize = sample })
-                ?: error("This image could not be opened.")
+                ?: throw UserFacingFailure("This image could not be opened.")
             try {
                 val scale = minOf(1.0, 1600.0 / max(source.width, source.height))
                 val target = Bitmap.createBitmap(
@@ -90,7 +93,7 @@ internal object EftProofFiles {
                         output.toByteArray()
                     }
                 } finally { target.recycle() }
-                require(compressed.size <= 6 * MIB) { "This image is too large after resizing." }
+                checkFile(compressed.size <= 6 * MIB) { "This image is too large after resizing." }
                 EftProofFile(id, safeName.substringBeforeLast('.') + ".jpg", "image/jpeg", "jpg", compressed)
             } finally { source.recycle() }
         }

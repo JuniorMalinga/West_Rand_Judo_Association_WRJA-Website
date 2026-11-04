@@ -1,7 +1,9 @@
 package za.co.wrja.mobile
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.Image
+import coil.compose.AsyncImage
+import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -36,7 +38,8 @@ private data class NewsArticle(
     val title: String,
     val excerpt: String,
     val body: String,
-    val publishedDate: String
+    val publishedDate: String,
+    val imagePath: String = ""
 )
 
 private fun newsPhoto(index: Int): Int = listOf(
@@ -59,7 +62,7 @@ private suspend fun fetchNews(): List<NewsArticle> =
 
         val address = SUPABASE_URL.trimEnd('/') +
                 "/rest/v1/news_posts" +
-                "?select=id,title,excerpt,body,published_at" +
+                "?select=id,title,excerpt,body,published_at,image_path" +
                 "&post_status=eq.published" +
                 "&order=published_at.desc.nullslast,id.asc"
 
@@ -93,8 +96,7 @@ private suspend fun fetchNews(): List<NewsArticle> =
             }
 
             val response = connection.inputStream
-                .bufferedReader()
-                .use { it.readText() }
+                .readBoundedText()
 
             val rows = JSONArray(response)
 
@@ -106,7 +108,8 @@ private suspend fun fetchNews(): List<NewsArticle> =
                     title = row.newsText("title"),
                     excerpt = row.newsText("excerpt"),
                     body = row.newsText("body"),
-                    publishedDate = row.newsText("published_at").take(10)
+                    publishedDate = row.newsText("published_at").take(10),
+                    imagePath = row.newsText("image_path")
                 )
             }
         } finally {
@@ -116,6 +119,7 @@ private suspend fun fetchNews(): List<NewsArticle> =
 
 @Composable
 fun SupabaseNews() {
+    val context = LocalContext.current
     var articles by remember {
         mutableStateOf<List<NewsArticle>>(emptyList())
     }
@@ -137,26 +141,23 @@ fun SupabaseNews() {
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (failure: Exception) {
-            articles = websiteNews
-            error = null
+            reportFailure("Refresh news", failure)
+            if (articles.isEmpty()) articles = websiteNews
+            error = "offline"
         } finally {
             loading = false
         }
     }
 
     Column(modifier = Modifier.fillMaxWidth()) {
+        if (error != null) {
+            Text(localized("Could not refresh news. Showing available articles.", "Kon nie nuus verfris nie. Beskikbare artikels word gewys.", "Izindaba azivuselelwanga. Kuboniswa izihloko ezitholakalayo."), color = MaterialTheme.colorScheme.error)
+        }
         when {
             loading -> {
                 CircularProgressIndicator()
                 Spacer(modifier = Modifier.height(12.dp))
                 Text("Loading news…")
-            }
-
-            error != null -> {
-                Text(
-                    text = error ?: "Unable to load news.",
-                    color = MaterialTheme.colorScheme.error
-                )
             }
 
             articles.isEmpty() -> {
@@ -174,12 +175,20 @@ fun SupabaseNews() {
                             .padding(bottom = 16.dp)
                     ) {
                         Column {
-                            Image(
-                                painter = painterResource(newsPhoto(index)),
+                            val imageUrl = publicMediaUrl(article.imagePath)
+                            var imageFailed by remember(article.id, imageUrl, refreshCount) { mutableStateOf(false) }
+                            AsyncImage(
+                                model = imageUrl,
+                                fallback = painterResource(if (article.id.startsWith("website-")) newsPhoto(index) else R.drawable.wrja_logo),
+                                error = painterResource(R.drawable.wrja_logo),
                                 contentDescription = article.title,
                                 modifier = Modifier.fillMaxWidth().height(190.dp),
-                                contentScale = ContentScale.Crop
+                                contentScale = ContentScale.Crop,
+                                onError = { imageFailed = true }
                             )
+                            if (imageFailed || (article.imagePath.isNotBlank() && imageUrl == null)) {
+                                Text(localized("Article photo unavailable.", "Artikelfoto onbeskikbaar.", "Isithombe sesihloko asitholakali."), Modifier.padding(horizontal = 18.dp, vertical = 6.dp), color = MaterialTheme.colorScheme.error)
+                            }
                             Column(modifier = Modifier.padding(18.dp)) {
                             if (article.publishedDate.isNotBlank()) {
                                 Text(
@@ -221,13 +230,18 @@ fun SupabaseNews() {
                                 ) {
                                     Text(
                                         if (expanded) {
-                                            "Show less"
+                                            localized("Show less", "Wys minder", "Bonisa okuncane")
                                         } else {
-                                            "Read article"
+                                            localized("Read article", "Lees artikel", "Funda isihloko")
                                         }
                                     )
                                 }
                             }
+                            TextButton(onClick = {
+                                val newsPage = "https://westrandjudoassociation.vercel.app/news"
+                                val link = if (article.id.startsWith("website-")) newsPage else "$newsPage/${Uri.encode(article.id)}"
+                                openPublicWebsite(context, link)
+                            }) { Text(localized("Open on website", "Maak op webwerf oop", "Vula kuwebhusayithi")) }
                             }
                         }
                     }
@@ -237,7 +251,7 @@ fun SupabaseNews() {
 
         if (!loading) {
             TextButton(onClick = { refreshCount++ }) {
-                Text(if (error == null) "Refresh" else "Retry")
+                Text(if (error == null) localized("Refresh", "Verfris", "Vuselela") else localized("Retry", "Probeer weer", "Zama futhi"))
             }
         }
     }

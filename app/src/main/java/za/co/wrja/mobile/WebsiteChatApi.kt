@@ -1,41 +1,72 @@
 package za.co.wrja.mobile
 
-import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
 
-/**
- * Client for the same assistant endpoint used by the WRJA website.
- *
- * The endpoint owns conversation history.  The returned session id is saved by
- * [WebsiteChatSessionStore] and sent with each later message, so a user keeps a
- * continuous conversation without exposing any server credentials in the app.
- */
-data class WebsiteChatResult(
-    val success: Boolean,
-    val sessionId: String?,
-    val answer: String?,
-    val error: String?
-)
+internal data class WebsiteChatReply(val answer: String, val mode: String)
+internal data class WebsiteChatExchange(val question: String, val answer: String)
+internal class WebsiteChatHttpFailure(val status: Int) : IOException("Chat request failed (HTTP $status).")
 
-object WebsiteChatApi {
+/** Uses the website's stateless assistant API; no credentials or account fields are sent. */
+internal object WebsiteChatApi {
     private const val Endpoint = "https://westrandjudoassociation.vercel.app/api/chat"
+    private const val MaxHistoryExchanges = 12 // Two turns per completed exchange.
+    private const val MaxTurnLength = 2400
+    private const val MaxHistoryLength = 24_000
+    private val modes = setOf("local", "gemini", "fallback", "handoff")
 
-    suspend fun send(message: String, sessionId: String?): WebsiteChatResult = withContext(Dispatchers.IO) {
+    internal fun requestBody(message: String, previous: List<WebsiteChatExchange>): JSONObject {
+        val question = message.replace("\u0000", "").trim()
+        require(question.isNotBlank() && question.length <= InputLimits.CHAT_MESSAGE) {
+            "Enter a message of up to 2,000 characters."
+        }
+        var length = 0
+        val newestFirst = mutableListOf<WebsiteChatExchange>()
+        for (exchange in previous.asReversed()) {
+            if (newestFirst.size >= MaxHistoryExchanges) break
+            val user = historyContent(exchange.question)
+            val answer = historyContent(exchange.answer)
+            if (user.isEmpty() || answer.isEmpty()) continue
+            if (length + user.length + answer.length > MaxHistoryLength) break
+            newestFirst += WebsiteChatExchange(user, answer)
+            length += user.length + answer.length
+        }
+        val history = JSONArray()
+        for (exchange in newestFirst.asReversed()) {
+            history.put(JSONObject().put("role", "user").put("content", exchange.question))
+            history.put(JSONObject().put("role", "assistant").put("content", exchange.answer))
+        }
+        return JSONObject().put("message", question).put("history", history)
+    }
+
+    private fun historyContent(value: String): String {
+        val clipped = value.replace("\u0000", "").trim().take(MaxTurnLength)
+        return if (clipped.lastOrNull()?.isHighSurrogate() == true) clipped.dropLast(1) else clipped
+    }
+
+    internal fun parseReply(responseText: String): WebsiteChatReply {
+        val json = try { JSONObject(responseText) } catch (_: org.json.JSONException) {
+            throw IOException("Chat returned an invalid response.")
+        }
+        val answer = (json.opt("answer") as? String)?.trim().orEmpty()
+        val mode = json.opt("mode") as? String
+        if (answer.isBlank() || mode == null || mode !in modes) {
+            throw IOException("Chat returned an invalid response.")
+        }
+        return WebsiteChatReply(answer, mode)
+    }
+
+    suspend fun send(message: String, previous: List<WebsiteChatExchange>): WebsiteChatReply = withContext(Dispatchers.IO) {
+        val requestBody = requestBody(message, previous).toString()
         val connection = (URL(Endpoint).openConnection() as HttpURLConnection)
         try {
-            val requestBody = JSONObject()
-                .put("message", message.trim())
-                .apply {
-                    if (!sessionId.isNullOrBlank()) put("sessionId", sessionId)
-                }
-                .toString()
-
+            connection.instanceFollowRedirects = false
             connection.requestMethod = "POST"
             connection.connectTimeout = 30_000
             connection.readTimeout = 40_000
@@ -49,50 +80,13 @@ object WebsiteChatApi {
             }
 
             val responseCode = connection.responseCode
-            val responseText = (if (responseCode in 200..299) connection.inputStream else connection.errorStream)
-                ?.bufferedReader()
-                ?.use { it.readText() }
-                .orEmpty()
-            val json = runCatching { JSONObject(responseText) }.getOrNull()
-            val result = WebsiteChatResult(
-                success = json?.optBoolean("success", false) ?: false,
-                sessionId = json.optionalString("sessionId"),
-                answer = json.optionalString("answer"),
-                error = json.optionalString("error")
-            )
-
             if (responseCode !in 200..299) {
-                throw IOException(result.error ?: result.answer ?: "WRJA Assistant is unavailable (HTTP $responseCode).")
+                throw WebsiteChatHttpFailure(responseCode)
             }
-            if (!result.success) {
-                throw IOException(result.error ?: result.answer ?: "WRJA Assistant is unavailable.")
-            }
-            result
+            parseReply(connection.inputStream.readBoundedText(512 * 1024))
         } finally {
             connection.disconnect()
         }
     }
 
-    private fun JSONObject?.optionalString(key: String): String? =
-        if (this == null || isNull(key)) null else optString(key).trim().ifEmpty { null }
-}
-
-/** Persists only the opaque server-issued conversation id; no messages or credentials are stored locally. */
-object WebsiteChatSessionStore {
-    // New namespace prevents session identifiers issued by the retired Vercel deployment
-    // from being sent to the current WRJA Assistant deployment.
-    private const val PreferencesName = "wrja_chat_v2"
-    private const val SessionIdKey = "website_chat_session_id"
-
-    fun read(context: Context): String? =
-        context.getSharedPreferences(PreferencesName, Context.MODE_PRIVATE).getString(SessionIdKey, null)
-
-    fun save(context: Context, sessionId: String?) {
-        context.getSharedPreferences(PreferencesName, Context.MODE_PRIVATE)
-            .edit()
-            .apply {
-                if (sessionId.isNullOrBlank()) remove(SessionIdKey) else putString(SessionIdKey, sessionId)
-            }
-            .apply()
-    }
 }

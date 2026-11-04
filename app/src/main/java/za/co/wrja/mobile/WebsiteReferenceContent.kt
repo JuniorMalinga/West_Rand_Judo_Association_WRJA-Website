@@ -6,9 +6,9 @@ import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -109,20 +110,18 @@ private data class WebsiteInstructor(val image: Int, val name: String, val role:
 private data class WebsiteClubLink(val label: String, val address: String)
 private data class WebsiteClub(val name: String, val summary: String, val links: List<WebsiteClubLink>)
 
-private fun openPublicWebsite(context: Context, address: String) {
-    context.startActivity(
-        Intent(Intent.ACTION_VIEW, Uri.parse(address)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    )
-}
-
+@OptIn(ExperimentalLayoutApi::class)
 @Composable fun WebsiteHome() {
+    val width = LocalPageWidth.current
+    val fontScale = LocalDensity.current.fontScale
+    val columns = if (width >= 520.dp || (width >= 340.dp && fontScale <= 1.3f)) 2 else 1
     WebsiteImageCard(R.drawable.home_cover_1, "WRJA judoka", Modifier.fillMaxWidth().wrjaReveal(), 225.dp) {
         Text("WEST RAND JUDO ASSOCIATION", color = WrjaGold, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.ExtraBold)
         Spacer(Modifier.height(7.dp)); Text(localized("Your WRJA journey starts here.", "Jou WRJA-reis begin hier.", "Uhambo lwakho lwe-WRJA luqala lapha."), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(8.dp)); Text(localized("Explore competitions, experienced coaching and a supportive club community across the West Rand.", "Verken kompetisies, ervare afrigting en 'n ondersteunende klubgemeenskap oor die Wes-Rand.", "Hlola imincintiswano, ukuqeqeshwa okunolwazi nomphakathi weklabhu osekelayo e-West Rand."), color = WrjaMuted)
     }
     Spacer(Modifier.height(14.dp))
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+    FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp), maxItemsInEachRow = columns) {
         HomeFeature(R.drawable.home_cover_2, localized("TRAIN WITH PURPOSE", "OEFEN MET DOEL", "QEQESHA NGENGQONDO"), localized("Coaching, discipline and growth.", "Afrigting, dissipline en groei.", "Ukuqeqeshwa, isimilo nokukhula."), Modifier.weight(1f).wrjaReveal(1))
         HomeFeature(R.drawable.home_cover_3, localized("GROW WITH YOUR CLUB", "GROEI SAAM MET JOU KLUB", "KHULA NEKLABHU YAKHO"), localized("From first class to the competition mat.", "Van eerste klas tot die kompetisiemat.", "Kusukela ekilasini lokuqala kuya kumata womncintiswano."), Modifier.weight(1f).wrjaReveal(2))
     }
@@ -136,10 +135,10 @@ private fun openPublicWebsite(context: Context, address: String) {
         localized("Certified coaches", "Gesertifiseerde afrigters", "Abaqeqeshi abaqinisekisiwe") to localized("Instructors with national coaching certification and years of experience.", "Instrukteurs met nasionale afrigtingsertifisering en jare se ervaring.", "Abaqeqeshi abanezitifiketi zikazwelonke neminyaka yesipiliyoni."),
         localized("Club champions", "Klubkampioene", "Ompetha beklabhu") to localized("A strong record of provincial and national competition results.", "'n Sterk rekord van provinsiale en nasionale kompetisie-uitslae.", "Irekhodi eliqinile lemiphumela yemincintiswano yesifundazwe nekazwelonke.")
     )
-    benefits.chunked(2).forEachIndexed { rowIndex, row ->
+    benefits.chunked(columns).forEachIndexed { rowIndex, row ->
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             row.forEachIndexed { columnIndex, (title, copy) ->
-                HomeBenefit(title, copy, Modifier.weight(1f).wrjaReveal(rowIndex * 2 + columnIndex + 3))
+                HomeBenefit(title, copy, Modifier.weight(1f).wrjaReveal(rowIndex * columns + columnIndex + 3))
             }
         }
         Spacer(Modifier.height(10.dp))
@@ -165,6 +164,7 @@ private fun openPublicWebsite(context: Context, address: String) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable fun WebsiteGallery() {
     var category by rememberSaveable { mutableStateOf("All") }
     var selectedPhotoIndex by rememberSaveable { mutableStateOf<Int?>(null) }
@@ -180,22 +180,24 @@ private fun openPublicWebsite(context: Context, address: String) {
     )
     WrjaSectionHeading(localized("On the mat", "Op die mat", "Emateni"), localized("WRJA gallery", "WRJA-galery", "Igalari ye-WRJA"), localized("Moments from training, championships and the next generation of judoka.", "Oomblikke van opleiding, kampioenskappe en die volgende geslag judoka.", "Izikhathi zokuqeqeshwa, imiqhudelwano nesizukulwane esilandelayo sama-judoka."))
     Spacer(Modifier.height(16.dp))
-    Row(
-        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    FlowRow(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         listOf(allLabel, localized("Kids Judo", "Kinderjudo", "I-Judo Yezingane"), localized("Adult Judo", "Volwasse Judo", "I-Judo Yabantu Abadala"), localized("Competitions", "Kompetisies", "Imiqhudelwano")).forEach { label ->
             FilterChip(
                 selected = category == label,
                 onClick = { category = label; selectedPhotoIndex = null },
-                label = { Text(label, maxLines = 1, style = MaterialTheme.typography.labelMedium) },
+                label = { Text(label, style = MaterialTheme.typography.labelMedium) },
                 colors = FilterChipDefaults.filterChipColors(containerColor = WrjaCard, labelColor = WrjaMuted, selectedContainerColor = WrjaGold, selectedLabelColor = Color(0xFF090909))
             )
         }
     }
     Spacer(Modifier.height(14.dp))
     val visiblePhotos = photos.filter { category == allLabel || it.category == category }
-    visiblePhotos.chunked(2).forEachIndexed { index, row ->
+    val columns = galleryColumns(LocalPageWidth.current, LocalDensity.current.fontScale)
+    visiblePhotos.chunked(columns).forEachIndexed { index, row ->
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             row.forEach { photo ->
                 WrjaContentCard(
@@ -203,7 +205,7 @@ private fun openPublicWebsite(context: Context, address: String) {
                         .wrjaReveal(index)
                         .clickable { selectedPhotoIndex = visiblePhotos.indexOf(photo) }
                 ) {
-                    Box(Modifier.fillMaxWidth().height(155.dp).clip(MaterialTheme.shapes.medium).background(Color(0xFF101010))) {
+                    Box(Modifier.fillMaxWidth().aspectRatio(1.15f).clip(MaterialTheme.shapes.medium).background(Color(0xFF101010))) {
                         Image(
                             painterResource(photo.image),
                             photo.caption,
@@ -215,7 +217,7 @@ private fun openPublicWebsite(context: Context, address: String) {
                     Text(photo.caption, Modifier.padding(top = 10.dp), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
                 }
             }
-            if (row.size == 1) Spacer(Modifier.weight(1f))
+            repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
         }
         Spacer(Modifier.height(8.dp))
     }
@@ -223,8 +225,11 @@ private fun openPublicWebsite(context: Context, address: String) {
         val photo = visiblePhotos.getOrNull(photoIndex)
         if (photo != null) {
             Dialog(onDismissRequest = { selectedPhotoIndex = null }) {
+                BoxWithConstraints(Modifier.widthIn(max = 640.dp).fillMaxWidth()) {
+                val photoHeight = minOf(maxHeight * 0.60f, 560.dp)
                 WrjaContentCard(Modifier.fillMaxWidth()) {
-                    Box(Modifier.fillMaxWidth().height(420.dp).background(Color(0xFF101010))) {
+                    Column(Modifier.verticalScroll(rememberScrollState())) {
+                    Box(Modifier.fillMaxWidth().height(photoHeight).background(Color(0xFF101010))) {
                         Image(
                             painter = painterResource(photo.image),
                             contentDescription = photo.caption,
@@ -237,12 +242,14 @@ private fun openPublicWebsite(context: Context, address: String) {
                         Text(photo.caption, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(4.dp))
                         Text(photo.category, color = WrjaMuted, style = MaterialTheme.typography.bodySmall)
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             TextButton(onClick = { selectedPhotoIndex = (photoIndex - 1 + visiblePhotos.size) % visiblePhotos.size }) { Text(localized("‹ Previous", "‹ Vorige", "‹ Okwedlule"), color = WrjaGold) }
                             TextButton(onClick = { selectedPhotoIndex = null }) { Text(localized("Close", "Sluit", "Vala"), color = WrjaGold) }
                             TextButton(onClick = { selectedPhotoIndex = (photoIndex + 1) % visiblePhotos.size }) { Text(localized("Next ›", "Volgende ›", "Okulandelayo ›"), color = WrjaGold) }
                         }
                     }
+                    }
+                }
                 }
             }
         }
@@ -298,7 +305,7 @@ private fun openPublicWebsite(context: Context, address: String) {
             listOf(
                 WebsiteClubLink(localized("Visit the official KJK Judo website", "Besoek die amptelike KJK Judo-webwerf", "Vakashela iwebhusayithi esemthethweni ye-KJK Judo"), "https://www.kjkjudo.co.za/"),
                 WebsiteClubLink(localized("Search KJK Judo on Facebook", "Soek KJK Judo op Facebook", "Sesha i-KJK Judo ku-Facebook"), "https://www.facebook.com/search/top?q=KJK%20Judo%20Club"),
-                WebsiteClubLink(localized("Search KJK Judo on Instagram", "Soek KJK Judo op Instagram", "Sesha i-KJK Judo ku-Instagram"), "https://www.instagram.com/")
+                WebsiteClubLink(localized("Search KJK Judo on Instagram", "Soek KJK Judo op Instagram", "Sesha i-KJK Judo ku-Instagram"), "https://www.instagram.com/explore/search/keyword/?q=KJK%20Judo")
             )
         ),
         WebsiteClub(

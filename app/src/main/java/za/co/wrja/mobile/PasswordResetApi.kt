@@ -25,7 +25,7 @@ object PasswordResetApi {
             connection.outputStream.bufferedWriter(Charsets.UTF_8).use { it.write(payload.toString()) }
             val status = connection.responseCode
             val body = (if (status in 200..299) connection.inputStream else connection.errorStream)
-                ?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+                ?.readBoundedText(64 * 1024).orEmpty()
             val json = runCatching { JSONObject(body) }.getOrNull()
             if (status !in 200..299 || json?.optBoolean("success") != true) {
                 throw PasswordResetFailure(status, json?.optString("error").orEmpty(), json?.optInt("retryAfterSeconds", 0) ?: 0)

@@ -1,6 +1,8 @@
 package za.co.wrja.mobile
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,6 +20,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import coil.compose.AsyncImage
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
@@ -28,27 +32,38 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
-private data class JudoEvent(
+internal data class JudoEvent(
+    val id: String,
     val title: String,
     val description: String,
     val date: String,
     val startTime: String,
     val location: String,
-    val registrationDeadline: String
+    val registrationDeadline: String,
+    val registrationUrl: String,
+    val qrCode: String,
+    val paymentRequired: Boolean
 )
+
+enum class EventListKind(val query: String) {
+    STANDARD("&event_type=neq.competition"),
+    COMPETITIONS("&event_type=eq.competition&slug=not.like.sa-schools-*"),
+    SCHOOLS("&event_type=eq.competition&slug=like.sa-schools-*")
+}
 
 private fun JSONObject.eventText(column: String): String {
     return if (isNull(column)) "" else optString(column, "")
 }
 
-private suspend fun fetchEvents(): List<JudoEvent> =
+internal suspend fun fetchEvents(kind: EventListKind?, eventId: String? = null): List<JudoEvent> =
     withContext(Dispatchers.IO) {
 
         val address = SUPABASE_URL.trimEnd('/') +
                 "/rest/v1/events" +
                 "?select=id,title,description,event_date,start_time," +
-                "location,registration_deadline" +
-                "&event_status=eq.published" +
+                "location,registration_deadline,entry_form_path,registration_url,qr_code_image_path,payment_required" +
+                "&event_status=eq.published" + kind?.query.orEmpty() +
+                (eventId?.let { "&id=eq.${android.net.Uri.encode(it)}" } ?: "") +
                 "&order=event_date.asc,id.asc"
 
         val connection =
@@ -81,8 +96,7 @@ private suspend fun fetchEvents(): List<JudoEvent> =
             }
 
             val response = connection.inputStream
-                .bufferedReader()
-                .use { it.readText() }
+                .readBoundedText()
 
             val rows = JSONArray(response)
 
@@ -90,13 +104,17 @@ private suspend fun fetchEvents(): List<JudoEvent> =
                 val row = rows.getJSONObject(index)
 
                 JudoEvent(
+                    id = row.eventText("id"),
                     title = row.eventText("title"),
                     description = row.eventText("description"),
                     date = row.eventText("event_date"),
                     startTime = row.eventText("start_time").take(5),
                     location = row.eventText("location"),
                     registrationDeadline =
-                        row.eventText("registration_deadline")
+                        row.eventText("registration_deadline"),
+                    registrationUrl = row.eventText("registration_url").ifBlank { row.eventText("entry_form_path") },
+                    qrCode = row.eventText("qr_code_image_path"),
+                    paymentRequired = row.optBoolean("payment_required")
                 )
             }
         } finally {
@@ -105,7 +123,7 @@ private suspend fun fetchEvents(): List<JudoEvent> =
     }
 
 @Composable
-fun SupabaseEvents() {
+fun SupabaseEvents(kind: EventListKind? = null, onPayment: ((String) -> Unit)? = null) {
     var events by remember {
         mutableStateOf<List<JudoEvent>>(emptyList())
     }
@@ -116,20 +134,17 @@ fun SupabaseEvents() {
     var error by remember { mutableStateOf<String?>(null) }
     var refreshCount by remember { mutableStateOf(0) }
 
-    LaunchedEffect(refreshCount) {
+    val loadFailure = loadFailureMessage()
+    LaunchedEffect(refreshCount, kind) {
         loading = true
         error = null
 
         try {
-            events = fetchEvents()
+            events = fetchEvents(kind)
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (failure: Exception) {
-            error = if (failure is IllegalStateException) {
-                failure.message ?: "Unable to load events."
-            } else {
-                "Could not connect. Check your internet connection and retry."
-            }
+            error = actionFailure("Load events", failure, loadFailure)
         } finally {
             loading = false
         }
@@ -214,27 +229,54 @@ fun SupabaseEvents() {
     }
 
     selectedEvent?.let { event ->
-        AlertDialog(
-            onDismissRequest = { selectedEvent = null },
-            title = { Text(event.title, fontWeight = FontWeight.Bold) },
-            text = {
-                Column {
-                    Text("${localized("Date", "Datum", "Usuku")}: ${event.date}")
-                    if (event.startTime.isNotBlank()) Text("${localized("Time", "Tyd", "Isikhathi")}: ${event.startTime}")
-                    if (event.location.isNotBlank()) Text("${localized("Location", "Plek", "Indawo")}: ${event.location}")
-                    if (event.registrationDeadline.isNotBlank()) {
-                        Spacer(Modifier.height(8.dp))
-                        Text("${localized("Registration closes", "Registrasie sluit", "Ukubhalisa kuyavalwa")}: ${event.registrationDeadline}")
-                    }
-                    if (event.description.isNotBlank()) {
-                        Spacer(Modifier.height(12.dp))
-                        Text(event.description)
+        EventDetailsDialog(event, onDismiss = { selectedEvent = null }, onPayment = onPayment)
+    }
+}
+
+@Composable
+internal fun EventDetailsDialog(event: JudoEvent, onDismiss: () -> Unit, onPayment: ((String) -> Unit)?) {
+    val context = LocalContext.current
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        title = { Text(event.title, fontWeight = FontWeight.Bold) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                Text("${localized("Date", "Datum", "Usuku")}: ${event.date}")
+                if (event.startTime.isNotBlank()) Text("${localized("Time", "Tyd", "Isikhathi")}: ${event.startTime}")
+                if (event.location.isNotBlank()) Text("${localized("Location", "Plek", "Indawo")}: ${event.location}")
+                if (event.registrationDeadline.isNotBlank()) {
+                    Spacer(Modifier.height(8.dp))
+                    Text("${localized("Registration closes", "Registrasie sluit", "Ukubhalisa kuyavalwa")}: ${event.registrationDeadline}")
+                }
+                if (event.description.isNotBlank()) {
+                    Spacer(Modifier.height(12.dp))
+                    Text(event.description)
+                }
+                if (event.qrCode.isNotBlank()) {
+                    val url = publicMediaUrl(event.qrCode)
+                    var qrFailed by remember(url) { mutableStateOf(false) }
+                    if (url != null && !qrFailed) {
+                        AsyncImage(model = url, contentDescription = "Registration QR code", modifier = Modifier.fillMaxWidth().height(160.dp), onError = { qrFailed = true })
+                    } else {
+                        Text(localized("The registration QR code could not load. Use the registration link if available.", "Die registrasie-QR-kode kon nie laai nie. Gebruik die registrasieskakel indien beskikbaar.", "Ikhodi ye-QR yokubhalisa ayilayishwanga. Sebenzisa isixhumanisi sokubhalisa uma sikhona."), color = MaterialTheme.colorScheme.error)
                     }
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = { selectedEvent = null }) { Text(localized("Close", "Sluit", "Vala")) }
+                if (event.registrationUrl.isNotBlank()) {
+                    TextButton(onClick = { openPublicWebsite(context, event.registrationUrl) }) {
+                        Text(localized("Open registration", "Maak registrasie oop", "Vula ukubhalisa"))
+                    }
+                } else {
+                    Text(localized("No registration link has been published.", "Geen registrasieskakel is gepubliseer nie.", "Asikho isixhumanisi sokubhalisa esishicilelwe."))
+                }
+                if (event.paymentRequired && onPayment != null) {
+                    TextButton(onClick = { onDismiss(); onPayment(event.id) }) {
+                        Text(localized("Payment details / Upload proof", "Betalingsbesonderhede / Laai bewys op", "Imininingwane yenkokhelo / Layisha ubufakazi"))
+                    }
+                }
             }
-        )
-    }
+        },
+        confirmButton = {
+            TextButton(onClick = { onDismiss() }) { Text(localized("Close", "Sluit", "Vala")) }
+        }
+    )
 }

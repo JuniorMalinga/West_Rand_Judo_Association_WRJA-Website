@@ -63,11 +63,11 @@ fun WebsiteStandardEvents(onBack: () -> Unit) {
         description = localized("Upcoming WRJA gradings, training camps and association events.", "Komende WRJA-graderings, oefenkampe en verenigingsgeleenthede.", "Ukukleliswa kwe-WRJA okuzayo, amakamu okuqeqesha nemicimbi yenhlangano."),
         onBack = onBack
     )
-    SupabaseEvents()
+    SupabaseEvents(EventListKind.STANDARD)
 }
 
 @Composable
-fun WebsiteEventsCalendar(onBack: () -> Unit) {
+fun WebsiteEventsCalendar(onBack: () -> Unit, onPayment: (String) -> Unit) {
     WebsiteEventCategoryHeader(
         title = localized("Calendar", "Kalender", "Ikhalenda"),
         description = localized("Keep track of upcoming WRJA events and important dates.", "Hou tred met komende WRJA-geleenthede en belangrike datums.", "Landela imicimbi ezayo ye-WRJA nezinsuku ezibalulekile."),
@@ -75,11 +75,11 @@ fun WebsiteEventsCalendar(onBack: () -> Unit) {
     )
     Text(localized("UPCOMING WRJA EVENTS", "KOMENDE WRJA-GELEENTHEDE", "IMICIMBI YE-WRJA EZAYO"), color = WrjaGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
     Spacer(Modifier.height(10.dp))
-    SupabaseEvents()
+    SupabaseEvents(onPayment = onPayment)
     Spacer(Modifier.height(20.dp))
     Text(localized("COMPETITION DATES", "KOMPETISIEDATUMS", "IZINSUKU ZEMINCINTISWANO"), color = WrjaGold, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
     Spacer(Modifier.height(10.dp))
-    CompetitionCalendar()
+    CompetitionCalendar(onPayment)
 }
 
 @Composable
@@ -166,8 +166,8 @@ fun WebsiteStore(
     StoreProductCard(
         label = "WRJA & JSA",
         title = "Tracksuits",
-        description = "Official WRJA and JSA tracksuits for athletes, coaches and supporters. Select your requirements through the WRJA ordering flow.",
-        action = "SHOP TRACKSUITS",
+        description = "Official WRJA and JSA tracksuits for athletes, coaches and supporters. Contact WRJA to ask about sizes, prices and ordering.",
+        action = "ENQUIRE ABOUT TRACKSUITS",
         onClick = onTracksuitClick,
         revealIndex = 1
     )

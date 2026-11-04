@@ -162,7 +162,7 @@ internal object SupabasePayments {
                     }
                     throw EftHttpException(status, message)
                 }
-                connection.inputStream.use { it.readBytes() }
+                connection.inputStream.readBoundedBytes()
             } finally { connection.disconnect() }
         }
     }

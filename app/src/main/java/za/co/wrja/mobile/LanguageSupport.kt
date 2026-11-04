@@ -89,41 +89,85 @@ fun localized(english: String, afrikaans: String, isiZulu: String): String =
         AppLanguage.ISIZULU -> isiZulu
     }
 
-/** Only letters, spaces, apostrophes and hyphens are valid in a person's name. */
-fun sanitizePersonName(value: String): String =
-    value.filter { character ->
-        character.isLetter() || character == ' ' || character == '-' ||
-            character == '\'' || character == '’'
-    }
+internal object InputLimits {
+    const val NAME = 60
+    const val CONTACT_NAME = 100
+    const val RESET_NAME = 120
+    const val BOOKING_NAME = 150
+    const val EMAIL = 254
+    const val PHONE = 30
+    const val PHONE_DIGITS = 15
+    const val PASSWORD = 128
+    const val LOGIN_PASSWORD = 1024
+    const val CONTACT_MESSAGE = 3000
+    const val BOOKING_NOTES = 2000
+    const val CHAT_MESSAGE = 2000
+    const val WEIGHT_CATEGORY = 60
+}
 
-fun isValidPersonName(value: String): Boolean {
+// Reject overlong edits, especially pasted passwords and numbers; never silently
+// submit a truncated value that might belong to someone else.
+internal fun boundedInput(previous: String, candidate: String, max: Int): String =
+    if (candidate.length <= max || candidate.length < previous.length) candidate else previous
+
+private fun Char.isNameCharacter(): Boolean =
+    isLetter() || this in " .-'’" || Character.getType(this) in setOf(
+        Character.NON_SPACING_MARK.toInt(), Character.COMBINING_SPACING_MARK.toInt()
+    )
+
+internal fun editPersonName(previous: String, candidate: String, max: Int = InputLimits.NAME): String =
+    boundedInput(previous, candidate.filter { it.isNameCharacter() }, max)
+
+fun isValidPersonName(value: String, max: Int = InputLimits.NAME): Boolean {
     val trimmed = value.trim()
-    return trimmed.length >= 2 && trimmed.any(Char::isLetter) &&
-        trimmed.all { character ->
-            character.isLetter() || character == ' ' || character == '-' ||
-                character == '\'' || character == '’'
-        }
+    return value.length <= max && trimmed.isNotEmpty() && trimmed.any(Char::isLetter) &&
+        trimmed.all { it.isNameCharacter() }
 }
 
 fun isValidEmailAddress(value: String): Boolean =
-    android.util.Patterns.EMAIL_ADDRESS.matcher(value.trim()).matches()
+    value.length <= InputLimits.EMAIL && android.util.Patterns.EMAIL_ADDRESS.matcher(value.trim()).matches()
 
 fun isValidRegistrationPassword(value: String): Boolean =
-    value.length >= 8 && value.any(Char::isLetter) && value.any(Char::isDigit)
+    value.length in 8..InputLimits.PASSWORD && value.any { it in 'A'..'Z' || it in 'a'..'z' } &&
+        value.any { it in '0'..'9' } && value.none(Char::isISOControl)
 
-/** Keep telephone input readable while preventing letters and other invalid symbols. */
-fun sanitizePhoneNumber(value: String): String =
-    value.filter { character -> character.isDigit() || character in setOf('+', ' ', '-', '(', ')') }
+private fun Char.isPhoneCharacter() = this in '0'..'9' || this in "+ -()."
+
+internal fun editPhoneNumber(previous: String, candidate: String): String {
+    val clean = candidate.filter { it.isPhoneCharacter() }
+    if (clean.indexOf('+') > 0 || clean.count { it == '+' } > 1 ||
+        clean.count { it in '0'..'9' } > InputLimits.PHONE_DIGITS) return previous
+    return boundedInput(previous, clean, InputLimits.PHONE)
+}
 
 fun isValidPhoneNumber(value: String): Boolean {
     val trimmed = value.trim()
-    return trimmed.count(Char::isDigit) in 7..15 &&
-        trimmed.all { character -> character.isDigit() || character in setOf('+', ' ', '-', '(', ')') }
+    if (value.length > InputLimits.PHONE || trimmed.count { it in '0'..'9' } !in 7..InputLimits.PHONE_DIGITS ||
+        !trimmed.all { it.isPhoneCharacter() } || trimmed.indexOf('+') > 0 || trimmed.count { it == '+' } > 1 ||
+        trimmed.first() !in "+(0123456789" || trimmed.last() !in ")0123456789") return false
+    var open = false
+    var digitsInGroup = false
+    for (char in trimmed) when {
+        char == '(' -> { if (open) return false; open = true; digitsInGroup = false }
+        char == ')' -> { if (!open || !digitsInGroup) return false; open = false }
+        open && char in '0'..'9' -> digitsInGroup = true
+    }
+    return !open
 }
+
+internal fun editBirthDate(previous: String, candidate: String): String =
+    boundedInput(previous, candidate.filter { it in '0'..'9' || it == '-' }, 10)
+
+internal fun isValidBirthDate(value: String): Boolean =
+    value.matches(Regex("[0-9]{4}-[0-9]{2}-[0-9]{2}")) &&
+        runCatching {
+            val date = LocalDate.parse(value)
+            date.year > 0 && !date.isAfter(LocalDate.now())
+        }.getOrDefault(false)
 
 fun isValidAdultDate(value: String): Boolean = try {
     val birthDate = LocalDate.parse(value.trim())
-    !birthDate.isAfter(LocalDate.now()) && Period.between(birthDate, LocalDate.now()).years >= 18
+    isValidBirthDate(value.trim()) && Period.between(birthDate, LocalDate.now()).years >= 18
 } catch (_: Exception) {
     false
 }

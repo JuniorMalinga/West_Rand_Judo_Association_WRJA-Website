@@ -3,6 +3,8 @@ package za.co.wrja.mobile
 import android.os.Bundle
 import android.hardware.fingerprint.FingerprintManager
 import androidx.activity.compose.LocalActivity
+import androidx.activity.SystemBarStyle
+import androidx.activity.enableEdgeToEdge
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
@@ -11,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.Image
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
@@ -32,6 +35,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -78,6 +82,12 @@ private val WRJAShapes = Shapes(
 
 /** Conversation model; a remote chat service can use this same shape later. */
 private data class ChatMessageUi(val text: String, val fromAssistant: Boolean)
+private class ChatConversation {
+    val messages = mutableStateListOf<ChatMessageUi>()
+    val onlineExchanges = ArrayDeque<WebsiteChatExchange>()
+    var draft by mutableStateOf("")
+    var sending by mutableStateOf(false)
+}
 
 private fun localChatReply(question: String, language: AppLanguage): String {
     val query = question.lowercase()
@@ -127,7 +137,7 @@ private fun localChatReply(question: String, language: AppLanguage): String {
             "belts" -> "Belt progress is earned through regular training, skill development and gradings. Your coach will guide you on readiness for the next grade."
             "safety" -> "Safety comes first: coaches teach safe falling, controlled practice and respectful partner work. Tell your coach about any injury or health concern before training."
             "membership" -> "You can start by creating an account and booking a free trial. The club can then guide you through the membership and registration steps."
-            "newsletter" -> "You can subscribe on the News page to receive WRJA announcements, results and upcoming event information."
+            "newsletter" -> "The app does not offer newsletter signup. Enable club notifications in the menu or contact WRJA about email updates."
             "greeting" -> "Hello! Ask me about programmes, a free trial, events, or how to contact a club."
             else -> "I can help with programmes, trials, schedules, fees, ages, uniforms, belts, safety, membership, events, newsletters and club contacts."
         }
@@ -151,7 +161,7 @@ private fun localChatReply(question: String, language: AppLanguage): String {
             "belts" -> "Gordelvordering word deur gereelde oefening, vaardigheidsontwikkeling en graderings verdien. Jou afrigter sal jou gereedheid lei."
             "safety" -> "Veiligheid kom eerste: afrigters leer veilige valtegnieke en beheerde oefening. Vertel jou afrigter van enige besering of gesondheidskwessie."
             "membership" -> "Begin deur ’n rekening te skep en ’n gratis proefsessie te bespreek. Die klub sal jou dan met lidmaatskap en registrasie help."
-            "newsletter" -> "Jy kan op die Nuus-bladsy inteken vir WRJA-aankondigings, uitslae en komende geleenthede."
+            "newsletter" -> "Die app bied nie nuusbriefintekening nie. Aktiveer klubkennisgewings in die kieslys of kontak WRJA oor e-posnuus."
             "greeting" -> "Hallo! Vra my oor programme, ’n gratis proefsessie, geleenthede of klubkontakte."
             else -> "Ek kan help met programme, proefsessies, roosters, fooie, ouderdomme, uniforms, gordels, veiligheid, lidmaatskap, geleenthede, nuusbriewe en klubkontakte."
         }
@@ -175,7 +185,7 @@ private fun localChatReply(question: String, language: AppLanguage): String {
             "belts" -> "Ukuqhubeka kwebhande kutholwa ngokuqeqeshwa njalo, ukuthuthukisa amakhono nama-grading. Umqeqeshi wakho uzokuqondisa."
             "safety" -> "Ukuphepha kuqala: abaqeqeshi bafundisa ukuwa ngokuphepha nokuzijwayeza okulawulwayo. Tshela umqeqeshi nganoma yikuphi ukulimala noma ukukhathazeka ngempilo."
             "membership" -> "Qala ngokwakha i-akhawunti bese ubhukha isivivinyo samahhala. Iklabhu izokusiza ngezinyathelo zobulungu nokubhalisa."
-            "newsletter" -> "Ungabhalisela ekhasini Lezindaba ukuze uthole izimemezelo zakwa-WRJA, imiphumela nolwazi lwemicimbi ezayo."
+            "newsletter" -> "Uhlelo alunakho ukubhalisela incwadi yezindaba. Vula izaziso zeklabhu kumenyu noma uthinte i-WRJA ngezindaba ze-imeyili."
             "greeting" -> "Sawubona! Ngibuze ngezinhlelo, isivivinyo samahhala, imicimbi noma indlela yokuxhumana neklabhu."
             else -> "Ngingasiza ngezinhlelo, izivivinyo, izikhathi, izimali, iminyaka, umfaniswano, amabhande, ukuphepha, ubulungu, imicimbi, izindaba nokuxhumana neklabhu."
         }
@@ -185,9 +195,19 @@ private fun localChatReply(question: String, language: AppLanguage): String {
 class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.BLACK)
+        )
         setContentView(
             ComposeView(this).apply {
-                setContent { MaterialTheme(colorScheme = WRJAColorScheme, shapes = WRJAShapes) { WRJAApp() } }
+                setContent {
+                    MaterialTheme(colorScheme = WRJAColorScheme, shapes = WRJAShapes) {
+                        Box(Modifier.fillMaxSize().background(Charcoal).windowInsetsPadding(WindowInsets.safeDrawing.union(WindowInsets.ime))) {
+                            WRJAApp()
+                        }
+                    }
+                }
             }
         )
     }
@@ -196,12 +216,23 @@ class MainActivity : FragmentActivity() {
 @Composable private fun WRJAApp() {
     val activity = LocalActivity.current as? MainActivity
     val context = LocalContext.current.applicationContext
-    var language by remember { mutableStateOf(LanguageStore.read(context)) }
+    var language by remember {
+        mutableStateOf(try { LanguageStore.read(context) } catch (failure: Exception) {
+            reportFailure("Read language preference", failure)
+            AppLanguage.ENGLISH
+        })
+    }
     var sessionChecked by remember { mutableStateOf(false) }
+    var startupFailed by remember { mutableStateOf(false) }
+    var startupAttempt by remember { mutableStateOf(0) }
+    var languageSaveFailed by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        SupabaseAuth.initialize(context)
-        sessionChecked = true
+    LaunchedEffect(startupAttempt) {
+        startupFailed = false
+        sessionChecked = recoverOperation("Start sign-in", { startupFailed = true; false }) {
+            SupabaseAuth.initialize(context)
+            true
+        }
     }
 
     if (!sessionChecked) {
@@ -209,25 +240,46 @@ class MainActivity : FragmentActivity() {
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            CircularProgressIndicator()
+            if (startupFailed) {
+                CompositionLocalProvider(LocalAppLanguage provides language) {
+                    Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(localized("Could not start sign-in. Please try again.", "Kon nie aanmelding begin nie. Probeer asseblief weer.", "Ukungena akuqalanga. Sicela uzame futhi."))
+                        TextButton(onClick = { startupAttempt++ }) { Text(localized("Retry", "Probeer weer", "Zama futhi")) }
+                    }
+                }
+            } else CircularProgressIndicator()
         }
         return
     }
     val scope = rememberCoroutineScope()
     val changeLanguage: (AppLanguage) -> Unit = { selected ->
         language = selected
-        LanguageStore.save(context, selected)
+        try {
+            LanguageStore.save(context, selected)
+        } catch (failure: Exception) {
+            reportFailure("Save language preference", failure)
+            languageSaveFailed = true
+        }
     }
 
     CompositionLocalProvider(LocalAppLanguage provides language) {
+    if (languageSaveFailed) {
+        AlertDialog(
+            onDismissRequest = { languageSaveFailed = false },
+            text = { Text(localized("Language changed, but the preference could not be saved for next time.", "Die taal is verander, maar die voorkeur kon nie vir volgende keer gestoor word nie.", "Ulimi lushintshile, kodwa ukukhetha akugcinwanga ukuze kusetshenziswe ngokuzayo.")) },
+            confirmButton = { TextButton(onClick = { languageSaveFailed = false }) { Text(localized("Close", "Sluit", "Vala")) } }
+        )
+    }
+    val fingerprintUnavailable = localized("Fingerprint sign-in is unavailable. Please use your password.", "Vingerafdrukaanmelding is onbeskikbaar. Gebruik asseblief jou wagwoord.", "Ukungena ngesigxivizo somunwe akutholakali. Sicela usebenzise iphasiwedi yakho.")
     if (!SupabaseAuth.isLoggedIn) {
         SupabaseAuthScreen(
             onLanguageChanged = changeLanguage,
             onFingerprintUnlock = { onError ->
-                if (activity != null) {
-                    activity.requestFingerprintUnlock(onError)
-                } else {
-                    onError("Fingerprint recognition is unavailable in this app session.")
+                try {
+                    if (activity != null) activity.requestFingerprintUnlock(onError) else onError(fingerprintUnavailable)
+                } catch (failure: Exception) {
+                    reportFailure("Open fingerprint prompt", failure)
+                    onError(fingerprintUnavailable)
                 }
             }
         )
@@ -235,6 +287,7 @@ class MainActivity : FragmentActivity() {
         var screen by remember { mutableStateOf("home") }
         var loggingOut by remember { mutableStateOf(false) }
         var logoutError by remember { mutableStateOf<String?>(null) }
+        val signOutFailure = localized("Could not finish signing out on this device. Try again before handing over the device.", "Kon nie op hierdie toestel afmeld nie. Probeer weer voordat jy die toestel oorhandig.", "Ukuphuma kule divayisi akuphumelelanga. Zama futhi ngaphambi kokunikeza omunye umuntu idivayisi.")
 
         MainSite(
             initial = screen,
@@ -251,9 +304,7 @@ class MainActivity : FragmentActivity() {
                         ) {
                             throw cancelled
                         } catch (failure: Exception) {
-                            logoutError =
-                                "Could not log out. Check your connection " +
-                                        "and try again."
+                            logoutError = actionFailure("Sign out", failure, signOutFailure)
                         } finally {
                             loggingOut = false
                         }
@@ -322,13 +373,15 @@ private fun MainActivity.requestFingerprintUnlock(onError: (String) -> Unit) {
         object : BiometricPrompt.AuthenticationCallback() {
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                 lifecycleScope.launch {
-                    runCatching { SupabaseAuth.unlockRememberedSession() }
-                        .onFailure { onError("Your remembered session is no longer available. Please log in with your password.") }
+                    recoverOperation("Unlock remembered session", {
+                        onError("Your remembered session is no longer available. Please log in with your password.")
+                    }) { SupabaseAuth.unlockRememberedSession() }
                 }
             }
 
             override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                if (errorCode != BiometricPrompt.ERROR_USER_CANCELED &&
+                if (errorCode != BiometricPrompt.ERROR_CANCELED &&
+                    errorCode != BiometricPrompt.ERROR_USER_CANCELED &&
                     errorCode != BiometricPrompt.ERROR_NEGATIVE_BUTTON
                 ) onError(errString.toString())
             }
@@ -359,10 +412,10 @@ private fun MainActivity.requestFingerprintUnlock(onError: (String) -> Unit) {
         }
     }
 }
-@Composable private fun Header(title: String) = Box(Modifier.fillMaxWidth().height(176.dp).background(Charcoal), contentAlignment = Alignment.Center) {
-    Image(painterResource(R.drawable.judo_hero), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-    Box(Modifier.fillMaxSize().background(Color(0x99000000)))
-    Column(horizontalAlignment = Alignment.CenterHorizontally) { Text(title.uppercase(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 30.sp); Text("WEST RAND JUDO ASSOCIATION", color = Gold, fontSize = 11.sp, letterSpacing = 1.sp) }
+@Composable private fun Header(title: String) = Box(Modifier.fillMaxWidth().heightIn(min = 176.dp).background(Charcoal), contentAlignment = Alignment.Center) {
+    Image(painterResource(R.drawable.judo_hero), null, Modifier.matchParentSize(), contentScale = ContentScale.Crop)
+    Box(Modifier.matchParentSize().background(Color(0x99000000)))
+    Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) { Text(title.uppercase(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 30.sp, textAlign = TextAlign.Center); Text("WEST RAND JUDO ASSOCIATION", color = Gold, fontSize = 11.sp, letterSpacing = 1.sp, textAlign = TextAlign.Center) }
 }
 
 @Composable
@@ -388,6 +441,7 @@ internal fun LoginScreen(
     val missingPasswordError = localized("Enter your password.", "Voer jou wagwoord in.", "Faka iphasiwedi yakho.")
     val connectionError = localized("Could not connect. Check your connection.", "Kon nie koppel nie. Gaan jou verbinding na.", "Ayikwazanga ukuxhuma. Hlola uxhumano lwakho.")
     val loginFailedError = localized("Login failed.", "Aanmelding het misluk.", "Ukungena kwehlulekile.")
+    val displayAuthFailure = authFailureMessage(connectionError, loginFailedError)
 
     if (showPasswordReset) {
         PasswordResetDialog(initialEmail = email, onDismiss = {
@@ -405,7 +459,7 @@ internal fun LoginScreen(
 
         item {
             Card(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth(),
+                modifier = Modifier.widthIn(max = 560.dp).fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                 colors = CardDefaults.cardColors(containerColor = Charcoal2),
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF3A3A3A)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
@@ -437,7 +491,7 @@ internal fun LoginScreen(
 
                     OutlinedTextField(
                         value = email,
-                        onValueChange = { email = it },
+                        onValueChange = { email = boundedInput(email, it, InputLimits.EMAIL); error = null },
                         label = { Text(tr("email")) },
                         placeholder = { Text("you@example.com") },
                         singleLine = true,
@@ -449,7 +503,7 @@ internal fun LoginScreen(
 
                     OutlinedTextField(
                         value = password,
-                        onValueChange = { password = it },
+                        onValueChange = { password = boundedInput(password, it, InputLimits.LOGIN_PASSWORD); error = null },
                         label = { Text(tr("password")) },
                         placeholder = { Text(tr("your_password")) },
                         singleLine = true,
@@ -467,13 +521,16 @@ internal fun LoginScreen(
                     )
 
                     Spacer(Modifier.height(2.dp))
-                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                            .toggleable(value = rememberMe, enabled = !busy, role = Role.Checkbox, onValueChange = { rememberMe = it }),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                             Box(
                                 modifier = Modifier
                                     .size(20.dp)
                                     .border(1.dp, if (rememberMe) Gold else Muted)
-                                    .background(if (rememberMe) Gold else Color.Transparent)
-                                    .clickable(enabled = !busy) { rememberMe = !rememberMe },
+                                    .background(if (rememberMe) Gold else Color.Transparent),
                                 contentAlignment = Alignment.Center
                             ) {
                                 if (rememberMe) Text("✓", color = Ink, fontWeight = FontWeight.Bold, fontSize = 13.sp)
@@ -485,8 +542,7 @@ internal fun LoginScreen(
                                     tr("fingerprint_unlock"),
                                     color = Muted,
                                     fontSize = 10.sp,
-                                    lineHeight = 13.sp,
-                                    maxLines = 2
+                                    lineHeight = 13.sp
                                 )
                             }
                     }
@@ -556,13 +612,7 @@ internal fun LoginScreen(
                                     ) {
                                         throw cancelled
                                     } catch (failure: Exception) {
-                                        error =
-                                            if (failure is java.io.IOException) {
-                                                connectionError
-                                            } else {
-                                                failure.message
-                                                    ?: loginFailedError
-                                            }
+                                        error = displayAuthFailure(failure)
                                     } finally {
                                         busy = false
                                     }
@@ -572,7 +622,7 @@ internal fun LoginScreen(
                         enabled = !busy,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(52.dp),
+                            .heightIn(min = 52.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Gold,
                             contentColor = Charcoal
@@ -626,8 +676,41 @@ internal fun LoginScreen(
     onLanguageChanged: (AppLanguage) -> Unit
 ) {
     var page by rememberSaveable { mutableStateOf(initial) }
+    var history by rememberSaveable { mutableStateOf(arrayListOf<String>()) }
+    val screenState = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
+    val chat = remember { ChatConversation() }
     val drawer = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    var navigationFailed by remember { mutableStateOf(false) }
+    fun moveMenu(open: Boolean) {
+        scope.launch {
+            recoverOperation("Move navigation menu", { navigationFailed = true }) {
+                if (open) drawer.open() else drawer.close()
+            }
+        }
+    }
+    if (navigationFailed) {
+        AlertDialog(
+            onDismissRequest = { navigationFailed = false },
+            text = { Text(localized("The menu could not respond. Close this message and try again.", "Die kieslys kon nie reageer nie. Sluit hierdie boodskap en probeer weer.", "Imenyu ayiphendulanga. Vala lo mlayezo bese uzama futhi.")) },
+            confirmButton = { TextButton(onClick = { navigationFailed = false }) { Text(localized("Close", "Sluit", "Vala")) } }
+        )
+    }
+    fun navigate(destination: String) {
+        if (destination != page) {
+            history = ArrayList((history + page).takeLast(50))
+            page = destination
+            update(destination)
+        }
+    }
+    androidx.activity.compose.BackHandler(enabled = drawer.isOpen || history.isNotEmpty()) {
+        if (drawer.isOpen) moveMenu(false)
+        else {
+            page = history.lastOrNull() ?: return@BackHandler
+            history = ArrayList(history.dropLast(1))
+            update(page)
+        }
+    }
     val pages = listOf("home" to tr("home"), "my profile" to tr("my_profile"), "about" to tr("about"), "events" to tr("events"), "programs" to tr("programs"), "book" to tr("book"), "news" to tr("news"), "gallery" to tr("gallery"), "faq" to tr("faq"), "contact" to tr("contact"), "chat assistant" to tr("chat_assistant"))
     ModalNavigationDrawer(
         drawerState = drawer,
@@ -641,11 +724,11 @@ internal fun LoginScreen(
                     }
                     HorizontalDivider(color = Color(0xFF343434), modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                     pages.forEach { (route, label) ->
-                        val selected = route == page
+                        val selected = route == page.substringBefore('/')
                         NavigationDrawerItem(
                             label = { Text(label, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium) },
                             selected = selected,
-                            onClick = { page = route; update(page); scope.launch { drawer.close() } },
+                            onClick = { navigate(route); moveMenu(false) },
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
                             colors = NavigationDrawerItemDefaults.colors(
                                 selectedContainerColor = Color(0xFF443400),
@@ -675,29 +758,36 @@ internal fun LoginScreen(
         }
     ) {
         Scaffold(
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
             topBar = {
-                TopAppBar(
-                    title = { Column { Text("WEST RAND JUDO", fontWeight = FontWeight.Black, fontSize = 16.sp); Text(localized("DISCIPLINE • RESPECT • EXCELLENCE", "DISSIPLINE • RESPEK • UITNEMENDHEID", "ISIMILO • INHLONIPHO • UBUHLE"), color = Gold, fontSize = 8.sp, letterSpacing = 0.8.sp) } },
-                    navigationIcon = { IconButton({ scope.launch { drawer.open() } }) { Icon(Icons.Default.Menu, "Menu") } },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Charcoal, scrolledContainerColor = Charcoal2, titleContentColor = Color.White, navigationIconContentColor = Color.White)
-                )
+                Surface(color = Charcoal, contentColor = Color.White) {
+                    Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(end = 16.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        IconButton({ moveMenu(true) }) { Icon(Icons.Default.Menu, "Menu") }
+                        Column(Modifier.weight(1f)) {
+                            Text("WEST RAND JUDO", fontWeight = FontWeight.Black, fontSize = 16.sp)
+                            Text(localized("DISCIPLINE • RESPECT • EXCELLENCE", "DISSIPLINE • RESPEK • UITNEMENDHEID", "ISIMILO • INHLONIPHO • UBUHLE"), color = Gold, fontSize = 10.sp, letterSpacing = 0.5.sp)
+                        }
+                    }
+                }
             }
         ) { padding ->
             AnimatedContent(targetState = page, transitionSpec = { (slideInHorizontally { it / 7 } + fadeIn()) togetherWith (slideOutHorizontally { -it / 10 } + fadeOut()) }, label = "site page transition") { targetPage ->
-                SitePage(
-                    page = targetPage,
-                    modifier = Modifier.padding(padding),
-                    onNavigate = { destination ->
-                        page = destination
-                        update(destination)
-                    }
-                )
+                screenState.SaveableStateProvider(targetPage) {
+                    SitePage(targetPage, Modifier.padding(padding), ::navigate, chat, scope)
+                }
             }
         }
     }
 }
 
-@Composable private fun SitePage(page: String, modifier: Modifier, onNavigate: (String) -> Unit) {
+@OptIn(ExperimentalLayoutApi::class)
+@Composable private fun SitePage(route: String, modifier: Modifier, onNavigate: (String) -> Unit, chat: ChatConversation, chatScope: kotlinx.coroutines.CoroutineScope) {
+    val page = route.substringBefore('/')
+    val enquiry = when (route) {
+        "contact/tracksuits" -> localized("I'd like to enquire about WRJA tracksuits.", "Ek wil graag navraag doen oor WRJA-sweetpakke.", "Ngicela ulwazi ngama-tracksuit e-WRJA.")
+        "contact/posters" -> localized("I'd like to enquire about WRJA posters.", "Ek wil graag navraag doen oor WRJA-plakkate.", "Ngicela ulwazi ngamaphosta e-WRJA.")
+        else -> ""
+    }
     val descriptions = mapOf(
         "home" to localized("Building discipline, respect, and excellence through judo for athletes of all ages across the West Rand community.", "Bou dissipline, respek en uitnemendheid deur judo vir atlete van alle ouderdomme in die Wes-Rand-gemeenskap.", "Sakha isimilo, inhlonipho nobuhle nge-judo kubasubathi bayo yonke iminyaka emphakathini wase-West Rand."),
         "about" to localized("Building character on and off the mat. We develop confident, disciplined and respectful individuals through judo.", "Bou karakter op en van die mat af. Ons ontwikkel selfversekerde, gedissiplineerde en respekvolle mense deur judo.", "Sakha isimilo ngaphakathi nangaphandle komata. Sithuthukisa abantu abazethembayo, abanesimilo nabahloniphekile nge-judo."),
@@ -711,25 +801,33 @@ internal fun LoginScreen(
         "chat assistant" to localized("Your WRJA guide for training, programmes, events and club information.", "Jou WRJA-gids vir opleiding, programme, geleenthede en klub-inligting.", "Umhlahlandlela wakho wakwa-WRJA wokuqeqesha, izinhlelo, imicimbi nolwazi lweklabhu.")
     )
     val title = when (page) { "home" -> tr("home"); "my profile" -> tr("my_profile"); "about" -> tr("about"); "events" -> tr("events"); "programs" -> tr("programs"); "book" -> tr("book"); "news" -> tr("news"); "gallery" -> tr("gallery"); "faq" -> tr("faq"); "contact" -> tr("contact"); "chat assistant" -> tr("chat_assistant"); else -> page.replaceFirstChar { it.uppercase() } }
-    LazyColumn(modifier.fillMaxSize().background(Charcoal)) {
+    BoxWithConstraints(modifier.fillMaxSize().background(Charcoal), contentAlignment = Alignment.TopCenter) {
+    val gutter = pageGutter(maxWidth)
+    val contentMax = when (page) {
+        "gallery" -> 1000.dp
+        "book", "my profile", "contact" -> 680.dp
+        else -> 820.dp
+    }
+    val contentWidth = (minOf(maxWidth, contentMax) - gutter * 2).coerceAtLeast(0.dp)
+    LazyColumn(Modifier.widthIn(max = 1120.dp).fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         item {
-            Box(Modifier.fillMaxWidth().height(if (page == "home") 320.dp else 170.dp).background(Charcoal2), contentAlignment = if (page == "home") Alignment.BottomStart else Alignment.Center) {
-                if (page == "home") Image(painterResource(R.drawable.landing_1), "WRJA members training together", Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0x44000000), Charcoal))))
-                Column(Modifier.padding(28.dp), horizontalAlignment = if (page == "home") Alignment.Start else Alignment.CenterHorizontally) {
+            Box(Modifier.fillMaxWidth().heightIn(min = if (page == "home") 300.dp else 144.dp).background(Charcoal2), contentAlignment = if (page == "home") Alignment.BottomStart else Alignment.Center) {
+                if (page == "home") Image(painterResource(R.drawable.landing_1), "WRJA members training together", Modifier.matchParentSize(), contentScale = ContentScale.Crop)
+                Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color(0x44000000), Charcoal))))
+                Column(Modifier.padding(horizontal = gutter, vertical = 24.dp), horizontalAlignment = if (page == "home") Alignment.Start else Alignment.CenterHorizontally) {
                     Text(if (page == "home") localized("WELCOME TO\nWEST RAND JUDO\nASSOCIATION", "WELKOM BY\nWEST RAND JUDO\nASSOCIATION", "SIYAKWAMUKELA E\nWEST RAND JUDO\nASSOCIATION") else title.uppercase(), color = Color.White, fontSize = if (page == "home") 29.sp else 29.sp, fontWeight = FontWeight.Black, textAlign = if (page == "home") TextAlign.Start else TextAlign.Center)
                     Spacer(Modifier.height(7.dp)); Text(if (page == "home") localized("DISCIPLINE  •  RESPECT  •  EXCELLENCE", "DISSIPLINE  •  RESPEK  •  UITNEMENDHEID", "ISIMILO  •  INHLONIPHO  •  UBUHLE") else "${tr("home").uppercase()}  /  $title", color = Gold, fontSize = 11.sp, letterSpacing = 1.sp, fontWeight = FontWeight.Bold)
                     if (page == "home") {
                         Spacer(Modifier.height(14.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Button(
                                 onClick = { onNavigate("contact") },
-                                modifier = Modifier.height(44.dp),
+                                modifier = Modifier.heightIn(min = 48.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Charcoal)
                             ) { Text(localized("CONTACT THE CLUB", "KONTAK DIE KLUB", "XHUMANA NEKLABHU"), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold) }
                             OutlinedButton(
                                 onClick = { onNavigate("about") },
-                                modifier = Modifier.height(44.dp),
+                                modifier = Modifier.heightIn(min = 48.dp),
                                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Ink),
                                 border = androidx.compose.foundation.BorderStroke(1.dp, Gold)
                             ) { Text(localized("LEARN MORE", "LEES MEER", "FUNDA KABANZI"), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold) }
@@ -739,12 +837,15 @@ internal fun LoginScreen(
             }
         }
         item {
-            Column(Modifier.padding(24.dp)) {
+            CompositionLocalProvider(LocalPageWidth provides contentWidth) {
+            Column(Modifier.widthIn(max = contentMax).fillMaxWidth().padding(horizontal = gutter, vertical = 24.dp)) {
                 Text(if (page == "chat assistant") tr("chat_help") else descriptions[page] ?: "", color = Ink, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, lineHeight = 27.sp, modifier = Modifier.wrjaReveal())
                 Spacer(Modifier.height(22.dp))
-                when (page) { "my profile" -> SupabaseMemberProfile(); "book" -> BookScreen(); "contact" -> { ContactForm(); Spacer(Modifier.height(30.dp)); WebsiteContact() }; "chat assistant" -> ChatAssistantScreen(); else -> ContentCards(page, onNavigate) }
+                when (page) { "my profile" -> SupabaseMemberProfile(); "book" -> BookScreen(); "contact" -> { ContactEnquiryForm(enquiry); Spacer(Modifier.height(30.dp)); WebsiteContact() }; "chat assistant" -> ChatAssistantScreen(chat, chatScope); else -> ContentCards(page, onNavigate) }
+            }
             }
         }
+    }
     }
 }
 
@@ -752,6 +853,10 @@ internal fun LoginScreen(
 
     if (page == "home") {
         WebsiteHome()
+        Spacer(Modifier.height(16.dp))
+        Button(onClick = { onNavigate("book") }) {
+            Text(localized("Request a free trial", "Versoek 'n gratis proefsessie", "Cela isivivinyo samahhala"))
+        }
         return
     }
     if (page == "programs") {
@@ -760,18 +865,38 @@ internal fun LoginScreen(
     }
     if (page == "events") {
         var eventSection by rememberSaveable { mutableStateOf("hub") }
+        var paymentEventId by rememberSaveable { mutableStateOf<String?>(null) }
+        var paymentBackSection by rememberSaveable { mutableStateOf("hub") }
+        val eventState = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
+        val showPayment: (String) -> Unit = { id ->
+            paymentBackSection = eventSection
+            paymentEventId = id
+            eventSection = "payment"
+        }
+        androidx.activity.compose.BackHandler(enabled = eventSection != "hub" && eventSection != "payment") { eventSection = "hub" }
         when (eventSection) {
             "standard" -> WebsiteStandardEvents(onBack = { eventSection = "hub" })
-            "calendar" -> WebsiteEventsCalendar(onBack = { eventSection = "hub" })
-            "competitions" -> EftPaymentsScreen(onBack = { eventSection = "hub" })
-            "schools" -> WebsiteSchoolsEvents(
-                onBack = { eventSection = "hub" },
-                onRegistrationClick = { eventSection = "competitions" }
-            )
+            "calendar" -> eventState.SaveableStateProvider("calendar") {
+                WebsiteEventsCalendar(onBack = { eventSection = "hub" }, onPayment = showPayment)
+            }
+            "competitions" -> {
+                TextButton(onClick = { eventSection = "hub" }) { Text(tr("events")) }
+                TextButton(onClick = {
+                    paymentEventId = null
+                    paymentBackSection = "competitions"
+                    eventSection = "payment"
+                }) { Text(localized("EFT payments and submissions", "EFT-betalings en indienings", "Izinkokhelo ze-EFT nokuthunyelwe")) }
+                SupabaseEvents(EventListKind.COMPETITIONS, showPayment)
+            }
+            "schools" -> {
+                TextButton(onClick = { eventSection = "hub" }) { Text(tr("events")) }
+                SupabaseEvents(EventListKind.SCHOOLS, showPayment)
+            }
+            "payment" -> EftPaymentsScreen(onBack = { eventSection = paymentBackSection }, initialEventId = paymentEventId)
             "store" -> WebsiteStore(
                 onBack = { eventSection = "hub" },
-                onTracksuitClick = { onNavigate("contact") },
-                onPosterEnquiryClick = { onNavigate("contact") }
+                onTracksuitClick = { onNavigate("contact/tracksuits") },
+                onPosterEnquiryClick = { onNavigate("contact/posters") }
             )
             else -> WebsiteEventsHub(
                 onStandardEventsClick = { eventSection = "standard" },
@@ -784,7 +909,7 @@ internal fun LoginScreen(
         return
     }
     if (page == "news") {
-        WebsiteNews()
+        SupabaseNews()
         return
     }
     if (page == "about") {
@@ -799,96 +924,40 @@ internal fun LoginScreen(
         WebsiteFaq(onContactClick = { onNavigate("contact") })
         return
     }
-    val content = when (page) {
-        "programs" -> listOf("Kids Judo" to "Balance, safe falling, discipline and confidence.", "Adult Judo" to "Throws, groundwork and conditioning for all grades.", "Women's Judo" to "A supportive space to train, compete and grow.")
-        "news" -> listOf("National success for Golden Score judokas" to "Golden Score athletes earned four gold, six silver and four bronze medals at the National Schools and SA Open Judo Championships.", "African Cup medals" to "KJK Judo athletes brought home gold, silver and bronze results from the African Cup tournament.", "Africa's best" to "Dane van Heerden won Cadet Boys under-50kg gold, while Madison Lombaard earned silver.")
-        "events" -> listOf("Events calendar" to "Use the monthly calendar below to plan around association activities, competitions and gradings.", "Club gradings" to "A clear belt-progression pathway with regular opportunities to demonstrate growth.", "Training camps" to "Special development sessions, seminars and club activities are published here as dates are confirmed.")
-        "gallery" -> listOf("Browse the gallery" to "Filter moments from Kids Judo, Adult Judo and competitions. Tap an image to view it in a future lightbox update.", "Training" to "Technique, teamwork and regular dojo sessions across our member clubs.", "Competition" to "Celebrating athletes representing the West Rand on regional, national and African stages.")
-        else -> listOf("Our mission" to "To develop confident, disciplined and respectful individuals through the practice of judo.", "Our values" to "Respect, discipline, integrity, perseverance and continuous self-improvement guide every session.", "A strong community" to "We support athletes, families, coaches, referees and officials across recreational to international levels.")
-    }
-    content.forEachIndexed { index, (heading, text) -> Card(Modifier.fillMaxWidth().height(if (page == "programs") 190.dp else 112.dp).padding(bottom = 14.dp), elevation = CardDefaults.cardElevation(3.dp)) { Box { if (page == "programs") { val image = listOf(R.drawable.kids_judo, R.drawable.adult_judo, R.drawable.womens_judo)[index]; Image(painterResource(image), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop); Box(Modifier.fillMaxSize().background(Color(0x99000000))) }; Row(Modifier.padding(18.dp).align(Alignment.BottomStart), verticalAlignment = Alignment.CenterVertically) { if (page != "programs") { Box(Modifier.size(52.dp).background(if (page == "gallery") Charcoal else Color(0x22C9A227)), contentAlignment = Alignment.Center) { Text(if (page == "gallery") "PHOTO" else "WRJA", color = Gold, fontSize = 9.sp, fontWeight = FontWeight.Bold) }; Spacer(Modifier.width(15.dp)) }; Column { Text(heading, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = if (page == "programs") Color.White else Ink); Text(text, color = if (page == "programs") Color.LightGray else Muted, fontSize = 14.sp, lineHeight = 20.sp) } } } } }
-    when (page) {
-        "home" -> { Spacer(Modifier.height(8.dp)); Button({}, colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Ink)) { Text("BOOK A FREE TRIAL") } }
-        "about" -> AboutDetail()
-        "events" -> EventsCalendarPreview()
-        "news" -> NewsDetailList()
-        "gallery" -> GalleryPhotoGrid()
-    }
 }
 
-@Composable private fun ContactForm() {
-    ContactEnquiryForm()
-}
 
-@Composable private fun AboutDetail() {
-    Spacer(Modifier.height(18.dp)); Text("OUR INSTRUCTORS & FACILITATORS", fontSize = 22.sp, fontWeight = FontWeight.Bold)
-    Spacer(Modifier.height(12.dp)); InstructorDetail("Sensei Katja Bruwer", "Director — KJK Judo Club", "7th Dan, former South African national team captain and IJF-qualified coach. With more than four decades in judo, she has developed athletes from grassroots to Commonwealth and African levels.", R.drawable.sensei_katja)
-    InstructorDetail("Sensei Michelle Diamond", "Founder & Director — Golden Score Judo", "3rd Dan Black Belt and Sport Psychology graduate. Her coaching combines competitive athlete development with character, discipline, respect and personal growth.", R.drawable.sensei_michelle)
-    Text("AFFILIATED CLUBS", fontSize = 22.sp, fontWeight = FontWeight.Bold); Text("Golden Score Judo and KJK Judo work together under the WRJA community to create accessible, high-quality training opportunities.", color = Muted, lineHeight = 21.sp)
-}
-
-@Composable private fun InstructorDetail(name: String, role: String, bio: String, photo: Int) {
-    Card(Modifier.fillMaxWidth().padding(bottom = 16.dp)) { Column { Box(Modifier.fillMaxWidth().height(240.dp).background(Charcoal2), contentAlignment = Alignment.Center) { Image(painterResource(photo), null, Modifier.fillMaxSize().padding(8.dp), contentScale = ContentScale.Fit) }; Column(Modifier.padding(16.dp)) { Text(name, fontWeight = FontWeight.Bold, fontSize = 19.sp); Text(role.uppercase(), color = GoldDark, fontSize = 12.sp, fontWeight = FontWeight.Bold); Spacer(Modifier.height(6.dp)); Text(bio, color = Muted, fontSize = 14.sp, lineHeight = 20.sp) } } }
-}
-
-@Composable
-private fun EventsCalendarPreview() {
-    CompetitionCalendar()
-}
-
-@Composable private fun NewsDetailList() {
-    Spacer(Modifier.height(18.dp)); Text("LATEST STORIES", fontSize = 22.sp, fontWeight = FontWeight.Bold); NewsStory(R.drawable.news_1, "4 August 2026", "Competition", "National success for Golden Score judokas", "Golden Score athletes returned from the National Schools and SA Open Judo Championships in Gqeberha with four gold, six silver and four bronze medals across multiple age divisions."); NewsStory(R.drawable.news_2, "24 July 2026", "Competition", "4 KJK Judo athletes claim medals at African Cup", "Tia Sheppard, Shasa-Mercedez Erasmus, Adriaan Jansen van Vuuren and Nico Sheppard combined for medal-winning performances.")
-    Text("NEWSLETTER", fontSize = 20.sp, fontWeight = FontWeight.Bold); Text("Subscribe to stay up to date with club results, announcements and upcoming events.", color = Muted); Spacer(Modifier.height(8.dp)); OutlinedTextField("", {}, label = { Text("Enter your email") }, modifier = Modifier.fillMaxWidth()); Spacer(Modifier.height(10.dp)); Button({}, colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Ink)) { Text("SUBSCRIBE") }
-}
-
-@Composable private fun NewsStory(photo: Int, date: String, category: String, title: String, excerpt: String) {
-    Card(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 8.dp)) { Column { Image(painterResource(photo), null, Modifier.fillMaxWidth().height(180.dp), contentScale = ContentScale.Crop); Column(Modifier.padding(16.dp)) { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text(date, color = Muted, fontSize = 11.sp); Text(category.uppercase(), color = GoldDark, fontSize = 11.sp, fontWeight = FontWeight.Bold) }; Spacer(Modifier.height(6.dp)); Text(title, fontSize = 19.sp, fontWeight = FontWeight.Bold); Spacer(Modifier.height(6.dp)); Text(excerpt, color = Muted, fontSize = 14.sp, lineHeight = 20.sp); Spacer(Modifier.height(8.dp)); Text("READ ARTICLE  →", color = GoldDark, fontSize = 12.sp, fontWeight = FontWeight.Bold) } } }
-}
-
-@Composable private fun GalleryPhotoGrid() {
-    Spacer(Modifier.height(18.dp)); Text("PHOTO GALLERY", fontSize = 22.sp, fontWeight = FontWeight.Bold); Text("ALL    KIDS JUDO    ADULT JUDO    WOMEN'S JUDO    COMPETITIONS", color = GoldDark, fontSize = 10.sp, fontWeight = FontWeight.Bold, lineHeight = 19.sp); Spacer(Modifier.height(12.dp));
-    val photos = listOf(R.drawable.gallery_adult_1 to "Adult Judo training", R.drawable.gallery_competition_1 to "Competition action", R.drawable.gallery_kid_1 to "Kids Judo training"); photos.chunked(2).forEach { row -> Row(Modifier.fillMaxWidth()) { row.forEach { (photo, caption) -> Box(Modifier.weight(1f).height(145.dp).padding(4.dp)) { Image(painterResource(photo), caption, Modifier.fillMaxSize(), contentScale = ContentScale.Crop); Box(Modifier.fillMaxWidth().align(Alignment.BottomCenter).background(Color(0x99000000)).padding(7.dp)) { Text(caption, color = Color.White, fontSize = 11.sp) } } }; if (row.size == 1) Spacer(Modifier.weight(1f)) } }; Text("More images will appear here as the gallery grows. Image selection and lightbox browsing are display-only until backend/content administration is connected.", color = Muted, fontSize = 13.sp, lineHeight = 19.sp, modifier = Modifier.padding(top = 10.dp))
-}
-
-@Composable private fun ChatAssistantScreen() {
+@Composable private fun ChatAssistantScreen(chat: ChatConversation, coroutineScope: kotlinx.coroutines.CoroutineScope) {
     val language = LocalAppLanguage.current
-    val context = LocalContext.current.applicationContext
     val welcome = tr("chat_welcome")
     val help = tr("chat_help")
-    val messages = remember(language, welcome, help) {
-        mutableStateListOf(
-            ChatMessageUi(welcome, true),
-            ChatMessageUi(help, true)
-        )
-    }
-    var draft by rememberSaveable { mutableStateOf("") }
-    var sessionId by rememberSaveable { mutableStateOf(WebsiteChatSessionStore.read(context)) }
-    var isSending by remember { mutableStateOf(false) }
-    val coroutineScope = rememberCoroutineScope()
+    val messages = chat.messages
+    val isSending = chat.sending
+    val offlineNotice = localized("The online assistant is unavailable. Here’s an offline answer:", "Die aanlyn assistent is onbeskikbaar. Hier is 'n vanlyn antwoord:", "Umsizi we-inthanethi akatholakali. Nansi impendulo engaxhunyiwe:")
+    val limitedNotice = localized("The online assistant is receiving too many messages. Wait a moment before trying again. Here’s an offline answer:", "Die aanlyn assistent ontvang te veel boodskappe. Wag 'n oomblik voor jy weer probeer. Hier is 'n vanlyn antwoord:", "Umsizi we-inthanethi uthola imilayezo eminingi kakhulu. Linda isikhashana ngaphambi kokuzama futhi. Nansi impendulo engaxhunyiwe:")
 
     fun sendQuestion(rawQuestion: String) {
-        val question = rawQuestion.trim()
-        if (question.isBlank() || isSending) return
+        val question = rawQuestion.replace("\u0000", "").trim()
+        if (question.isBlank() || question.length > InputLimits.CHAT_MESSAGE || chat.sending) return
 
         messages += ChatMessageUi(question, false)
-        draft = ""
-        isSending = true
+        chat.draft = ""
+        chat.sending = true
         coroutineScope.launch {
             try {
-                val result = WebsiteChatApi.send(question, sessionId)
-                result.sessionId?.let { returnedSessionId ->
-                    sessionId = returnedSessionId
-                    WebsiteChatSessionStore.save(context, returnedSessionId)
-                }
-                messages += ChatMessageUi(
-                    result.answer ?: result.error ?: localChatReply(question, language),
-                    true
-                )
-            } catch (_: Exception) {
+                val result = WebsiteChatApi.send(question, chat.onlineExchanges.toList())
+                chat.onlineExchanges.addLast(WebsiteChatExchange(question, result.answer))
+                if (chat.onlineExchanges.size > 12) chat.onlineExchanges.removeFirst()
+                messages += ChatMessageUi(result.answer, true)
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                reportFailure("Ask online assistant", failure)
                 // Retain the useful offline assistant when the server or connection is unavailable.
-                messages += ChatMessageUi(localChatReply(question, language), true)
+                val notice = if (failure is WebsiteChatHttpFailure && failure.status == 429) limitedNotice else offlineNotice
+                messages += ChatMessageUi("$notice\n\n${localChatReply(question, language)}", true)
             } finally {
-                isSending = false
+                chat.sending = false
             }
         }
     }
@@ -904,7 +973,9 @@ private fun EventsCalendarPreview() {
         }
     }
     Spacer(Modifier.height(16.dp))
-    messages.forEachIndexed { index, message -> ChatBubble(message, index) }
+    ChatBubble(ChatMessageUi(welcome, true), 0)
+    ChatBubble(ChatMessageUi(help, true), 1)
+    messages.forEachIndexed { index, message -> ChatBubble(message, index + 2) }
     if (isSending) {
         Row(Modifier.padding(bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Gold, strokeWidth = 2.dp)
@@ -921,9 +992,9 @@ private fun EventsCalendarPreview() {
     Spacer(Modifier.height(14.dp))
     Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Charcoal2), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF3C3C3C)), elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)) {
         Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(value = draft, onValueChange = { draft = it }, placeholder = { Text(tr("ask_assistant")) }, enabled = !isSending, modifier = Modifier.weight(1f), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Gold, unfocusedBorderColor = Color.LightGray))
+            OutlinedTextField(value = chat.draft, onValueChange = { chat.draft = boundedInput(chat.draft, it, InputLimits.CHAT_MESSAGE) }, placeholder = { Text(tr("ask_assistant")) }, enabled = !isSending, modifier = Modifier.weight(1f), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Gold, unfocusedBorderColor = Color.LightGray))
             Spacer(Modifier.width(8.dp))
-            IconButton(onClick = { sendQuestion(draft) }, enabled = draft.isNotBlank() && !isSending, colors = IconButtonDefaults.iconButtonColors(contentColor = Ink, disabledContentColor = Muted)) { Icon(Icons.Default.Send, "Send message") }
+            IconButton(onClick = { sendQuestion(chat.draft) }, enabled = chat.draft.isNotBlank() && !isSending, colors = IconButtonDefaults.iconButtonColors(contentColor = Ink, disabledContentColor = Muted)) { Icon(Icons.Default.Send, "Send message") }
         }
     }
     Text(tr("chat_preview"), color = Muted, fontSize = 11.sp, lineHeight = 16.sp, modifier = Modifier.padding(top = 10.dp))
@@ -932,7 +1003,7 @@ private fun EventsCalendarPreview() {
 @Composable private fun ChatBubble(message: ChatMessageUi, index: Int) {
     Row(Modifier.fillMaxWidth().padding(bottom = 10.dp), horizontalArrangement = if (message.fromAssistant) Arrangement.Start else Arrangement.End) {
         Surface(color = if (message.fromAssistant) Charcoal2 else Gold, shape = MaterialTheme.shapes.medium, tonalElevation = 4.dp, shadowElevation = 4.dp, border = if (message.fromAssistant) androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF343434)) else null, modifier = Modifier.wrjaReveal(index)) {
-            Text(message.text, Modifier.padding(horizontal = 15.dp, vertical = 12.dp).widthIn(max = 265.dp), color = if (message.fromAssistant) Ink else Charcoal, fontSize = 14.sp, lineHeight = 20.sp)
+            Text(message.text, Modifier.widthIn(max = minOf(LocalPageWidth.current * 0.88f, 600.dp)).padding(horizontal = 15.dp, vertical = 12.dp), color = if (message.fromAssistant) Ink else Charcoal, fontSize = 14.sp, lineHeight = 20.sp)
         }
     }
 }

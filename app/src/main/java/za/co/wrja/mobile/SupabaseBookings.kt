@@ -42,6 +42,10 @@ object SupabaseBookings {
     }
 
     suspend fun submit(booking: BookingRequest) {
+        require(isValidPersonName(booking.fullName, InputLimits.BOOKING_NAME)) { "Enter a valid full name." }
+        require(isValidEmailAddress(booking.email)) { "Enter a valid email address." }
+        require(isValidPhoneNumber(booking.phone)) { "Enter a valid phone number." }
+        require(booking.notes.length <= InputLimits.BOOKING_NOTES) { "Notes must not exceed 2,000 characters." }
         check(SupabaseAuth.isLoggedIn) { "Please log in before requesting a booking." }
         val token = SupabaseAuth.accessToken()
         val id = UUID.fromString(booking.id).toString()
@@ -80,7 +84,7 @@ object SupabaseBookings {
                 "GET", "rest/v1/trial_requests?select=id&id=eq.$id&requester_profile_id=eq.$userId", token
             )
             if (existing.status !in 200..299) {
-                throw IllegalStateException(
+                throw UserFacingFailure(
                     "This request may already be saved, but the app cannot verify it. " +
                         "Ask the club to check before submitting another request."
                 )
@@ -100,29 +104,28 @@ object SupabaseBookings {
         if (response.status !in 200..299) throw failure(response)
     }
 
-    private fun failure(response: Response): IllegalStateException {
+    private fun failure(response: Response): UserFacingFailure {
         val code = errorCode(response)
         val message = when {
             code == "23502" ->
-                "A required database field was missing. Share the trial_requests table definition so the app payload can be matched."
+                "A required booking detail was missing. Review the form or contact WRJA for help."
             code == "22P02" || code == "23514" ->
-                "A booking value does not match the existing database rules. Share the table definition to check the allowed values."
+                "A booking detail was not accepted. Review the form before retrying."
             code == "23503" ->
                 "The selected program or your profile is unavailable. Refresh programs and try again."
             response.status == 401 ->
-                "Your session or app key was rejected. Log in again and check the existing Supabase configuration."
+                "Your session was not accepted. Sign out and sign in again."
             response.status == 403 || code == "42501" ->
-                "The existing database permissions do not allow this request. Share this error with the project administrator."
+                "This account cannot make that request. Contact WRJA for help."
             response.status == 404 ->
-                "The required table or API endpoint is unavailable. Check that the app uses the correct Supabase project."
+                "Booking is temporarily unavailable. Try again later or contact WRJA."
             response.status == 409 ->
                 "A matching request may already exist. Ask the club to check before submitting another request."
             response.status == 429 ->
                 "Too many requests. Please wait a moment and retry."
-            else -> "Supabase could not complete the booking request."
+            else -> "Could not confirm your booking. Retry with the same form or contact WRJA before making a new request."
         }
-        val details = "HTTP ${response.status}" + if (code.isNotBlank()) ", $code" else ""
-        return IllegalStateException("$message ($details)")
+        return UserFacingFailure(message)
     }
 
     private suspend fun request(
@@ -151,7 +154,7 @@ object SupabaseBookings {
             }
             val status = connection.responseCode
             val stream = if (status in 200..299) connection.inputStream else connection.errorStream
-            Response(status, stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty())
+            Response(status, stream?.readBoundedText().orEmpty())
         } catch (failure: IOException) {
             throw IOException(
                 "Could not confirm the booking. Check your connection and retry with the same details.",

@@ -54,7 +54,7 @@ private data class CalendarCompetition(
 )
 
 @Composable
-fun CompetitionCalendar() {
+fun CompetitionCalendar(onPayment: ((String) -> Unit)? = null) {
     val currentMonth = remember { YearMonth.now(ZoneId.of("Africa/Johannesburg")) }
     val startMonth = remember(currentMonth) { currentMonth.minusYears(10) }
     val endMonth = remember(currentMonth) { currentMonth.plusYears(10) }
@@ -73,6 +73,43 @@ fun CompetitionCalendar() {
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var reload by remember { mutableStateOf(0) }
+    var detailId by remember { mutableStateOf<String?>(null) }
+    var detail by remember { mutableStateOf<JudoEvent?>(null) }
+    var detailFailed by remember { mutableStateOf(false) }
+    val loadFailure = loadFailureMessage()
+    val monthFailure = localized("Could not open that month. Try swiping or using the arrows again.", "Kon nie daardie maand oopmaak nie. Vee of gebruik die pyltjies weer.", "Leyo nyanga ayivulekanga. Swayipha noma usebenzise imicibisholo futhi.")
+    var monthError by remember(visibleMonth) { mutableStateOf(false) }
+    fun scrollTo(month: YearMonth) {
+        monthError = false
+        scope.launch {
+            recoverOperation("Change calendar month", { monthError = true }) { state.animateScrollToMonth(month) }
+        }
+    }
+    LaunchedEffect(detailId) {
+        detail = null
+        detailFailed = false
+        val id = detailId ?: return@LaunchedEffect
+        try {
+            detail = fetchEvents(null, id).firstOrNull()
+            detailFailed = detail == null
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (failure: Exception) {
+            reportFailure("Load competition details", failure)
+            detailFailed = true
+        }
+    }
+    detailId?.let { id ->
+        val event = detail?.takeIf { it.id == id }
+        if (event != null) {
+            EventDetailsDialog(event, onDismiss = { detailId = null }, onPayment = onPayment)
+        } else {
+            AlertDialog(onDismissRequest = { detailId = null },
+                title = { Text(localized("Competition details", "Kompetisiebesonderhede", "Imininingwane yomncintiswano")) },
+                text = { if (detailFailed) Text(localized("Could not load this competition. Refresh and try again.", "Kon nie die kompetisie laai nie. Verfris en probeer weer.", "Umncintiswano awulayishwanga. Vuselela bese uzama futhi.")) else CircularProgressIndicator() },
+                confirmButton = { TextButton(onClick = { detailId = null }) { Text(localized("Close", "Sluit", "Vala")) } })
+        }
+    }
 
     LaunchedEffect(visibleMonth, reload, SupabaseAuth.isLoggedIn) {
         loading = true
@@ -87,10 +124,8 @@ fun CompetitionCalendar() {
             loadedMonth = visibleMonth
         } catch (cancelled: CancellationException) {
             throw cancelled
-        } catch (_: java.io.IOException) {
-            error = "Could not load competition dates. Check your internet connection and retry."
         } catch (failure: Exception) {
-            error = failure.message ?: "Could not load competition dates."
+            error = actionFailure("Load competition dates", failure, loadFailure)
         } finally {
             loading = false
         }
@@ -109,7 +144,7 @@ fun CompetitionCalendar() {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             IconButton(
                 enabled = visibleMonth > startMonth && !state.isScrollInProgress,
-                onClick = { scope.launch { state.animateScrollToMonth(visibleMonth.minusMonths(1)) } }
+                onClick = { scrollTo(visibleMonth.minusMonths(1)) }
             ) { Icon(Icons.Default.ChevronLeft, "Previous month", tint = CalendarGold) }
             Text(
                 text = visibleMonth.format(MonthLabel).uppercase(Locale.ENGLISH),
@@ -120,10 +155,12 @@ fun CompetitionCalendar() {
             )
             IconButton(
                 enabled = visibleMonth < endMonth && !state.isScrollInProgress,
-                onClick = { scope.launch { state.animateScrollToMonth(visibleMonth.plusMonths(1)) } }
+                onClick = { scrollTo(visibleMonth.plusMonths(1)) }
             ) { Icon(Icons.Default.ChevronRight, "Next month", tint = CalendarGold) }
         }
+        if (monthError) Text(monthFailure, color = MaterialTheme.colorScheme.error)
         Spacer(Modifier.height(12.dp))
+        Column(Modifier.align(Alignment.CenterHorizontally).widthIn(max = 520.dp).fillMaxWidth()) {
         Row(Modifier.fillMaxWidth().background(CalendarGold)) {
             listOf("M", "T", "W", "T", "F", "S", "S").forEach { day ->
                 Text(day, Modifier.weight(1f).padding(vertical = 10.dp),
@@ -161,6 +198,7 @@ fun CompetitionCalendar() {
                 }
             }
         )
+        }
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(localized("Gold = competition day", "Goud = kompetisiedag", "Igolide = usuku lomncintiswano"), color = CalendarMuted,
@@ -176,7 +214,7 @@ fun CompetitionCalendar() {
             }
             error != null -> Text(error.orEmpty(), color = Color(0xFFFFD1D1))
             ready -> {
-                val date = selectedDate?.let { LocalDate.parse(it) }
+                val date = selectedDate?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
                 if (date == null) {
                     Text(
                         if (competitions.isEmpty()) localized("No published competitions this month.", "Geen gepubliseerde kompetisies hierdie maand nie.", "Ayikho imincintiswano eshicilelwe kule nyanga.")
@@ -191,6 +229,7 @@ fun CompetitionCalendar() {
                     }
                     selectedCompetitions.forEach { competition ->
                         Card(
+                            onClick = { detailId = competition.id },
                             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                             colors = CardDefaults.cardColors(containerColor = Color(0xFF242424)),
                             border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF393939)),
@@ -240,7 +279,7 @@ private suspend fun loadCalendarCompetitions(month: YearMonth): List<CalendarCom
                         else -> "Could not load competition dates (HTTP $status)."
                     }
                 }
-                JSONArray(connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() })
+                JSONArray(connection.inputStream.readBoundedText())
             } finally {
                 connection.disconnect()
             }

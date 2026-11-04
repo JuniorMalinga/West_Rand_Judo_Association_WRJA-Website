@@ -38,7 +38,7 @@ fun PasswordResetDialog(initialEmail: String, onDismiss: () -> Unit) {
     val expiry = ((expiresAt - now + 999) / 1000).coerceAtLeast(0)
     val invalidDetails = localized("Enter your account's full name, a valid email, and a valid phone number if provided.", "Voer jou rekening se volle naam, 'n geldige e-posadres en 'n geldige telefoonnommer indien verskaf in.", "Faka igama eligcwele le-akhawunti, i-imeyili evumelekile nenombolo yocingo evumelekile uma uyinikeza.")
     val invalidCode = localized("Enter the 6–12 digit code from your email before it expires.", "Voer die 6–12 syferkode uit jou e-pos in voordat dit verval.", "Faka ikhodi yezinombolo ezi-6–12 evela ku-imeyili ngaphambi kokuphelelwa isikhathi.")
-    val invalidPassword = localized("Use at least 8 characters with a letter and a number. Both passwords must match.", "Gebruik minstens 8 karakters met 'n letter en syfer. Albei wagwoorde moet ooreenstem.", "Sebenzisa izinhlamvu okungenani eziyi-8 ezinohlamvu nenombolo. Amaphasiwedi kufanele afane.")
+    val invalidPassword = localized("Use 8–128 characters with a letter and a number. Both passwords must match.", "Gebruik 8–128 karakters met 'n letter en 'n syfer. Albei wagwoorde moet ooreenstem.", "Sebenzisa izinhlamvu eziyi-8 kuya kweziyi-128, kufaka uhlamvu nenombolo. Amaphasiwedi kufanele afane.")
     val connectionError = localized("Could not confirm the request. Check your connection and email before trying again.", "Kon nie die versoek bevestig nie. Gaan jou verbinding en e-pos na voordat jy weer probeer.", "Asikwazanga ukuqinisekisa isicelo. Hlola uxhumano ne-imeyili ngaphambi kokuzama futhi.")
     val unavailable = localized("Password recovery is temporarily unavailable. Please try again later.", "Wagwoordherstel is tydelik onbeskikbaar. Probeer later weer.", "Ukubuyisela iphasiwedi akutholakali okwamanje. Zama kamuva.")
     val rejected = localized("The details or code could not be verified. Check your account details or request a new code.", "Die besonderhede of kode kon nie bevestig word nie. Gaan jou rekeningbesonderhede na of versoek 'n nuwe kode.", "Imininingwane noma ikhodi ayiqinisekiswanga. Hlola imininingwane ye-akhawunti noma ucele ikhodi entsha.")
@@ -48,9 +48,9 @@ fun PasswordResetDialog(initialEmail: String, onDismiss: () -> Unit) {
     fun submit(action: String) {
         if (busy) return
         error = when {
-            action == "request" && (!isValidPersonName(name) || name.trim().length > 120 || !isValidEmailAddress(email) || (phone.isNotBlank() && !isValidPhoneNumber(phone))) -> invalidDetails
+            action == "request" && (!isValidPersonName(name, InputLimits.RESET_NAME) || !isValidEmailAddress(email) || (phone.isNotBlank() && !isValidPhoneNumber(phone))) -> invalidDetails
             action == "verify" && (code.length !in 6..12 || expiry == 0L) -> invalidCode
-            action == "complete" && (password.length !in 8..128 || !password.any { it in 'A'..'Z' || it in 'a'..'z' } || !password.any { it in '0'..'9' } || password != confirm) -> invalidPassword
+            action == "complete" && (!isValidRegistrationPassword(password) || password != confirm) -> invalidPassword
             else -> null
         }
         if (error != null) return
@@ -95,7 +95,8 @@ fun PasswordResetDialog(initialEmail: String, onDismiss: () -> Unit) {
                     failure.reason.contains("different from") -> reused
                     else -> rejected
                 }
-            } catch (_: Exception) {
+            } catch (failure: Exception) {
+                reportFailure("Reset password", failure)
                 error = connectionError
             } finally { busy = false }
         }
@@ -110,22 +111,22 @@ fun PasswordResetDialog(initialEmail: String, onDismiss: () -> Unit) {
                 when (step) {
                     0 -> {
                         Text(localized("Enter your registered details. A reset code will be sent to your email.", "Voer jou geregistreerde besonderhede in. 'n Herstelkode sal na jou e-pos gestuur word.", "Faka imininingwane obhalise ngayo. Ikhodi izothunyelwa ku-imeyili yakho."))
-                        OutlinedTextField(name, { name = sanitizePersonName(it); error = null }, label = { Text(localized("Full name", "Volle naam", "Igama eligcwele")) }, singleLine = true, enabled = !busy)
-                        OutlinedTextField(email, { email = it; error = null }, label = { Text(tr("email")) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email), singleLine = true, enabled = !busy)
-                        OutlinedTextField(phone, { phone = sanitizePhoneNumber(it); error = null }, label = { Text(localized("Phone (optional)", "Telefoon (opsioneel)", "Ucingo (ngokuzithandela)")) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), singleLine = true, enabled = !busy)
+                        OutlinedTextField(name, { name = editPersonName(name, it, InputLimits.RESET_NAME); error = null }, label = { Text(localized("Full name", "Volle naam", "Igama eligcwele")) }, singleLine = true, enabled = !busy)
+                        OutlinedTextField(email, { email = boundedInput(email, it, InputLimits.EMAIL); error = null }, label = { Text(tr("email")) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email), singleLine = true, enabled = !busy)
+                        OutlinedTextField(phone, { phone = editPhoneNumber(phone, it); error = null }, label = { Text(localized("Phone (optional)", "Telefoon (opsioneel)", "Ucingo (ngokuzithandela)")) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), singleLine = true, enabled = !busy)
                     }
                     1 -> {
                         Text(localized("Check your email and spam folder for the reset code.", "Gaan jou e-pos en strooiposvouer na vir die herstelkode.", "Hlola i-imeyili nefolda yogaxekile ukuze uthole ikhodi."))
                         Text(email)
                         Text("${localized("Code expires in", "Kode verval oor", "Ikhodi iphelelwa yisikhathi ngo")}: ${expiry / 60}:${(expiry % 60).toString().padStart(2, '0')}")
-                        OutlinedTextField(code, { code = it.filter(Char::isDigit).take(12); error = null }, label = { Text(localized("Email code", "E-poskode", "Ikhodi ye-imeyili")) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword), singleLine = true, enabled = !busy)
+                        OutlinedTextField(code, { code = boundedInput(code, it.filter { digit -> digit in '0'..'9' }, 12); error = null }, label = { Text(localized("Email code", "E-poskode", "Ikhodi ye-imeyili")) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword), singleLine = true, enabled = !busy)
                         TextButton(onClick = { submit("request") }, enabled = !busy && cooldown == 0L) { Text(localized("Resend code", "Stuur kode weer", "Thumela ikhodi futhi") + if (cooldown > 0) " (${cooldown}s)" else "") }
                         TextButton(onClick = { step = 0; code = ""; error = null }, enabled = !busy) { Text(localized("Edit account details", "Wysig rekeningbesonderhede", "Hlela imininingwane ye-akhawunti")) }
                     }
                     2 -> {
                         Text(localized("Email verified. Choose a new password different from your current one.", "E-pos bevestig. Kies 'n nuwe wagwoord wat van jou huidige een verskil.", "I-imeyili iqinisekisiwe. Khetha iphasiwedi entsha ehlukile kweyamanje."))
-                        OutlinedTextField(password, { password = it; error = null }, label = { Text(tr("password")) }, visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), enabled = !busy, singleLine = true)
-                        OutlinedTextField(confirm, { confirm = it; error = null }, label = { Text(localized("Confirm password", "Bevestig wagwoord", "Qinisekisa iphasiwedi")) }, visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), enabled = !busy, singleLine = true)
+                        OutlinedTextField(password, { password = boundedInput(password, it, InputLimits.PASSWORD); error = null }, label = { Text(tr("password")) }, visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), enabled = !busy, singleLine = true)
+                        OutlinedTextField(confirm, { confirm = boundedInput(confirm, it, InputLimits.PASSWORD); error = null }, label = { Text(localized("Confirm password", "Bevestig wagwoord", "Qinisekisa iphasiwedi")) }, visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), enabled = !busy, singleLine = true)
                         Text(invalidPassword)
                         TextButton(enabled = !busy, onClick = {
                             resetToken = ""; password = ""; confirm = ""; error = null; step = 0

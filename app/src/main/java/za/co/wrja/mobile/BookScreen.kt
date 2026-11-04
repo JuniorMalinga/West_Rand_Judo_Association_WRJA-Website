@@ -2,7 +2,6 @@ package za.co.wrja.mobile
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
-import android.util.Patterns
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -61,6 +60,8 @@ fun BookScreen() {
     var programsError by remember { mutableStateOf<String?>(null) }
     var programsReload by remember { mutableStateOf(0) }
 
+    val loadFailure = loadFailureMessage()
+    val bookingFailure = localized("Could not confirm your booking. Check your connection and retry with the same form, or contact WRJA before making a new request.", "Kon nie jou bespreking bevestig nie. Gaan jou verbinding na en probeer met dieselfde vorm, of kontak WRJA voor 'n nuwe versoek.", "Ukubhukha akuqinisekisiwe. Hlola uxhumano bese uzama ngefomu elifanayo, noma uxhumane ne-WRJA ngaphambi kwesicelo esisha.")
     LaunchedEffect(SupabaseAuth.isLoggedIn, programsReload) {
         programsLoading = true
         programsError = null
@@ -70,7 +71,7 @@ fun BookScreen() {
             throw cancelled
         } catch (failure: Exception) {
             programs = emptyList()
-            programsError = failure.message ?: "Unable to load programs."
+            programsError = actionFailure("Load booking programs", failure, loadFailure)
         } finally {
             programsLoading = false
         }
@@ -100,16 +101,16 @@ fun BookScreen() {
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Text(
-                text = localized("BOOK A SESSION", "BESPREEK 'N SESSIE", "BHUKHA ISESHINI"),
+                text = localized("FREE TRIAL", "GRATIS PROEFSESSIE", "ISIVIVINYO SAMAHHALA"),
                 color = BookGold,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.ExtraBold
             )
 
-            Text(text = localized("Request a booking", "Versoek 'n bespreking", "Cela ukubhukha"), color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            Text(text = localized("Request a free trial", "Versoek 'n gratis proefsessie", "Cela isivivinyo samahhala"), color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
 
             Text(
-                text = localized("Choose a program and enter your preferred session details. Times are South African time.", "Kies 'n program en voer jou voorkeursessiebesonderhede in. Tye is Suid-Afrikaanse tyd.", "Khetha uhlelo bese ufaka imininingwane yeseshini oyithandayo. Izikhathi ezaseNingizimu Afrika."),
+                text = localized("Choose a programme and preferred session in South African time. This is a free trial request; no payment is taken.", "Kies 'n program en voorkeursessie in Suid-Afrikaanse tyd. Dit is 'n gratis proefsessie; geen betaling word gehef nie.", "Khetha uhlelo nesikhathi saseNingizimu Afrika. Lesi isicelo sesivivinyo samahhala; akukho nkokhelo ezothathwa."),
                 color = Color.LightGray,
                 fontSize = 13.sp
             )
@@ -142,7 +143,7 @@ fun BookScreen() {
                 label = localized("Full name", "Volle naam", "Igama eligcwele"),
                 value = fullName,
                 placeholder = localized("Your full name", "Jou volle naam", "Igama lakho eligcwele"),
-                onValueChange = { fullName = it }
+                onValueChange = { fullName = editPersonName(fullName, it, InputLimits.BOOKING_NAME) }
             )
 
             BookInput(
@@ -151,7 +152,7 @@ fun BookScreen() {
                 value = email,
                 placeholder = "you@example.com",
                 keyboardType = KeyboardType.Email,
-                onValueChange = { email = it }
+                onValueChange = { email = boundedInput(email, it, InputLimits.EMAIL) }
             )
 
             BookInput(
@@ -160,12 +161,12 @@ fun BookScreen() {
                 value = phone,
                 placeholder = localized("Your phone number", "Jou telefoonnommer", "Inombolo yakho yocingo"),
                 keyboardType = KeyboardType.Phone,
-                onValueChange = { phone = it }
+                onValueChange = { phone = editPhoneNumber(phone, it) }
             )
 
             BookDropdown(
                 enabled = formEnabled,
-                label = localized("Payment method", "Betaalmetode", "Indlela yokukhokha"),
+                label = localized("Payment preference for future sessions", "Betaalvoorkeur vir toekomstige sessies", "Indlela yokukhokha oyikhethayo ngezikhathi ezizayo"),
                 value = paymentMethod,
                 placeholder = localized("Select a payment method", "Kies 'n betaalmetode", "Khetha indlela yokukhokha"),
                 options = listOf("EFT", "Cash", "Card"),
@@ -233,7 +234,7 @@ fun BookScreen() {
                 value = notes,
                 placeholder = localized("Anything we should know before your session", "Enigiets wat ons voor jou sessie moet weet", "Noma yini okufanele siyazi ngaphambi kweseshini yakho"),
                 multiline = true,
-                onValueChange = { notes = it }
+                onValueChange = { notes = boundedInput(notes, it, InputLimits.BOOKING_NOTES) }
             )
 
             error?.let {
@@ -252,7 +253,7 @@ fun BookScreen() {
                 enabled = formEnabled && !programsLoading && programs.isNotEmpty(),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp),
+                    .heightIn(min = 52.dp),
                 shape = RoundedCornerShape(4.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = BookGold,
@@ -268,8 +269,8 @@ fun BookScreen() {
                         programs.none { it.id == programId } ->
                             "Please select a program."
 
-                        fullName.isBlank() ->
-                            "Please enter your full name."
+                        !isValidPersonName(fullName, InputLimits.BOOKING_NAME) ->
+                            "Please enter a valid full name."
 
                         fullName.trim().length > 150 ->
                             "Please keep your name under 151 characters."
@@ -277,13 +278,11 @@ fun BookScreen() {
                         email.trim().length > 254 ->
                             "Please enter a shorter email address."
 
-                        !Patterns.EMAIL_ADDRESS
-                            .matcher(email.trim())
-                            .matches() ->
+                        !isValidEmailAddress(email) ->
                             "Please enter a valid email address."
 
-                        phone.isBlank() ->
-                            "Please enter your phone number."
+                        !isValidPhoneNumber(phone) ->
+                            "Please enter a valid phone number with 7–15 digits."
 
                         phone.trim().length > 30 ->
                             "Please keep your phone number under 31 characters."
@@ -326,7 +325,7 @@ fun BookScreen() {
                             } catch (cancelled: CancellationException) {
                                 throw cancelled
                             } catch (failure: Exception) {
-                                error = failure.message ?: "Unable to submit your booking."
+                                error = actionFailure("Submit trial booking", failure, bookingFailure)
                             } finally {
                                 submitting = false
                             }

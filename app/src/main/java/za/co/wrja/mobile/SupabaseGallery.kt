@@ -155,8 +155,7 @@ private suspend fun fetchGallery(): List<GalleryPhoto> =
             }
 
             val response = connection.inputStream
-                .bufferedReader()
-                .use { it.readText() }
+                .readBoundedText()
 
             val rows = JSONArray(response)
 
@@ -185,6 +184,7 @@ fun SupabaseGallery() {
     var error by remember { mutableStateOf<String?>(null) }
     var refreshCount by remember { mutableStateOf(0) }
 
+    val loadFailure = loadFailureMessage()
     LaunchedEffect(refreshCount) {
         loading = true
         error = null
@@ -194,11 +194,7 @@ fun SupabaseGallery() {
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (failure: Exception) {
-            error = if (failure is IllegalStateException) {
-                failure.message ?: "Unable to load the gallery."
-            } else {
-                "Could not connect. Check your internet connection and retry."
-            }
+            error = actionFailure("Load gallery", failure, loadFailure)
         } finally {
             loading = false
         }
@@ -287,12 +283,12 @@ private fun GalleryPhotoCard(photo: GalleryPhoto) {
                         }
                     },
                     error = {
-                        Image(
-                            painter = painterResource(fallbackImage),
-                            contentDescription = photo.caption.ifBlank { photo.title },
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomStart) {
+                            Image(painterResource(fallbackImage), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                            Surface(color = MaterialTheme.colorScheme.surface) {
+                                Text(localized("Original photo unavailable", "Oorspronklike foto onbeskikbaar", "Isithombe sokuqala asitholakali"), Modifier.padding(8.dp))
+                            }
+                        }
                     }
                 )
             }

@@ -17,9 +17,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
-import java.io.IOException
 
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SupabaseAuthScreen(
     onLanguageChanged: (AppLanguage) -> Unit = {},
@@ -52,11 +52,12 @@ fun SupabaseAuthScreen(
     val invalidEmailError = localized("Enter a valid email address.", "Voer 'n geldige e-posadres in.", "Faka ikheli le-imeyili elivumelekile.")
     val missingPasswordError = localized("Enter your password.", "Voer jou wagwoord in.", "Faka iphasiwedi yakho.")
     val invalidDateError = localized("Enter a valid date of birth. Athletes must be at least 18.", "Voer 'n geldige geboortedatum in. Atlete moet minstens 18 wees.", "Faka usuku lokuzalwa oluvumelekile. Abasubathi kufanele babe neminyaka engu-18 okungenani.")
-    val weakPasswordError = localized("Use 8 or more characters, including a letter and a number.", "Gebruik 8 of meer karakters, insluitend 'n letter en 'n syfer.", "Sebenzisa izinhlamvu eziyi-8 noma ngaphezulu, kufaka uhlamvu nenombolo.")
+    val weakPasswordError = localized("Use 8–128 characters, including a letter and a number.", "Gebruik 8–128 karakters, insluitend 'n letter en 'n syfer.", "Sebenzisa izinhlamvu eziyi-8 kuya kweziyi-128, kufaka uhlamvu nenombolo.")
     val mismatchPasswordError = localized("The passwords do not match.", "Die wagwoorde stem nie ooreen nie.", "Amaphasiwedi awafani.")
     val confirmationNotice = localized("Check your email for a confirmation link, then return here to log in. If you already have an account, log in.", "Gaan jou e-pos na vir 'n bevestigingskakel, en keer dan hierheen terug om aan te meld. Meld aan as jy reeds 'n rekening het.", "Hlola i-imeyili yakho ukuze uthole isixhumanisi sokuqinisekisa, bese ubuya lapha ukuze ungene. Ngena uma usuvele une-akhawunti.")
     val connectionError = localized("Could not connect. Check your internet connection and try again.", "Kon nie koppel nie. Gaan jou internetverbinding na en probeer weer.", "Ayikwazanga ukuxhuma. Hlola uxhumano lwakho lwe-inthanethi bese uzama futhi.")
-    val authenticationFailedError = localized("Authentication failed.", "Stawing het misluk.", "Ukuqinisekisa kwehlulekile.")
+    val authenticationFailedError = localized("Could not complete sign-in or registration. Try again or contact WRJA if the problem continues.", "Kon nie aanmelding of registrasie voltooi nie. Probeer weer of kontak WRJA as die probleem voortduur.", "Ukungena noma ukubhalisa akuqedwanga. Zama futhi noma uxhumane ne-WRJA uma inkinga iqhubeka.")
+    val displayAuthFailure = authFailureMessage(connectionError, authenticationFailedError)
     val invalidPhoneError = localized("Enter a valid phone number with at least 7 digits.", "Voer 'n geldige telefoonnommer met minstens 7 syfers in.", "Faka inombolo yocingo evumelekile enezinombolo okungenani eziyi-7.")
 
     BackHandler(enabled = signUpMode && !busy) {
@@ -89,13 +90,13 @@ fun SupabaseAuthScreen(
         return
     }
 
+    Box(Modifier.fillMaxSize().background(Color(0xFF090909)), contentAlignment = Alignment.TopCenter) {
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF090909))
+            .widthIn(max = 560.dp)
+            .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .imePadding()
-            .padding(24.dp),
+            .padding(horizontal = 20.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(28.dp))
@@ -119,7 +120,7 @@ fun SupabaseAuthScreen(
             OutlinedTextField(
                 value = firstName,
                 onValueChange = { rawValue ->
-                    val cleaned = sanitizePersonName(rawValue)
+                    val cleaned = editPersonName(firstName, rawValue)
                     firstNameInputRejected = rawValue != cleaned
                     firstName = cleaned
                     error = null
@@ -141,7 +142,7 @@ fun SupabaseAuthScreen(
             OutlinedTextField(
                 value = lastName,
                 onValueChange = { rawValue ->
-                    val cleaned = sanitizePersonName(rawValue)
+                    val cleaned = editPersonName(lastName, rawValue)
                     lastNameInputRejected = rawValue != cleaned
                     lastName = cleaned
                     error = null
@@ -163,7 +164,7 @@ fun SupabaseAuthScreen(
             OutlinedTextField(
                 value = phone,
                 onValueChange = { rawValue ->
-                    val cleaned = sanitizePhoneNumber(rawValue)
+                    val cleaned = editPhoneNumber(phone, rawValue)
                     phoneInputRejected = rawValue != cleaned
                     phone = cleaned
                     error = null
@@ -172,7 +173,7 @@ fun SupabaseAuthScreen(
                 isError = phoneInputRejected || (phone.isNotBlank() && !isValidPhoneNumber(phone)),
                 supportingText = {
                     if (phoneInputRejected || (phone.isNotBlank() && !isValidPhoneNumber(phone))) {
-                        Text(localized("Use digits, spaces, +, - or parentheses only.", "Gebruik slegs syfers, spasies, +, - of hakies.", "Sebenzisa izinombolo, izikhala, +, - noma abakaki kuphela."))
+                        Text(localized("Enter 7–15 digits. Use + only at the start, and keep the total under 31 characters.", "Voer 7–15 syfers in. Gebruik + net aan die begin, met hoogstens 30 karakters in totaal.", "Faka amadijithi ayi-7 kuya kwayi-15. Sebenzisa u-+ ekuqaleni kuphela, ungadluli izinhlamvu ezingama-30 sezizonke."))
                     }
                 },
                 keyboardOptions = KeyboardOptions(
@@ -185,7 +186,7 @@ fun SupabaseAuthScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Row(
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -209,7 +210,7 @@ fun SupabaseAuthScreen(
             OutlinedTextField(
                 value = dateOfBirth,
                 onValueChange = {
-                    dateOfBirth = it
+                    dateOfBirth = editBirthDate(dateOfBirth, it)
                     error = null
                 },
                 label = { Text(localized("Date of birth", "Geboortedatum", "Usuku lokuzalwa")) },
@@ -227,7 +228,7 @@ fun SupabaseAuthScreen(
 
         OutlinedTextField(
             value = email,
-            onValueChange = { email = it },
+            onValueChange = { email = boundedInput(email, it, InputLimits.EMAIL) },
             label = { Text(tr("email")) },
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Email
@@ -241,7 +242,7 @@ fun SupabaseAuthScreen(
 
         OutlinedTextField(
             value = password,
-            onValueChange = { password = it },
+            onValueChange = { password = boundedInput(password, it, InputLimits.PASSWORD) },
             label = { Text(tr("password")) },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(
@@ -257,7 +258,7 @@ fun SupabaseAuthScreen(
 
             OutlinedTextField(
                 value = confirmPassword,
-                onValueChange = { confirmPassword = it },
+                onValueChange = { confirmPassword = boundedInput(confirmPassword, it, InputLimits.PASSWORD) },
                 label = { Text(localized("Confirm password", "Bevestig wagwoord", "Qinisekisa iphasiwedi")) },
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(
@@ -310,7 +311,7 @@ fun SupabaseAuthScreen(
             enabled = !busy && acceptedTerms,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(52.dp),
+                .heightIn(min = 52.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = gold,
                 contentColor = Color.Black
@@ -377,11 +378,7 @@ fun SupabaseAuthScreen(
                         } catch (cancelled: CancellationException) {
                             throw cancelled
                         } catch (failure: Exception) {
-                            error = if (failure is IOException) {
-                                connectionError
-                            } else {
-                                failure.message ?: authenticationFailedError
-                            }
+                            error = displayAuthFailure(failure)
                         } finally {
                             busy = false
                         }
@@ -418,5 +415,6 @@ fun SupabaseAuthScreen(
                 }
             )
         }
+    }
     }
 }
